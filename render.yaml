@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: plant-connectome
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn app:app -c gunicorn.conf.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGO_URI
+        sync: false  # You must set this manually in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false  # You must set this manually in Render dashboard

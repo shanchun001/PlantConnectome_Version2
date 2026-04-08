@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-container" style="max-width: 1100px; padding: 0 16px;">
+
+  <!-- Page Header -->
+  <div class="preview-header">
+    <h2 class="preview-title">Preview Search Results</h2>
+    <div class="preview-meta">
+      <span class="preview-meta-item">Query: <strong class="preview-query">{{ search_term }}</strong></span>
+      <span class="preview-meta-divider">&middot;</span>
+      <span class="preview-meta-item">Search Type: <strong>{{ search_type }}</strong></span>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="preview-controls">
+    <input
+      type="text"
+      id="entityNameSearchInput"
+      placeholder="Search entity name..."
+      class="preview-search-input"
+    >
+    <select id="entityTypeFilter" class="preview-filter-select">
+      <option value="">All Categories</option>
+    </select>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="preview-status-bar">
+    <div class="preview-node-count">
+      Total Nodes Selected: <strong id="totalNodeCount">0</strong>
+    </div>
+    <div class="preview-info-hint">
+      Node counts are per-cluster. Shared nodes across clusters reduce the final count.
+    </div>
+  </div>
+
+  <!-- Warning -->
+  <div id="warningMessageContainer" class="preview-warning" style="display: none;">
+    &#9888; Total nodes selected exceeded 8000. Please reduce your selection so the graph can render.
+  </div>
+
+  <!-- Results Table -->
+  <div class="preview-table-card">
+    <div class="preview-table-scroll">
+      <table class="preview-table" id="resultsTable">
+        <thead>
+          <tr>
+            <th style="width: 44px;">
+              <input type="checkbox" id="selectAllCheckbox">
+            </th>
+            <th>Entity Name</th>
+            <th onclick="sortTable(2)" class="sortable-th">Entity Type &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(3)" class="sortable-th">Unique Nodes &#x25B2;&#x25BC;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows rendered by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Action Button -->
+  <div class="preview-actions">
+    <button id="showSelectedButton" class="preview-submit-btn" onclick="getSelectedEntities()">
+      Show Selected Entities
+    </button>
+  </div>
+</div>
+
+<!-- =========================
+       STYLES
+========================= -->
+<style>
+  /* ── Page Header ── */
+  .preview-header {
+    margin-top: 24px;
+    margin-bottom: 20px;
+  }
+  .preview-title {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+  }
+  .preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95em;
+    color: #6b7280;
+  }
+  .preview-meta-divider { color: #d1d5db; }
+  .preview-query { color: #0d9488; }
+
+  /* ── Controls ── */
+  .preview-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .preview-search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .preview-search-input:focus {
+    outline: none;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+  }
+  .preview-filter-select {
+    width: 220px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .preview-filter-select:focus {
+    outline: none;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+  }
+
+  /* ── Status Bar ── */
+  .preview-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 16px;
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 8px;
+    font-size: 0.9em;
+  }
+  .preview-node-count {
+    color: #1f2937;
+    font-size: 0.95em;
+  }
+  .preview-node-count strong { color: #0d9488; font-size: 1.1em; }
+  .preview-info-hint {
+    color: #6b7280;
+    font-size: 0.85em;
+  }
+
+  /* ── Warning ── */
+  .preview-warning {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    color: #991b1b;
+    font-weight: 500;
+    font-size: 0.9em;
+  }
+
+  /* ── Table Card ── */
+  .preview-table-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .preview-table-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .preview-table-scroll::-webkit-scrollbar { width: 6px; }
+  .preview-table-scroll::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 3px; }
+
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .preview-table th {
+    padding: 12px 14px;
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 12px;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .sortable-th { cursor: pointer; user-select: none; }
+  .sortable-th:hover { color: #0d9488; }
+  .preview-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: left;
+    color: #374151;
+  }
+  .preview-table tbody tr:hover { background-color: #f0fdfa; }
+  .preview-table input[type="checkbox"] { cursor: pointer; }
+
+  .table-link {
+    color: #0d9488;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .table-link:hover { color: #065f56; text-decoration: underline; }
+
+  .highlight {
+    background-color: #fef9c3;
+    padding: 1px 2px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+
+  /* ── Actions ── */
+  .preview-actions {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .preview-submit-btn {
+    background-color: #0d9488;
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .preview-submit-btn:hover {
+    background-color: #0f766e;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .preview-submit-btn:active { transform: scale(0.97); }
+  .preview-submit-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+</style>
+
+<!-- =========================
+       JAVASCRIPT
+========================= -->
+<script>
+  // Global variables
+  const search_type = "{{ search_type }}";
+  const search_term = "{{ search_term }}";
+  const unique_id = "{{ unique_id }}";
+  let allRowsData = [];
+  let filteredRowsData = [];
+  let selectedEntities = new Set();
+  let totalNodes = 0;
+
+  let currentSortCol = null;
+  let currentSortDir = 1;
+
+  const promptToVisCat = {{ entity_categories | tojson }};
+  const csvCategoryDict = {{ entity_categories_csv | tojson }};
+
+  const categorySet = new Set([
+    ...Object.values(promptToVisCat).map(c => c.toLowerCase()),
+    ...Object.values(csvCategoryDict).map(c => c.toLowerCase()),
+    'other'
+  ]);
+
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const dropdown = document.getElementById("entityTypeFilter");
+    [...categorySet].sort().forEach(category => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+      dropdown.appendChild(option);
+    });
+
+    const nameInput = document.getElementById('entityNameSearchInput');
+    nameInput.addEventListener('keyup', debounce(applyFilterAndRender, 300));
+    dropdown.addEventListener('change', applyFilterAndRender);
+
+    document.getElementById('selectAllCheckbox').addEventListener('click', toggleSelectAll);
+
+    const cachedData = getCachedSearch(search_term, search_type);
+    if (cachedData) {
+      allRowsData = cachedData.preview_results;
+      applyFilterAndRender();
+    } else {
+      allRowsData = {{ preview_results | tojson }};
+      applyFilterAndRender();
+      cacheSearchResults(search_term, search_type, {
+        preview_results: allRowsData,
+        unique_id: unique_id
+      });
+    }
+  });
+
+  // =========================
+  // CLIENT-SIDE CACHING
+  // =========================
+  function getCachedSearch(term, type) {
+    const cacheKey = `search_${type}_${term}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) return null;
+    try {
+      const parsedCache = JSON.parse(cached);
+      const cacheAge = (new Date().getTime() - parsedCache.timestamp) / (1000 * 60 * 60);
+      if (cacheAge > 24) {
+        localStorage.removeItem(cacheKey);
+        return null;
+      }
+      return parsedCache.data;
+    } catch (e) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+  }
+
+  function cacheSearchResults(term, type, data) {
+    const cacheKey = `search_${type}_${term}`;
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: new Date().getTime() }));
+    } catch (e) {
+      console.warn("Failed to cache:", e);
+    }
+  }
+
+  // =========================
+  // FILTERING
+  // =========================
+  function applyFilterAndRender() {
+    const searchValue = document.getElementById('entityNameSearchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('entityTypeFilter').value.toLowerCase();
+
+    filteredRowsData = allRowsData.filter(item => {
+      let entity, entity_type, vis_category;
+      if (Array.isArray(item)) {
+        entity = item[0];
+        entity_type = item[1];
+        vis_category = (item[4] || 'OTHER').toLowerCase();
+      } else {
+        entity = item.entity;
+        entity_type = item.entity_type;
+        vis_category = (item.vis_category || 'OTHER').toLowerCase();
+      }
+      const nameMatch = entity.toLowerCase().includes(searchValue);
+      const categoryMatch = typeFilter === '' || vis_category === typeFilter;
+      return nameMatch && categoryMatch;
+    });
+
+    renderPage();
+  }
+
+  // =========================
+  // RENDERING
+  // =========================
+  function renderPage() {
+    const tbody = document.querySelector("#resultsTable tbody");
+    tbody.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+
+    filteredRowsData.forEach(item => {
+      let entity, entity_type, edge_number, network_count;
+      if (Array.isArray(item)) {
+        [entity, entity_type, edge_number, network_count] = item;
+      } else {
+        entity = item.entity;
+        entity_type = item.entity_type;
+        edge_number = item.edge_number;
+        network_count = item.network_count;
+      }
+
+      const row = document.createElement('tr');
+      row.dataset.entity = entity;
+      row.dataset.entityType = entity_type;
+      row.dataset.networkCount = network_count;
+
+      // Checkbox
+      const checkboxCell = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.classList.add('entity-checkbox');
+      checkbox.value = `${entity}|${entity_type}`;
+      checkbox.addEventListener('change', updateTotalNodeCount);
+      checkboxCell.appendChild(checkbox);
+      row.appendChild(checkboxCell);
+
+      // Entity Name
+      const nameCell = document.createElement('td');
+      nameCell.classList.add('entity-name');
+      const link = document.createElement('a');
+      link.href = `/${search_type === 'non-alphanumeric' ? 'non_alpha' : search_type}/${encodeURIComponent(entity)}/results/${entity_type}?uid=${unique_id}`;
+      link.classList.add('table-link');
+      const searchInput = document.getElementById('entityNameSearchInput').value;
+      if (searchInput && entity.toLowerCase().includes(searchInput.toLowerCase())) {
+        const regex = new RegExp(`(${escapeRegExp(searchInput)})`, 'gi');
+        link.innerHTML = entity.replace(regex, '<span class="highlight">$1</span>');
+      } else {
+        link.textContent = entity;
+      }
+      link.dataset.originalText = entity;
+      nameCell.appendChild(link);
+      row.appendChild(nameCell);
+
+      // Entity Type
+      const typeCell = document.createElement('td');
+      typeCell.classList.add('entity-type');
+      typeCell.textContent = entity_type;
+      row.appendChild(typeCell);
+
+      // Unique Nodes
+      const networkCell = document.createElement('td');
+      const strong = document.createElement('strong');
+      strong.textContent = network_count;
+      networkCell.appendChild(strong);
+      row.appendChild(networkCell);
+
+      fragment.appendChild(row);
+    });
+
+    tbody.appendChild(fragment);
+    updateTotalNodeCount();
+    updateSelectAllCheckbox();
+  }
+
+  // =========================
+  // SELECT ALL
+  // =========================
+  function toggleSelectAll(eventOrCheckbox) {
+    const checkbox = eventOrCheckbox.target ? eventOrCheckbox.target : eventOrCheckbox;
+    const visibleCheckboxes = document.querySelectorAll("#resultsTable tbody .entity-checkbox");
+    visibleCheckboxes.forEach(cb => {
+      cb.checked = checkbox.checked;
+      if (checkbox.checked) selectedEntities.add(cb.value);
+      else selectedEntities.delete(cb.value);
+    });
+    updateTotalNodeCount();
+  }
+
+  function updateSelectAllCheckbox() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    const visible = document.querySelectorAll("#resultsTable tbody .entity-checkbox");
+    let checked = 0;
+    visible.forEach(cb => { if (cb.checked) checked++; });
+    selectAll.checked = (checked === visible.length && visible.length > 0);
+  }
+
+  // =========================
+  // TOTAL NODE COUNT
+  // =========================
+  function updateTotalNodeCount() {
+    totalNodes = 0;
+    selectedEntities.clear();
+    document.querySelectorAll(".entity-checkbox:checked").forEach(checkbox => {
+      const row = checkbox.closest("tr");
+      if (row) {
+        const countEl = row.querySelector("td:nth-child(4) strong");
+        if (countEl) {
+          const count = parseFloat(countEl.textContent);
+          if (!isNaN(count)) {
+            totalNodes += count;
+            selectedEntities.add(checkbox.value);
+          }
+        }
+      }
+    });
+    document.getElementById("totalNodeCount").textContent = totalNodes;
+    const warning = document.getElementById("warningMessageContainer");
+    const btn = document.getElementById("showSelectedButton");
+    if (totalNodes > 8000) {
+      warning.style.display = "block";
+      btn.disabled = true;
+    } else {
+      warning.style.display = "none";
+      btn.disabled = false;
+    }
+  }
+
+  // =========================
+  // SHOW SELECTED
+  // =========================
+  function getSelectedEntities() {
+    if (selectedEntities.size === 0) {
+      alert("No entities selected.");
+      return;
+    }
+    if (totalNodes > 8000) {
+      alert("Total nodes exceeded 8000. Please reduce your selection.");
+      return;
+    }
+    const selectedArray = Array.from(selectedEntities);
+    const pathSegment = (search_type === 'non-alphanumeric') ? 'non_alpha' : search_type;
+    fetch(`/${pathSegment}/${encodeURIComponent(search_term)}_multi/results?uid=${encodeURIComponent(unique_id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected_entities: selectedArray, search_term: search_term })
+    })
+    .then(response => {
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        return response.text().then(text => console.log('Response:', text));
+      }
+    })
+    .catch(err => console.error('Error:', err));
+  }
+
+  // =========================
+  // SORT
+  // =========================
+  function sortTable(colIndex) {
+    if (currentSortCol === colIndex) {
+      currentSortDir = -currentSortDir;
+    } else {
+      currentSortCol = colIndex;
+      currentSortDir = 1;
+    }
+    allRowsData.sort((a, b) => {
+      let valueA, valueB;
+      if (Array.isArray(a)) {
+        if (colIndex === 2) { valueA = a[1].toString(); valueB = b[1].toString(); }
+        else if (colIndex === 3) { valueA = parseFloat(a[3]) || 0; valueB = parseFloat(b[3]) || 0; }
+        else { valueA = a[colIndex].toString(); valueB = b[colIndex].toString(); }
+      } else {
+        if (colIndex === 2) { valueA = a.entity_type?.toString() || ''; valueB = b.entity_type?.toString() || ''; }
+        else if (colIndex === 3) { valueA = parseFloat(a.network_count) || 0; valueB = parseFloat(b.network_count) || 0; }
+        else { const keys = ['entity', 'entity_type', 'edge_number', 'network_count']; valueA = a[keys[colIndex]]?.toString() || ''; valueB = b[keys[colIndex]]?.toString() || ''; }
+      }
+      if (colIndex === 3) return currentSortDir * (valueA - valueB);
+      return currentSortDir * valueA.localeCompare(valueB, undefined, { sensitivity: 'base' });
+    });
+    applyFilterAndRender();
+  }
+
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+</script>
+{% endblock %}

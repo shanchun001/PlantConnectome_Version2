@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-container">
+  <br>
+  <h2>Features</h2>
+  <hr>
+
+  <h4>Database Statistics</h4>
+  <p>PlantConnectome is built from scientific literature processed with GPT assistance to extract relationships between plant science entities.</p>
+
+  <h4>Key Features</h4>
+  <ul>
+    <li><strong>Multiple Search Modes:</strong> Gene/Word and Substring searches for flexible entity discovery.</li>
+    <li><strong>Interactive Network Visualization:</strong> Explore relationships using Cytoscape.js-powered network graphs.</li>
+    <li><strong>Author Search:</strong> Find all relationships from papers by a specific author.</li>
+    <li><strong>PubMed Integration:</strong> Search by PubMed ID to see all extracted relationships.</li>
+    <li><strong>AI-Powered Summaries:</strong> Generate summaries of relationships using GPT models.</li>
+    <li><strong>API Access:</strong> Programmatic access to search results via REST API.</li>
+  </ul>
+
+  <h4>Entity Categories</h4>
+  <ul>
+    <li><strong>Plant/Organism:</strong> Plants, crops, model organisms, and plant communities</li>
+    <li><strong>Gene/Protein:</strong> Genes, proteins, enzymes, transcription factors, and protein complexes</li>
+    <li><strong>Chemical:</strong> Metabolites, hormones, compounds, and molecules</li>
+    <li><strong>Disease/Stress:</strong> Plant diseases, abiotic stress, pathogens, and disorders</li>
+    <li><strong>Cell/Compartment:</strong> Cells, organelles, tissues, and anatomical structures</li>
+    <li><strong>Biological Process:</strong> Pathways, metabolic processes, signaling, and biological functions</li>
+    <li><strong>Treatment:</strong> Experimental conditions, growth conditions, and interventions</li>
+    <li><strong>Taxonomy:</strong> Phylum, class, order, family, genus, species, cultivar</li>
+  </ul>
+</div>
+{% endblock %}

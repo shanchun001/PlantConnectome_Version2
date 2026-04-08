@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.pkl
+*.log
+.DS_Store
+
+# Large data files — load these separately on the server
+gut_microbiome_2_2k_most_recent_papers_semi-fixed.xlsx
+oup_wly_elv_spr_sci_sciadv_all_kg.csv
+papers.with_citations.jsonl

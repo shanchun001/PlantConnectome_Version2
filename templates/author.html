@@ -1,0 +1,892 @@
+{% extends "base.html" %}
+
+{% block dependencies %}
+  {{ super() }}
+  <input type="hidden" id="selected_categories" value="{{ selected_categories }}">
+  <script>
+    // Function to append logs to HTML
+    function logToHTML(message) {
+      const logList = document.getElementById("log-list");
+      if (logList) {
+        const logItem = document.createElement("li");
+        logItem.textContent = message;
+        logList.appendChild(logItem);
+        logList.parentElement.scrollTop = logList.parentElement.scrollHeight;
+      }
+    }
+    // Override console.log
+    (function() {
+      const originalLog = console.log;
+      console.log = function(...args) {
+        originalLog.apply(console, args);
+        const message = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
+        logToHTML(message);
+      };
+    })();
+  </script>
+  <!-- CytoscapeJS dependencies -->
+  <script>
+    var queryTerms = "{{ search_term }}";
+    console.log("Query term from Flask:", queryTerms); // Debugging purpose
+  </script>
+  <script src="{{ url_for('static', filename='js/vendor/jquery.js') }}"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+  <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+  <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+  <script src="https://unpkg.com/cytoscape-svg"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- Marked.js dependency for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Load custom scripts -->
+  <script>
+    const g = "{{ genes }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/search_results.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/info_popup.js') }}" defer></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/additional_styles.css') }}" defer>
+
+  <style>
+    /* ===========================================
+       Author Page Styles — Matching Gene Page
+       =========================================== */
+
+    /* ── Base ── */
+    .author-page { padding: 0 8px; }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+    }
+
+    /* ── Buttons ── */
+    .button {
+      padding: 10px 20px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.95em; font-weight: 500;
+      transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    .button:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .button:active { transform: scale(0.97); }
+    .button.primary { background-color: #0d9488; color: #fff; }
+    .button.primary:hover { background-color: #0f766e; }
+    .button.success { background-color: #059669; color: #fff; }
+    .button.success:hover { background-color: #047857; }
+    .button.secondary { background-color: #6b7280; color: #fff; }
+    .button.secondary:hover { background-color: #4b5563; }
+    .button.alert { background-color: #dc2626; color: #fff; }
+    .button.alert:hover { background-color: #b91c1c; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .toolbar .button { font-size: 0.9em; padding: 8px 16px; }
+
+    /* ── Modal ── */
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal.active { display: block; }
+    .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 24px; border: none; width: 80%; max-width: 1000px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .close-button { color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
+    .close-button:hover { color: #111827; }
+    body.modal-open { overflow: hidden; }
+
+    .small-button { font-size: 13px; padding: 8px 14px; }
+
+    /* ── Node Shapes ── */
+    .shape { width: 20px; height: 20px; display: inline-block; margin-right: 8px; }
+    .ellipse { border-radius: 50%; background-color: #89CFF0; }
+    .hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); background-color: #FFB6C1; }
+    .octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); background-color: #FF6B6B; }
+    .diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); background-color: #FFD700; }
+    .bio-hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); background-color: #98FB98; }
+    .micro-octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); background-color: #FFB6C1; }
+    .vee { clip-path: polygon(0% 0%, 50% 30%, 100% 0%, 100% 100%, 50% 70%, 0% 100%); background-color: #FF6B6B; }
+    .rhomboid { clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%); background-color: #DDA0DD; }
+    .tag { clip-path: polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%); background-color: #AFEEEE; }
+    .heptagon { clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%); background-color: #F0E68C; }
+    .rectangle { background-color: #90EE90; }
+    .pentagon { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); background-color: #E0FFFF; }
+    .concave-hexagon { clip-path: polygon(0% 0%, 50% 15%, 100% 0%, 100% 100%, 50% 85%, 0% 100%); background-color: #87CEEB; }
+    .triangle { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); background-color: #D2B48C; }
+    .cut-rectangle { clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%); background-color: #FFC0CB; }
+    .star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); background-color: #FFA07A; }
+
+    /* ── Search Header ── */
+    .search-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .search-term-container { max-height: 100px; overflow-y: auto; display: block; width: 100%; padding: 0; border: none; border-radius: 4px; background-color: transparent; box-sizing: border-box; margin: 0; }
+    .search-term-container::-webkit-scrollbar { width: 6px; }
+    .search-term-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 3px; }
+    .term { display: inline-block; background-color: #f0fdfa; padding: 4px 12px; margin: 2px 4px; border-radius: 20px; font-size: 1.1em; color: #0f766e; border: 1px solid #99f6e4; font-weight: 500; }
+    .search-header .search-term-container { flex: 1 1 auto; margin-right: 20px; }
+    .search-header .graph-info { flex: 0 0 auto; font-size: 0.95em; color: #6b7280; padding: 4px 14px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+    @media (max-width: 768px) {
+      .search-header { flex-direction: column; align-items: flex-start; }
+      .search-header .search-term-container { width: 100%; margin-right: 0; }
+      .search-header .graph-info { width: 100%; }
+    }
+
+    /* ── Section Cards ── */
+    .section-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .section-card > .section-title, .section-card .section-title { font-size: 1.15em; font-weight: 600; color: #1f2937; margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+
+    /* ── Table ── */
+    .table-container { max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; margin-bottom: 0; }
+    .table_results { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table_results th, .table_results td { padding: 10px 14px; border-bottom: 1px solid #f3f4f6; text-align: left; }
+    .table_results th { background-color: #f9fafb; color: #374151; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; position: sticky; top: 0; z-index: 1; }
+    .table_results tbody tr:hover { background-color: #f0fdfa; }
+    .pubmed-link.pubmed-hyperlink { color: #0d9488; text-decoration: none; transition: color 0.2s; }
+    .pubmed-link.pubmed-hyperlink:hover { color: #065f56; text-decoration: underline; }
+
+    /* ── Text Summary ── */
+    .summary-container { max-height: 500px; overflow-y: auto; overflow-x: hidden; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fafafa; margin-bottom: 0; box-sizing: border-box; font-size: 14px; line-height: 1.6; }
+    .summary-container::-webkit-scrollbar { width: 6px; }
+    .summary-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 3px; }
+
+    /* ── Legends ── */
+    #nodes-legend, #edges-legend { background-color: rgba(255,255,255,0.94); padding: 10px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: none; overflow-y: visible; }
+    #nodes-legend ul, #edges-legend ul { padding-left: 0; margin: 0; }
+    #nodes-legend li, #edges-legend li { margin-bottom: 6px; display: flex; align-items: center; font-size: 11px; }
+    .shape, svg { margin-right: 8px; }
+    .legend-title { font-size: 12px; cursor: pointer; margin: 0 0 6px 0; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+    .legend-title .legend-chevron { font-size: 10px; color: #9ca3af; }
+    .legend-collapsed ul { display: none; }
+    .legend-collapsed .legend-chevron { transform: rotate(-90deg); }
+
+    /* ── Side Tooltip ── */
+    .side-tooltip { position: absolute; top: 35px; right: 0; width: 320px; max-height: calc(100% - 45px); overflow-y: auto; background-color: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 15; }
+    .side-tooltip a { color: #0d9488; text-decoration: none; }
+    .side-tooltip a:hover { text-decoration: underline; }
+    .content.nodeinfo ul { list-style-type: none; padding-left: 0; }
+    .content.nodeinfo li { margin-bottom: 5px; }
+    .tooltip-close-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; z-index: 1; line-height: 1; }
+    .tooltip-close-btn:hover { color: #111827; }
+
+    /* ── Console Log ── */
+    #custom-console-log { position: fixed; bottom: 20px; right: 20px; z-index: 1000; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 12px 14px; width: 220px; max-height: 180px; overflow-y: auto; background: #fff; border: 1px solid #e5e7eb; font-size: 12px; transition: max-height 0.2s, opacity 0.2s; }
+    #custom-console-log.console-collapsed { max-height: 36px; overflow: hidden; opacity: 0.6; }
+    #custom-console-log.console-collapsed:hover { opacity: 0.9; }
+    #custom-console-log h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #374151; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    #custom-console-log ul { list-style-type: none; padding-left: 0; margin: 0; font-size: 12px; }
+    #custom-console-log ul li { color: #6b7280; font-style: italic; padding: 2px 0; }
+    .console-toggle-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: #9ca3af; padding: 0; }
+
+    /* ── Alert Box (info style) ── */
+    .alert-box { position: relative; padding: 12px 40px 12px 44px; background-color: #f0f9ff; color: #1e40af; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 8px; margin-bottom: 16px; font-size: 0.88em; }
+    .alert-box p { margin: 0; line-height: 1.5; }
+    .alert-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); font-size: 18px; }
+    .alert-box .close-button { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: none; border: none; font-size: 22px; font-weight: bold; color: #1e40af; cursor: pointer; transition: color 0.2s; }
+    .alert-box .close-button:hover { color: #1e3a5f; }
+
+    /* ── Cytoscape Wrapper ── */
+    .resize-buttons { position: absolute; bottom: 0; right: 0; z-index: 12; display: flex; gap: 0; }
+    #cy_wrapper { transition: width 0.3s, height 0.3s; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .fullscreen { position: fixed !important; top: 0; left: 0; width: 100% !important; height: 100% !important; z-index: 9998 !important; background-color: white; border-radius: 0 !important; }
+    hr { margin: 8px 0; border: none; border-top: 1px solid #f3f4f6; }
+
+    /* ── AI Summary Controls ── */
+    .ai-summary-controls { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 0; }
+    .ai-summary-controls h5 { margin-bottom: 16px; font-size: 1.2em; color: #1e293b; font-weight: 600; }
+    .ai-summary-controls small { color: #64748b; font-weight: 400; }
+    .ai-summary-controls label { font-weight: 600; display: block; margin-top: 16px; margin-bottom: 6px; color: #475569; font-size: 0.95em; }
+    .ai-summary-controls select, .ai-summary-controls textarea { width: 100%; padding: 10px 12px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.95em; transition: border-color 0.2s, box-shadow 0.2s; }
+    .ai-summary-controls select:focus, .ai-summary-controls textarea:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+    .ai-summary-controls textarea { resize: vertical; min-height: 120px; }
+    .slider-container-group { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px; }
+    .slider-container { display: flex; align-items: center; gap: 10px; width: 30%; }
+    .slider-container label { width: 110px; text-align: left; font-weight: 600; font-size: 0.9em; }
+    .slider-container input[type="range"] { flex-grow: 1; width: 100%; margin: 0; accent-color: #0d9488; }
+    .slider-container span { min-width: 72px; text-align: center; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; background: #fff; font-weight: 600; font-size: 0.9em; }
+    #generatedSummary { margin-top: 16px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04); color: #334155; }
+    #sentPrompt { max-height: 250px; overflow-y: auto; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; transition: max-height 0.3s; }
+    #sentPrompt.expanded { max-height: none; }
+    #expandPromptBtn, #expandResponseBtn { margin-top: 8px; padding: 6px 14px; font-size: 0.85em; cursor: pointer; border: none; background-color: #0d9488; color: white; border-radius: 6px; font-weight: 500; transition: background-color 0.2s; }
+    #expandPromptBtn:hover, #expandResponseBtn:hover { background-color: #0f766e; }
+    #apiResponse { max-height: 250px; overflow-y: auto; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; transition: max-height 0.3s; }
+    #apiResponse.expanded { max-height: none; }
+    #validationResult:not(:empty) { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 12px 0; }
+
+    /* ── Large Network Banner ── */
+    .large-network-banner { display: flex; align-items: flex-start; gap: 12px; background: #fef9e7; border: 1px solid #f5c518; border-left: 4px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 14px; color: #7a5d00; font-size: 0.95em; line-height: 1.55; }
+    .large-network-icon { color: #e6a700; font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .large-network-text { flex: 1; }
+    .large-network-text em { font-style: normal; font-weight: 600; color: #5a4400; }
+    .large-network-close { background: none; border: none; font-size: 22px; color: #b8960a; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; transition: color 0.15s; }
+    .large-network-close:hover { color: #7a5d00; }
+
+    /* ── Node Summary Line ── */
+    .node-summary-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .node-summary-line .lead { font-weight: 700; white-space: nowrap; }
+    .node-summary-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 14px; font-size: 0.95em; color: #374151; }
+    .hint-red { color: #dc2626; font-weight: 600; }
+
+    /* ── Loading Spinner ── */
+    .layout-spinner { width: 36px; height: 36px; margin: 0 auto; border: 4px solid #e5e7eb; border-top-color: #0d9488; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid-container align-center author-page" style="padding-left: 2px; padding-right: 2px; width: 100%;">
+  {% if genes %}
+    {% set terms = search_term.split(',') %}
+    <div class="search-header" style="margin-top: 16px;">
+      <div>
+        <h3 style="margin: 0 0 4px 0; font-weight: 700; font-size: 1.5em; color: #111827;">Author search results for:</h3>
+        <span class="search-term-container">
+          {% for term in terms %}
+            {% set clean_term = term.strip() %}
+            <span class="term">{{ clean_term }}</span>
+          {% endfor %}
+        </span>
+      </div>
+      <small class="graph-info">
+        <span id="element-len"></span> &middot;
+        <span id="number-papers">{{ connectome_count }}</span> paper(s)
+      </small>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="alert-box" role="alert" aria-live="assertive">
+      <span class="alert-icon" aria-hidden="true">&#x2139;&#xFE0F;</span>
+      <p>Small/medium networks (&lt;1000 nodes) use <strong>cose</strong> layout. Larger networks use <strong>fcose</strong>. Tip: Apply filters and recalculate to switch layouts.</p>
+      <button class="close-button" aria-label="Dismiss alert" type="button" onclick="this.parentElement.style.display='none';">&times;</button>
+    </div>
+
+    <!-- Console Log -->
+    <div id="custom-console-log" class="console-collapsed">
+      <h4>Logs <button class="console-toggle-btn" onclick="toggleConsoleLog()">&#9660;</button></h4>
+      <ul id="log-list" style="display:none;"><li></li></ul>
+    </div>
+    <script>
+      function toggleConsoleLog() {
+        const log = document.getElementById('custom-console-log');
+        const list = document.getElementById('log-list');
+        const btn = log.querySelector('.console-toggle-btn');
+        const collapsed = log.classList.toggle('console-collapsed');
+        list.style.display = collapsed ? 'none' : '';
+        btn.innerHTML = collapsed ? '&#9660;' : '&#9650;';
+      }
+    </script>
+
+    <!-- Search & Toolbar -->
+    <form id="node-search-form" style="margin-bottom: 0;">
+      <input type="text" id="node-search" name="node-search" placeholder="Search a node by its name..." />
+      <div class="toolbar">
+        <button class="button primary" type="submit">Search</button>
+        <button class="button success" type="button" onclick="window.location.href = '{{ url_for('index') }}'">Home</button>
+        <button class="button success" type="button" id="download-pdf">Export SVG</button>
+        <button class="button success" type="button" onclick="downloadTableAsTSV('table.tsv')">Export TSV</button>
+      </div>
+    </form>
+
+    <!-- Node summary -->
+    <div id="nodeSummary"></div>
+
+    <!-- Cytoscape Graph / Network Viewer -->
+    <div class="cy-wrapper" id="cy_wrapper" style="position: relative; width: 100%; height: 600px; background-color: white; border: 0px solid black;">
+      <!-- Resize Buttons -->
+      <div class="resize-buttons">
+        <button class="button secondary small-button" onclick="toggleFullScreen()" aria-label="Toggle full screen">
+          Full Screen
+        </button>
+      </div>
+      <div id="cy" style="width: 100%; height: 100%;"></div>
+      <!-- Loading overlay -->
+      <div id="layout-loading" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:100; align-items:center; justify-content:center;">
+        <div style="text-align:center;">
+          <div class="layout-spinner"></div>
+          <p style="margin-top:12px; color:#374151; font-size:14px; font-weight:500;">Computing layout...</p>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 0px; left: 0px; position: absolute; z-index: 11;">
+        Node Filter Layout
+      </button>
+      <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 0px; right: 0px; position: absolute; z-index: 11;">
+        Edge Filter Layout
+      </button>
+
+      <!-- Node Filter Form -->
+      <div class="form-popup" id="nodeFilterForm" style="display:none; position:absolute; top:35px; left:0px;">
+        <div class="form-container">
+          <div class="expanded button-group">
+            <button id="applyNodeFilter" class="button secondary" onclick="recalculateLayout()"> Recalculate layout </button>
+            <button class="button alert" onclick="nodecloseForm()"> <b> Close Options </b> </button>
+          </div>
+          <h5>Node Filters:</h5>
+          <div id="nodeTypeCheckboxes" class="checkbox-grid"></div>
+        </div>
+      </div>
+
+      <!-- Edge Filter Form -->
+      <div class="form-popup" id="edgeFilterForm" style="display:none; position:absolute; top:35px; right:0px;">
+        <div class="form-container">
+          <div class="expanded button-group">
+            <button class="button secondary" onclick="recalculateLayout()">Recalculate layout</button>
+            <button class="button alert" onclick="edgecloseForm()"><b>Close Options</b></button>
+          </div>
+          <input type="text" id="edgeTypeSearch"
+                placeholder="Search edge types..."
+                onkeyup="filterCheckboxes('edgeTypeSearch', 'edgeTypeCheckboxes')">
+          <h5>Edge Filters:</h5>
+          <div id="edgeTypeCheckboxes" class="checkbox-grid"></div>
+          <hr/>
+          <input type="text" id="edgeCategorySearch"
+                placeholder="Search edge categories..."
+                onkeyup="filterCheckboxes('edgeCategorySearch', 'edgeCategoryCheckboxes')">
+          <h5>Edge Category Filter:</h5>
+          <div id="edgeCategoryCheckboxes" class="checkbox-grid">
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend Section -->
+      <div id="nodes-legend" style="position:absolute; top:35px; left:0px; z-index:10;">
+        <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Nodes Legend <span class="legend-chevron">&#9660;</span></h6>
+        <ul>
+          <li><span class="shape ellipse"></span> Gene/Protein</li>
+          <li><span class="shape micro-octagon"></span> Microorganism</li>
+          <li><span class="shape vee"></span> Disease/Condition</li>
+          <li><span class="shape diamond"></span> Chemical</li>
+          <li><span class="shape bio-hexagon"></span> Biological Process</li>
+          <li><span class="shape tag"></span> Cell/Compartment</li>
+          <li><span class="shape heptagon"></span> Host/Organism</li>
+          <li><span class="shape rectangle"></span> Phenotype</li>
+          <li><span class="shape pentagon"></span> Treatment</li>
+          <li><span class="shape concave-hexagon"></span> Environment</li>
+          <li><span class="shape triangle"></span> Method</li>
+          <li><span class="shape cut-rectangle"></span> Taxonomy</li>
+          <li><span class="shape star"></span> Other</li>
+        </ul>
+      </div>
+      <!-- Legend for edges -->
+      <div id="edges-legend" style="position:absolute; top:35px; right:0px; z-index:10;">
+        <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Edges Legend <span class="legend-chevron">&#9660;</span></h6>
+        <ul>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#32CD32;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#32CD32;"/></svg> Activation/Induction/Causation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DC143C;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#DC143C;"/></svg> Repression/Inhibition</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#4682B4;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#4682B4;"/></svg> Regulation/Control</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF8C00;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#FF8C00;"/></svg> Expression/Detection</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#8A2BE2;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#8A2BE2;"/></svg> Association/Interaction/Binding</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#3CB371;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#3CB371;"/></svg> Localization/Containment</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#B22222;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#B22222;"/></svg> Requirement/Activity/Function</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#9370DB;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#9370DB;"/></svg> Encodes/Contains</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#808080;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#808080;"/></svg> Lacks/Dissimilar</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DAA520;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#DAA520;"/></svg> Synthesis/Formation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF6347;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#FF6347;"/></svg> Modification/Changes/Alters</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#20B2AA;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#20B2AA;"/></svg> Treatment/Exposure/Perturbation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#778899;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#778899;"/></svg> Comparison/Evaluation/Benchmarking</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#6495ED;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#6495ED;"/></svg> Definition/Classification</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#BC8F8F;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#BC8F8F;"/></svg> Property/Characterization</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DEB887;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#DEB887;"/></svg> Hypothesis/Assumption</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#5F9EA0;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#5F9EA0;"/></svg> Temporal/Sequential</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#7B68EE;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#7B68EE;"/></svg> Is/Similarity/Equivalence</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#66CDAA;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#66CDAA;"/></svg> Limitation/Innovation/Improvement</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#D3D3D3;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#D3D3D3;"/></svg> No Effect/Null</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#C0C0C0;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#C0C0C0;"/></svg> Others</li>
+        </ul>
+      </div>
+
+      <!-- Popup for node actions -->
+      <div class="side-tooltip" id="side-tooltip" style="display: none;">
+        <button class="tooltip-close-btn" onclick="hideTooltip()" aria-label="Close tooltip">&times;</button>
+        <label class="title" id="ab-title"></label><br/>
+        <div id="pmid-row" style="display:none;">
+          <label class="title">Source Text:</label>
+          <a id="pmid" class="pubmed-link pubmed-hyperlink" href="javascript:void(0)"></a>
+        </div>
+        <div class="content nodeinfo">
+          <label class="title" style="font-size:12px; color:#6b7280;">Actions:</label>
+          <ul>
+            <li><a href="javascript:void(0)" onclick="removeNode()">Remove node</a></li>
+            <li><a href="javascript:void(0)" onclick="isolateNeighborhood()">Isolate neighborhood</a></li>
+          </ul>
+        </div>
+        <div class="content" id="ab"></div>
+      </div>
+    </div>
+
+    <div class="paper-overlay"></div>
+
+    <!-- Cytoscape.js Script -->
+    <script>{{ cytoscape_js_code | safe }}</script>
+
+    <!-- AI Summary Generation Controls -->
+    <div class="section-card ai-summary-controls">
+      <h5>AI Summary Generation <small>(powered by <span id="modelLabel">GPT-4o-mini</span>)</small></h5>
+
+      <label for="prompt_type">Prompt Type Template:</label>
+      <select id="prompt_type">
+        <option value="Author">Author</option>
+      </select>
+
+      <script>
+          // Ensure that DOM elements are available before executing code
+          document.addEventListener("DOMContentLoaded", function () {
+            // Function to extract entity types from brackets
+            function extractEntityTypes(query) {
+              return query.split(",").map(term => {
+                const match = term.match(/\[(.*?)\]/);  // Extract text inside brackets
+                return match ? match[1].trim().toLowerCase() : term.trim().toLowerCase();
+              });
+            }
+          
+            // Fetch the query term from backend
+            var queryTerms = "{{ search_term }}";  // Example: "Lactobacillus [bacterial genus], butyrate [metabolite]"
+            var formattedQuery = queryTerms
+            var formattedQuery2 = extractEntityTypes(queryTerms); 
+          
+            console.log("Formatted Query (Extracted Entity Types):", formattedQuery2);
+          
+            // Category detection using same mapping as gene.html
+            const typeToCategoryMap = {
+              'enzyme': 'gene/protein', 'protein': 'gene/protein', 'gene': 'gene/protein',
+              'transcription factor': 'gene/protein', 'gene set': 'gene/protein',
+              'gene expression': 'gene/protein', 'receptor': 'gene/protein',
+              'bacterial genus': 'microorganism', 'bacterial species': 'microorganism',
+              'bacterial phylum': 'microorganism', 'bacterial family': 'microorganism',
+              'bacterial strain': 'microorganism', 'fungal genus': 'microorganism',
+              'fungal species': 'microorganism', 'probiotic bacterium': 'microorganism',
+              'disease': 'disease/condition', 'metabolic disease': 'disease/condition',
+              'metabolic disorder': 'disease/condition', 'disease model': 'disease/condition',
+              'metabolite': 'chemical', 'short-chain fatty acid': 'chemical',
+              'microbial metabolite': 'chemical', 'amino acid': 'chemical',
+              'metabolic pathway': 'biological process', 'metabolic process': 'biological process',
+              'biological process': 'biological process', 'signaling pathway': 'biological process',
+              'cellular process': 'biological process', 'immune process': 'biological process',
+              'organ': 'cell/compartment', 'tissue sample': 'cell/compartment',
+              'cell type': 'cell/compartment', 'immune cell type': 'cell/compartment',
+              'patient cohort': 'host/organism', 'patient population': 'host/organism',
+              'phenotype': 'phenotype', 'behavioral phenotype': 'phenotype',
+              'treatment': 'treatment', 'dietary intervention': 'treatment',
+              'therapeutic intervention': 'treatment', 'probiotic treatment': 'treatment',
+              'environmental condition': 'environment', 'soil property': 'environment',
+              'analytical method': 'method', 'statistical test': 'method',
+              'sequencing method': 'method', 'bioinformatics tool': 'method',
+            };
+
+            // Default category
+            let detectedCategory = 'Author';
+
+            // Check which category the extracted entity type belongs to
+            if (Array.isArray(formattedQuery2)) {
+              for (const term of formattedQuery2) {
+                if (typeToCategoryMap[term]) {
+                  detectedCategory = typeToCategoryMap[term];
+                  break;
+                }
+              }
+            }
+          
+            console.log("Final Detected Category:", detectedCategory);
+          
+            // Get dropdown
+            const promptTypeSelect = document.getElementById("prompt_type");
+          
+            // Ensure dropdown exists before updating it
+            if (promptTypeSelect) {
+              promptTypeSelect.value = detectedCategory;
+            } else {
+              console.error("Dropdown #prompt_type is missing.");
+            }
+          
+            // Define placeholders for each prompt type
+            const placeholders = {
+              'Author': `Generate a structured, comprehensive scientific review based on the knowledge graph summary constructed from ${formattedQuery}’s publications. Every statement must be directly linked to the input data using only the PMIDs provided in the input. **Do not generate or infer additional PMIDs** beyond those explicitly present in the input.
+
+#### **Review Structure:**
+Each section should be at least 1,000 words to ensure exhaustive discussion while minimizing redundancy and ensure that every detail from the input, including all PMIDs, is included and cited appropriately at the end of the sentence.
+
+### **1. Introduction**
+- Provide an overview of ${formattedQuery}’s research focus, summarizing the major scientific themes, methodologies, and biological systems covered in their work.
+- Identify the core objectives of their research based on the knowledge graph and explain its significance within the broader scientific field.
+- Discuss historical context or background where relevant.
+- Include PMIDs where relevant.
+
+### **2. Key Findings and Relationships**
+- Describe the most significant relationships in the knowledge graph, detailing gene interactions, regulatory mechanisms, and functional annotations.
+- Highlight novel discoveries and biological insights, such as transcription factor-target interactions, signaling cascades, and epistatic relationships.
+- Where applicable, discuss co-expression patterns, genetic redundancies, or functional clustering observed.
+
+### **3. Methodological Approaches**
+- Provide a detailed account of the experimental and computational methodologies used in ${formattedQuery}’s research.
+- If applicable, describe wet-lab techniques (e.g., high-throughput sequencing, RNA-seq, proteomics, metabolomics).
+- Outline computational methods, including bioinformatics pipelines, machine learning models, statistical analyses, and knowledge graph construction approaches.
+- Discuss data sources used in the knowledge graph (e.g., gene expression databases, protein interaction networks, literature mining techniques).
+- Explain how data was curated, annotated, and processed to ensure reproducibility and accuracy.
+
+### **4. Comparative Analysis**
+- Compare ${formattedQuery}’s findings with existing literature, highlighting agreements, discrepancies, or novel contributions.
+- Discuss how the knowledge graph insights refine or challenge previous scientific knowledge.
+- Provide qualitative or quantitative comparisons, referencing existing models, experimental data, and large-scale databases.
+- If applicable, evaluate whether the findings confirm or refute known gene regulatory networks, pathways, or metabolic processes.
+
+### **5. Future Directions and Implications**
+- Identify promising avenues for future research based on the knowledge graph.
+- Discuss potential applications, including implications for biotechnology, medicine, synthetic biology, and plant sciences.
+- Highlight possible interdisciplinary applications (e.g., linking genetic regulation to agronomic traits, disease mechanisms, or bioengineering).
+- Consider emerging technologies (e.g., CRISPR, AI-driven bioinformatics, single-cell transcriptomics) that could enhance the research.
+- Discuss limitations of the current knowledge graph and propose refinements or expansions.
+
+### **Guidelines for Formatting:**
+✅ **Use only PMIDs from the input data**; do not generate or infer new ones.  
+✅ **Ensure each fact is backed by at least one PMID** and list multiple PMIDs where applicable.  
+✅ **Maintain a formal, precise, and publication-ready writing style.** Avoid casual or speculative language.  
+✅ **Output should be structured clearly** and formatted as an academic review.`};
+          
+            // Update the custom prompt text area with the appropriate placeholder
+            function updatePromptText(selectedType) {
+              const customPromptTextarea = document.getElementById("customPrompt");
+              if (customPromptTextarea) {
+                customPromptTextarea.value = placeholders[selectedType] || placeholders['other'];
+              }
+            }
+          
+            // Set initial placeholder text
+            updatePromptText(detectedCategory);
+          
+            // Event listener for dropdown changes
+            if (promptTypeSelect) {
+              promptTypeSelect.addEventListener("change", function () {
+                updatePromptText(this.value);
+              });
+            }
+          
+          });
+      </script>
+
+      <label for="customPrompt">Enter your custom prompt:</label>
+      <textarea id="customPrompt"></textarea>
+
+      <div class="slider-container-group">
+        <div class="slider-container">
+          <label for="temperature">Temperature:</label>
+          <input type="range" id="temperature" min="0" max="2" step="0.01" value="0">
+          <span id="tempValue">0</span>
+        </div>
+
+        <div class="slider-container">
+          <label for="top_p">Top_P:</label>
+          <input type="range" id="top_p" min="0" max="1" step="0.01" value="0">
+          <span id="top_pValue">0</span>
+        </div>
+
+        <div class="slider-container">
+          <label for="max_tokens">Max Tokens:</label>
+          <input type="range" id="max_tokens" min="0" max="16383" step="1" value="4096">
+          <span id="max_tokensValue">4096</span>
+        </div>
+      </div>
+
+      <button id="generateSummaryButton" class="button primary">Generate Summary</button>
+      <div id="generatedSummary"></div>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          var generateSummaryButton = document.getElementById('generateSummaryButton');
+          if (generateSummaryButton) {
+              generateSummaryButton.addEventListener('click', function () {
+                  var networkSummaryText = document.getElementById("networkSummary").textContent;
+                  var customPrompt = document.getElementById("customPrompt").value;
+                  var placeholderText = document.getElementById("customPrompt").getAttribute('placeholder');
+      
+                  if (!customPrompt || customPrompt.trim() === "") {
+                      customPrompt = placeholderText;
+                      document.getElementById("customPrompt").value = placeholderText;
+                  }
+      
+                  var temperature = document.getElementById("temperature").value;
+                  var top_p = document.getElementById("top_p").value;
+                  var max_tokens = document.getElementById("max_tokens").value;
+      
+                  if (!networkSummaryText || networkSummaryText.trim() === "") {
+                      console.error("Network summary is empty!");
+                      return;
+                  }
+            
+                  // Clean up formatting:
+                  formattednetworkSummaryText = networkSummaryText.replace(/\n\s*/g, ' ').trim();
+                  // Construct the JSON payload
+                  var promptPayload = {
+                      temperature: temperature,
+                      top_p: top_p,
+                      max_tokens: max_tokens,
+                      models: "gpt-4o-mini",
+                      search_term: "{{ search_term }}",
+                      user_input: customPrompt + "\n\n",  // Adding extra line break before summary
+                      summary: formattednetworkSummaryText,
+                  };
+      
+                  var generatedSummaryDiv = document.getElementById("generatedSummary");
+                  generatedSummaryDiv.innerHTML = "";
+      
+                  // Create the expand/collapse button at the TOP
+                  var expandPromptBtn = document.createElement("button");
+                  expandPromptBtn.id = "expandPromptBtn";
+                  expandPromptBtn.textContent = "Expand Prompt";
+                  expandPromptBtn.style.marginBottom = "10px";
+                  generatedSummaryDiv.appendChild(expandPromptBtn);
+      
+                  // Create a container for the prompt sent
+                  var promptContainer = document.createElement("div");
+                  promptContainer.id = "sentPrompt";
+                  promptContainer.innerHTML = `
+                      <h6>Prompt sent to API:</h6>
+                      <pre>${Object.entries(promptPayload).map(([key, value]) => `${key}: ${value}`).join("\n")}</pre>
+                  `;
+                  generatedSummaryDiv.appendChild(promptContainer);
+      
+                  // Create the expand/collapse button at the TOP for the response
+                  var expandResponseBtn = document.createElement("button");
+                  expandResponseBtn.id = "expandResponseBtn";
+                  expandResponseBtn.textContent = "Expand Summary";
+                  expandResponseBtn.style.marginBottom = "10px";
+                  generatedSummaryDiv.appendChild(expandResponseBtn);
+      
+                  // Create a container for the API response (generated summary)
+                  var responseContainer = document.createElement("div");
+                  responseContainer.id = "apiResponse";
+                  responseContainer.innerHTML = `
+                      <h6>Generated Summary:</h6>
+                      <div id='markdownOutput'></div>
+                  `;
+                  generatedSummaryDiv.appendChild(responseContainer);
+      
+                  // Expand/Collapse functionality
+                  expandPromptBtn.addEventListener("click", function () {
+                      let promptDiv = document.getElementById("sentPrompt");
+                      if (promptDiv.classList.contains("expanded")) {
+                          promptDiv.classList.remove("expanded");
+                          this.textContent = "Expand Prompt";
+                      } else {
+                          promptDiv.classList.add("expanded");
+                          this.textContent = "Collapse Prompt";
+                      }
+                  });
+      
+                  expandResponseBtn.addEventListener("click", function () {
+                      let responseDiv = document.getElementById("apiResponse");
+                      if (responseDiv.classList.contains("expanded")) {
+                          responseDiv.classList.remove("expanded");
+                          this.textContent = "Expand Summary";
+                      } else {
+                          responseDiv.classList.add("expanded");
+                          this.textContent = "Collapse Summary";
+                      }
+                  });
+      
+                  console.log("temperature:", temperature);
+                  console.log("top_p:", top_p);
+                  console.log("max_tokens:", max_tokens);
+                  console.log("Network Summary Generation in progress...");
+                  function convertPubmedIDs() {
+                    const container = document.getElementById('markdownOutput');
+                    if (container) {
+                      // Replace patterns of the form "PMID: 26771740_results1"
+                      container.innerHTML = container.innerHTML.replace(/PMID:\s*(\d+)_([a-zA-Z0-9]+)/g, function(match, id, context) {
+                        const combined = `${id}_${context}`; // e.g., "26771740_results1"
+                        return `<a href="javascript:void(0);" class="pubmed-link pubmed-hyperlink" onclick="addModalContent('${combined}')">${match}</a>`;
+                      });
+                    }
+                  }
+      
+                // Inside your fetch call:
+                fetch('/process-summary', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(promptPayload),
+                })
+                .then(response => {
+                  const reader = response.body.getReader();
+                  const decoder = new TextDecoder();
+                  let completeSummary = '';
+                  let updateInterval;
+                  const markdownOutput = document.getElementById('markdownOutput');
+  
+                  // This function updates the container and converts PubMed IDs.
+                  function updateContent() {
+                    // Only update if there is new content.
+                    markdownOutput.innerHTML = marked.parse(completeSummary);
+                    convertPubmedIDs();
+                  }
+  
+                  // Throttle updates: update every 500ms.
+                  updateInterval = setInterval(() => {
+                    updateContent();
+                  }, 500);
+  
+                  function read() {
+                    reader.read().then(({ done, value }) => {
+                      if (done) {
+                        console.log("Stream complete");
+                        // Final update and clear the interval.
+                        updateContent();
+                        clearInterval(updateInterval);
+                        return;
+                      }
+  
+                      const chunk = decoder.decode(value, { stream: true });
+                      completeSummary += chunk;
+                      // (No immediate update here—updates occur every 500ms)
+                      read();
+                    });
+                  }
+                  read();
+                })
+                .catch((error) => {
+                  console.error('Error:', error);
+                });
+              });
+          } else {
+              console.error("Generate Summary button not found!");
+          }
+      });
+      </script>
+  
+    </div>
+
+    <!-- Validation Result Container -->
+    <div id="validationResult"></div>
+
+    <!-- Text Summary -->
+    <div class="section-card">
+      <div class="section-title">Text Summary of the Network</div>
+      <div class="summary-container resizable">
+        <div id="networkSummary">
+          <p>{{ network_summary }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Summary -->
+    <div class="section-card">
+      <div class="section-title">Table Summary of the Network</div>
+      <div class="table-container resizable">
+        <table class="table_results" id="table_id">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Interaction Type</th>
+              <th>Target</th>
+              <th>PMID</th>
+              <th>Section</th>
+            </tr>
+          </thead>
+          <tbody id="body_results">
+            {% for gene in genes %}
+            <tr>
+              <td>{{ gene.id }} [{{ gene.idtype }}]</td>
+              <td>{{ gene.inter_type }}</td>
+              <td>{{ gene.target }} [{{ gene.targettype }}]</td>
+              <td>
+                <a href="https://pubmed.ncbi.nlm.nih.gov/{{ gene.publication }}" target="_blank" class="pubmed-link pubmed-hyperlink">
+                  {{ gene.publication }}
+                </a>
+              </td>
+              <td>{{ gene.p_source }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('temperature').addEventListener('input', function(e) {
+          document.getElementById('tempValue').textContent = e.target.value;
+        });
+        document.getElementById('top_p').addEventListener('input', function(e) {
+          document.getElementById('top_pValue').textContent = e.target.value;
+        });
+        document.getElementById('max_tokens').addEventListener('input', function(e) {
+          document.getElementById('max_tokensValue').textContent = e.target.value;
+        });
+      });
+    </script>
+
+    <!-- Extracted & Generated Definitions -->
+    <div class="section-card" id="definitionsCard" style="display:none;">
+      <div id="definitionsContainer"></div>
+    </div>
+
+  {% else %}
+    <div class="grid-container fluid">
+      <h2>No hits were found using the query: {{ search_term }}</h2>
+      <p>Please try another search term or check your spelling.</p>
+      <button class="button success" onclick="window.location.href = '{{ url_for('index') }}'">Go back</button>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Additional Scripts for Resize and Fullscreen Functionality -->
+<script>
+  let isEnlarged = false;
+  function enlargeCyWrapper() {
+    const cyWrapper = document.getElementById('cy_wrapper');
+    if (!isEnlarged) {
+      cyWrapper.style.height = '1000px';
+      cyWrapper.style.width = '1500px';
+      isEnlarged = true;
+      const enlargeButton = document.querySelector('button[onclick="enlargeCyWrapper()"]');
+      if (enlargeButton) {
+        enlargeButton.textContent = 'Shrink';
+      }
+    } else {
+      cyWrapper.style.height = '600px';
+      cyWrapper.style.width = '600px';
+      isEnlarged = false;
+      const enlargeButton = document.querySelector('button[onclick="enlargeCyWrapper()"]');
+      if (enlargeButton) {
+        enlargeButton.textContent = 'Enlarge';
+      }
+    }
+    if (typeof cy !== 'undefined') {
+      cy.resize();
+      cy.fit();
+    }
+  }
+  function toggleFullScreen() {
+    const cyWrapper = document.getElementById('cy_wrapper');
+    const paperModal = document.querySelector('.paper-overlay');
+    if (!document.fullscreenElement) {
+      if (cyWrapper.requestFullscreen) {
+        cyWrapper.requestFullscreen();
+      } else if (cyWrapper.webkitRequestFullscreen) {
+        cyWrapper.webkitRequestFullscreen();
+      } else if (cyWrapper.msRequestFullscreen) {
+        cyWrapper.msRequestFullscreen();
+      }
+      cyWrapper.appendChild(paperModal);
+      paperModal.style.position = "fixed";
+      paperModal.style.zIndex = "2147483647";
+      paperModal.style.display = "none";
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+      document.body.appendChild(paperModal);
+    }
+  }
+</script>
+{% endblock %}

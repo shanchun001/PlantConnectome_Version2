@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-container">
+  <br>
+  <h2>Help</h2>
+  <hr>
+
+  <h4>Search Types</h4>
+  <ul>
+    <li><strong>Gene/Word Search:</strong> Searches for entities containing the search term as a word. Best for general searches. For example, searching "Lactobacillus" will match "Lactobacillus rhamnosus" and "Lactobacillus acidophilus".</li>
+    <li><strong>Substring Search:</strong> Finds entities containing the search term as a substring (excluding exact matches). Useful for finding variants and partial matches.</li>
+  </ul>
+
+  <h4>Author Search</h4>
+  <p>Search by author name using "Last Name Initials" format (e.g., "Knight R").</p>
+
+  <h4>PubMed ID Search</h4>
+  <p>Search by PubMed ID. Multiple IDs can be separated by semicolons.</p>
+
+  <h4>Network Visualization</h4>
+  <p>Results are displayed as an interactive network graph using Cytoscape.js. Nodes represent entities and edges represent relationships extracted from scientific literature.</p>
+
+  <h4>Entity Types</h4>
+  <p>The database contains relationships between various entity types including:</p>
+  <ul>
+    <li>Microorganisms (bacteria, fungi, viruses, archaea)</li>
+    <li>Genes and Proteins</li>
+    <li>Metabolites and Chemical Compounds</li>
+    <li>Diseases and Conditions</li>
+    <li>Cells, Compartments, and Organs</li>
+    <li>Biological Processes and Pathways</li>
+    <li>Treatments and Diets</li>
+  </ul>
+</div>
+{% endblock %}

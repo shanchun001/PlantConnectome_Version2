@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% block dependencies %}
+    <title>PlantConnectome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/vendor/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vendor/what-input.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/foundation.min.css') }}">
+    <style>
+      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+      /* ── Navbar ── */
+      .mc-navbar {
+        background: linear-gradient(135deg, #0d9488 0%, #065f56 100%);
+        padding: 0 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      }
+      .mc-navbar .menu { background: transparent; }
+      .mc-navbar .menu-text {
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 0.02em;
+      }
+      .mc-navbar .mc-icon {
+        display: inline-block;
+        width: 28px; height: 28px;
+        margin-right: 8px;
+        vertical-align: middle;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        text-align: center;
+        line-height: 28px;
+        font-size: 16px;
+      }
+      .mc-navbar a {
+        color: rgba(255,255,255,0.85) !important;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+      }
+      .mc-navbar a:hover { color: #fff !important; }
+      /* ── Footer ── */
+      .mc-footer {
+        border-top: 1px solid #e5e7eb;
+        margin-top: 2rem;
+        padding: 1rem 0;
+        color: #6b7280;
+        font-size: 0.85rem;
+      }
+      .mc-footer a { color: #0d9488; text-decoration: none; }
+      .mc-footer a:hover { text-decoration: underline; }
+    </style>
+    {% endblock %}
+</head>
+<body>
+    {% block navbar %}
+    <div class="top-bar mc-navbar">
+        <div class="top-bar-left">
+            <ul class="menu">
+                <li class="menu-text">
+                    <img src="{{ url_for('static', filename='PC_icon.png') }}" alt="PC" style="width:28px;height:28px;margin-right:8px;vertical-align:middle;border-radius:50%;">
+                    PlantConnectome
+                </li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/catalogue">Entities</a></li>
+                <li><a href="/features">Features</a></li>
+                <li><a href="/help">Help</a></li>
+            </ul>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <div class="mc-footer">
+      <div class="grid-container text-center">
+        PlantConnectome &copy; 2025 &middot;
+        <a href="https://genomiverse.net/" target="_blank">Anniz Lab</a>
+      </div>
+    </div>
+    {% endblock %}
+
+    {% block start_foundation %}
+    <script src="{{ url_for('static', filename='js/vendor/foundation.min.js') }}"></script>
+    <script>$(document).ready(function(){ $(document).foundation(); });</script>
+    {% endblock %}
+</body>
+</html>

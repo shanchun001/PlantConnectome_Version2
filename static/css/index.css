@@ -1,0 +1,128 @@
+/* ═══════════════════════════════════════════════
+   PlantConnectome – Index Page Styles
+   Palette: teal (#0d9488) · coral (#ef6c5e) · slate
+   ═══════════════════════════════════════════════ */
+
+/* ── Hero ── */
+.callout.large {
+  padding-bottom: 5px !important;
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 100%);
+}
+h3 small { font-size: 0.6em; color: #6b7280; }
+
+/* ── Lead text ── */
+.lead {
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: #374151;
+  margin-top: 10px;
+}
+.lead strong.count {
+  color: #0d9488;
+  font-weight: 700;
+}
+
+/* ── Grid ── */
+.grid-container {
+  padding-top: 5px !important;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.grid-x {
+  display: flex; flex-wrap: wrap;
+  margin-left: -15px; margin-right: -15px;
+}
+.cell { padding-left: 15px; padding-right: 15px; }
+.medium-6 { flex: 0 0 50%; max-width: 50%; }
+
+/* ── Search Forms ── */
+form {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s;
+}
+form:focus-within {
+  box-shadow: 0 2px 12px rgba(13,148,136,0.15);
+  border-color: #99f6e4;
+}
+form label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+form input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-top: 5px;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+form input[type="text"]:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+}
+
+.button-group { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ── Buttons (teal) ── */
+.button {
+  background-color: #0d9488;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  flex: 1 1 auto;
+  min-width: 100px;
+  text-align: center;
+}
+.button:hover  { background-color: #0f766e; }
+.button:active { transform: scale(0.98); }
+
+.button.hollow {
+  background: #fff;
+  border: 2px solid #0d9488;
+  color: #0d9488;
+  padding: 8px 18px;
+}
+.button.hollow:hover {
+  background-color: #0d9488;
+  color: #fff;
+}
+
+/* ── Help text panel ── */
+.help-text {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+/* ── Cytoscape preview ── */
+.figure-legend {
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin: 4px 0 0;
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .medium-6  { flex: 0 0 100%; max-width: 100%; }
+  .button-group { flex-direction: column; }
+  .button    { width: 100%; min-width: unset; }
+}
