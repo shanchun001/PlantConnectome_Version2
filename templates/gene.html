@@ -805,42 +805,66 @@
       
           // Category detection: entity types map to their categories from the backend CSV
           // The entity type (in brackets) directly maps to a category
-          const typeToCategoryMap = {
-            // GENE/PROTEIN
-            'enzyme': 'gene/protein', 'protein': 'gene/protein', 'gene': 'gene/protein',
-            'transcription factor': 'gene/protein', 'gene set': 'gene/protein',
-            'gene expression': 'gene/protein', 'receptor': 'gene/protein',
-            'mutant': 'gene/protein', 'protein complex': 'gene/protein',
-            'protein domain': 'gene/protein', 'gene family': 'gene/protein',
-            'protein family': 'gene/protein', 'gene identifier': 'gene identifier',
-            // CELL/ORGAN/ORGANISM
-            'organism': 'cell/organ/organism', 'organ': 'cell/organ/organism',
-            'tissue': 'cell/organ/organism', 'cell type': 'cell/organ/organism',
-            'subcellular compartment': 'cell/organ/organism', 'organelle': 'cell/organ/organism',
-            'plant': 'cell/organ/organism', 'virus': 'cell/organ/organism',
-            // CHEMICAL
-            'metabolite': 'chemical', 'hormone': 'chemical', 'phytohormone': 'chemical',
-            'amino acid': 'chemical', 'compound': 'chemical', 'molecule': 'chemical',
-            'chemical': 'chemical', 'polysaccharide': 'chemical',
-            // PHENOTYPE
-            'phenotype': 'phenotype',
-            // BIOLOGICAL PROCESS
-            'process': 'biological process', 'biological process': 'biological process',
-            'metabolic pathway': 'biological process', 'signaling pathway': 'biological process',
-            'cellular process': 'biological process', 'metabolic process': 'biological process',
-            // TREATMENT
-            'treatment': 'treatment', 'condition': 'treatment',
-            'environment': 'treatment', 'environmental factor': 'treatment',
-            'abiotic stress': 'treatment', 'disease': 'treatment', 'stress': 'treatment',
-            // GENOMIC/TRANSCRIPTOMIC FEATURE
-            'genomic region': 'genomic/transcriptomic feature',
-            'mutation': 'genomic/transcriptomic feature', 'genome': 'genomic/transcriptomic feature',
-            'dna sequence': 'genomic/transcriptomic feature', 'rna': 'genomic/transcriptomic feature',
-            'genotype': 'genomic/transcriptomic feature',
-            // METHOD
-            'method': 'method', 'technique': 'method', 'tool': 'method',
-            'database': 'method', 'software': 'method', 'dataset': 'method',
+          // Build typeToCategoryMap from categoryMap (category -> types[])
+          const categoryMap = {
+            'biological process': [
+              'metabolic pathway', 'function', 'pathway', 'signaling pathway',
+              'metabolic process', 'cell process', 'biochemical process', 'cellular process',
+              'molecular function', 'signalling pathway', 'genetic process', 'biological pathway', 'process'
+            ],
+            'cell/organ/organism': [
+              'organism', 'organ', 'subcellular compartment', 'tissue', 'cell type',
+              'organelle', 'virus', 'organelles', 'cell structure', 'plant', 'organism part'
+            ],
+            'chemical': [
+              'metabolite', 'molecule', 'compound', 'chemical', 'hormone', 'phytohormone',
+              'polysaccharide', 'material', 'polymer', 'chemical structure', 'biopolymer',
+              'chemical compound', 'plant hormone', 'chemical group'
+            ],
+            'gene/protein': [
+              'gene', 'protein', 'mutant', 'protein complex', 'enzyme', 'protein domain',
+              'genetic element', 'gene family', 'protein family', 'protein structure', 'peptide',
+              'protein motif', 'enzyme activity', 'protein region', 'gene feature', 'gene region',
+              'gene structure', 'protein feature', 'transcription factor', 'gene cluster', 'gene group',
+              'promoter', 'subunit', 'transcript', 'gene element', 'allele', 'protein sequence',
+              'protein modification', 'post-translational modification', 'genetic locus',
+              'protein subunit', 'genes', 'qtl', 'protein function', 'amino acid residue',
+              'histone modification', 'protein fragment', 'receptor', 'genetic event', 'protein kinase',
+              'protein class', 'protein group', 'gene product', 'antibody', 'proteins',
+              'protein interaction', 'gene module', 'gene, protein', 'gene, mutant', 'gene identifier'
+            ],
+            'genomic/transcriptomic feature': [
+              'genomic region', 'genome', 'amino acid', 'genomic feature', 'dna sequence', 'rna',
+              'sequence', 'mutation', 'chromosome', 'gene expression', 'genetic material', 'genotype',
+              'genomic element', 'genetic marker', 'epigenetic mark', 'genetic variation',
+              'regulatory element', 'epigenetic modification', 'dna element', 'mirna', 'genomic location',
+              'subfamily', 'dna', 'activity', 'genetic feature', 'sequence motif', 'genetic variant',
+              'motif', 'mrna', 'residue', 'region', 'genomic sequence', 'cis-element', 'clade',
+              'accession', 'plasmid', 'genomic data', 'cultivar', 'genomic event', 'genomic resource',
+              'ecotype', 'marker', 'lncrna', 'genetic construct', 'sequence feature', 'genus',
+              'genetic concept'
+            ],
+            'method': [
+              'method', 'technique', 'tool', 'database', 'software', 'dataset', 'concept', 'study',
+              'description', 'model', 'modification', 'location', 'author', 'measurement', 'experiment',
+              'researcher', 'mechanism', 'system', 'feature', 'parameter', 'algorithm', 'event',
+              'reaction', 'resource', 'interaction', 'device', 'metric', 'technology', 'network',
+              'construct', 'vector', 'category', 'data', 'research', 'geographical location',
+              'document', 'analysis', 'person', 'project', 'research field', 'researchers',
+              'gene network', 'relationship'
+            ],
+            'phenotype': ['phenotype'],
+            'treatment': [
+              'treatment', 'environment', 'condition', 'time', 'environmental factor', 'disease',
+              'developmental stage', 'time point', 'stress', 'geographic location', 'abiotic stress',
+              'time period'
+            ]
           };
+          // Invert categoryMap to type->category lookup
+          const typeToCategoryMap = {};
+          for (const [cat, types] of Object.entries(categoryMap)) {
+            types.forEach(t => { typeToCategoryMap[t] = cat; });
+          }
 
           // Default category
           let detectedCategory = 'other';
