@@ -447,7 +447,7 @@
             }
           
             // Fetch the query term from backend
-            var queryTerms = "{{ search_term }}";  // Example: "Lactobacillus [bacterial genus], butyrate [metabolite]"
+            var queryTerms = "{{ search_term }}";
             var formattedQuery = queryTerms
             var formattedQuery2 = extractEntityTypes(queryTerms); 
           
@@ -458,26 +458,22 @@
               'enzyme': 'gene/protein', 'protein': 'gene/protein', 'gene': 'gene/protein',
               'transcription factor': 'gene/protein', 'gene set': 'gene/protein',
               'gene expression': 'gene/protein', 'receptor': 'gene/protein',
-              'bacterial genus': 'microorganism', 'bacterial species': 'microorganism',
-              'bacterial phylum': 'microorganism', 'bacterial family': 'microorganism',
-              'bacterial strain': 'microorganism', 'fungal genus': 'microorganism',
-              'fungal species': 'microorganism', 'probiotic bacterium': 'microorganism',
-              'disease': 'disease/condition', 'metabolic disease': 'disease/condition',
-              'metabolic disorder': 'disease/condition', 'disease model': 'disease/condition',
-              'metabolite': 'chemical', 'short-chain fatty acid': 'chemical',
-              'microbial metabolite': 'chemical', 'amino acid': 'chemical',
-              'metabolic pathway': 'biological process', 'metabolic process': 'biological process',
-              'biological process': 'biological process', 'signaling pathway': 'biological process',
-              'cellular process': 'biological process', 'immune process': 'biological process',
-              'organ': 'cell/compartment', 'tissue sample': 'cell/compartment',
-              'cell type': 'cell/compartment', 'immune cell type': 'cell/compartment',
-              'patient cohort': 'host/organism', 'patient population': 'host/organism',
-              'phenotype': 'phenotype', 'behavioral phenotype': 'phenotype',
-              'treatment': 'treatment', 'dietary intervention': 'treatment',
-              'therapeutic intervention': 'treatment', 'probiotic treatment': 'treatment',
-              'environmental condition': 'environment', 'soil property': 'environment',
-              'analytical method': 'method', 'statistical test': 'method',
-              'sequencing method': 'method', 'bioinformatics tool': 'method',
+              'mutant': 'gene/protein', 'protein complex': 'gene/protein',
+              'protein domain': 'gene/protein', 'gene family': 'gene/protein',
+              'gene identifier': 'gene identifier',
+              'organism': 'cell/organ/organism', 'organ': 'cell/organ/organism',
+              'tissue': 'cell/organ/organism', 'cell type': 'cell/organ/organism',
+              'subcellular compartment': 'cell/organ/organism', 'plant': 'cell/organ/organism',
+              'metabolite': 'chemical', 'hormone': 'chemical', 'phytohormone': 'chemical',
+              'amino acid': 'chemical', 'compound': 'chemical', 'molecule': 'chemical',
+              'phenotype': 'phenotype',
+              'process': 'biological process', 'biological process': 'biological process',
+              'metabolic pathway': 'biological process', 'signaling pathway': 'biological process',
+              'cellular process': 'biological process',
+              'treatment': 'treatment', 'condition': 'treatment',
+              'environment': 'treatment', 'abiotic stress': 'treatment', 'disease': 'treatment',
+              'method': 'method', 'technique': 'method', 'tool': 'method',
+              'database': 'method', 'software': 'method',
             };
 
             // Default category

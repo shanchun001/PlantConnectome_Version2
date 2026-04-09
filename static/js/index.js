@@ -6,12 +6,11 @@ const titleInput = document.getElementById("gene_id");
 // Change placeholder text based on which button is being hovered over.
 const setupButtonHoverEvents = () => {
     const buttonConfigs = [
-        { value: 'Word', placeholder: "e.g., Lactobacillus (press Enter to search)", defaultPlaceholder: "e.g., Lactobacillus (press Enter to search)" },
-        { value: 'Exact', placeholder: "e.g., butyrate (press Enter to search)", defaultPlaceholder: "e.g., butyrate (press Enter to search)" },
-        { value: 'Alias', placeholder: "e.g., TLR4 (press Enter to search)", defaultPlaceholder: "e.g., TLR4 (press Enter to search)" },
-        { value: 'Substring', placeholder: "e.g., Bacteroid (press Enter to search)", defaultPlaceholder: "e.g., Bacteroid (press Enter to search)" },
-        { value: 'Non-alphanumeric', placeholder: "e.g., IL-6 (press Enter to search)", defaultPlaceholder: "e.g., IL-6 (press Enter to search)" },
-        { value: 'Paired-entity', placeholder: "e.g., butyrate$inflammation (press Enter to search)", defaultPlaceholder: "e.g., butyrate$inflammation (press Enter to search)" }
+        { value: 'Word', placeholder: "e.g., CESA (press Enter to search)", defaultPlaceholder: "e.g., CESA (press Enter to search)" },
+        { value: 'Exact', placeholder: "e.g., salicylic acid (press Enter to search)", defaultPlaceholder: "e.g., salicylic acid (press Enter to search)" },
+        { value: 'Substring', placeholder: "e.g., Arabidop (press Enter to search)", defaultPlaceholder: "e.g., Arabidop (press Enter to search)" },
+        { value: 'Non-alphanumeric', placeholder: "e.g., AT4G (press Enter to search)", defaultPlaceholder: "e.g., AT4G (press Enter to search)" },
+        { value: 'Paired-entity', placeholder: "e.g., drought$ABA (press Enter to search)", defaultPlaceholder: "e.g., drought$ABA (press Enter to search)" }
     ];
 
     buttonConfigs.forEach(config => {
@@ -37,7 +36,7 @@ const gene_form_listeners = () => {
         })
         return temp;
     })();
-    
+
     for (let i = 0 ; i < form_buttons.length ; i++) {
         form_buttons[i].addEventListener('click', () => {
             submitGeneForm(event, forms[0], form_actions[i]);
@@ -48,7 +47,7 @@ const gene_form_listeners = () => {
 // Function to show the loading icon and background overlay
 function showLoading() {
     //document.getElementById('loading-icon').style.display = 'inline-block'; // Show the main loading icon
-    document.getElementById('loading-text').style.display = 'inline-block';    
+    document.getElementById('loading-text').style.display = 'inline-block';
     document.getElementById('loading-icon-small').style.display = 'inline-block'; // Show the small loading icon
 }
 
@@ -69,12 +68,11 @@ document.querySelectorAll('form .button').forEach(button => {
 function submitGeneForm(event, form, path) {
     // Default title values for different paths
     const defaultTitles = {
-        '/form/gene_id/alias': 'TLR4',
-        '/form/gene_id/exact': 'butyrate',
-        '/form/gene_id/normal': 'Lactobacillus',
-        '/form/gene_id/substring': 'Bacteroid',
-        '/form/gene_id/paired_entity': 'butyrate$inflammation',
-        '/form/gene_id/non_alpha': 'IL-6'
+        '/form/gene_id/exact': 'salicylic acid',
+        '/form/gene_id/normal': 'CESA',
+        '/form/gene_id/substring': 'Arabidop',
+        '/form/gene_id/paired_entity': 'drought$ABA',
+        '/form/gene_id/non_alpha': 'AT4G'
     };
 
     // If the title input is empty, set it based on the path
@@ -88,7 +86,7 @@ function submitGeneForm(event, form, path) {
 function submitNameForm(event, form) {
     const titleInput = document.getElementById("author");
     if (titleInput.value === "") {
-        titleInput.value = 'Anniz S';
+        titleInput.value = 'Mutwil M';
     }
     form.submit();
 }
@@ -96,7 +94,7 @@ function submitNameForm(event, form) {
 function submitTitleForm(event, form) {
     const titleInput = document.getElementById("title");
     if (titleInput.value === "") {
-        titleInput.value = '26503768';
+        titleInput.value = '38050352';
     }
     form.submit();
 }
@@ -172,89 +170,77 @@ const change_help_text = (button, text) => {
         case 'word':
             help_text = `
             <p>
-            Find all entities that contain the search query as a <b>whole</b> word. For instance, if "Lactobacillus" is searched, the following entities will be identified:
+            Find all entities that contain the search query as a <b>whole</b> word. For instance, if "CESA" is searched, the following entities will be identified:
                 <ul style = 'color: green;'>
-                    <li> Lactobacillus </li>
-                    <li> Lactobacillus rhamnosus </li>
-                    <li> Lactobacillus species </li>
+                    <li> CESA </li>
+                    <li> CESA1 </li>
+                    <li> CESA complex </li>
                 </ul>
                 However, it will not find entities such as:
                 <br> <br>
                 <ul style = 'color: red;'>
-                    <li> Lactobacillaceae (i.e., part of another word) </li>
+                    <li> cellulose (i.e., not containing CESA as a word) </li>
                 </ul>
                 </p>`;
             break;
         case 'exact':
             help_text = `
             <p>
-                Finds the entity that <b>exactly</b> matches the search query. For instance, if "butyrate" is searched, the following entity will be found:
+                Finds the entity that <b>exactly</b> matches the search query. For instance, if "salicylic acid" is searched, the following entity will be found:
                 <ul style = 'color: green;'>
-                    <li> butyrate </li>
+                    <li> salicylic acid </li>
                 </ul>
                 However, it will not find entities such as:
                 <br> <br>
                 <ul style = 'color: red;'>
-                    <li> butyrate production </li>
-                    <li> sodium butyrate </li>
-                </ul>
-            </p>`;
-            break;
-        case 'alias':
-            help_text = `
-            <p>
-                Finds <b>all gene aliases</b> that are associated with the search query. For instance, if "TLR4" is searched, this search will find the
-                following entities:
-                <ul style = 'color: green;'>
-                    <li> TLR4 </li>
-                    <li> Toll-like receptor 4 (TLR4) </li>
+                    <li> salicylic acid signaling </li>
+                    <li> methyl salicylic acid </li>
                 </ul>
             </p>`;
             break;
         case 'substring':
             help_text = `
             <p>
-                Finds all entities that contain the search query as a <b>substring</b>. For instance, if "Bacteroid" is searched, this search will find the
+                Finds all entities that contain the search query as a <b>substring</b>. For instance, if "Arabidop" is searched, this search will find the
                 following entities:
                 <ul style = 'color: green;'>
-                    <li> Bacteroides </li>
-                    <li> Bacteroidetes </li>
-                    <li> Bacteroides fragilis </li>
+                    <li> Arabidopsis </li>
+                    <li> Arabidopsis thaliana </li>
+                    <li> Arabidopsis lyrata </li>
                 </ul>
             </p>`;
             break;
         case 'non-alphanumeric':
             help_text = `
             <p>
-                Finds all entities that contain the search query <b>followed by a non-alphanumeric character</b> (eg. "/", "-"). For instance, if "IL"
+                Finds all entities that contain the search query <b>followed by a non-alphanumeric character</b> (eg. "/", "-"). For instance, if "AT4G"
                 is searched, this search will find the following entities:
                 <ul style = 'color: green;'>
-                    <li> IL-6 </li>
-                    <li> IL-10 </li>
+                    <li> AT4G02770 </li>
+                    <li> AT4G18780 </li>
                 </ul>
                 However, it will not find entities such as:
                 <br> <br>
                 <ul style = 'color: red;'>
-                    <li> ILC2 </li>
-                    <li> inflammation </li>
+                    <li> AT5G01530 </li>
                 </ul>
-            </p>`;   
+            </p>`;
             break;
         case 'paired-entity':
                 help_text = `
                 <p>
-                    Finds all <b>paired entities</b> matches the search query split by "$". For instance, if "butyrate$inflammation"
+                    Finds all <b>paired entities</b> matches the search query split by "$". For instance, if "drought$ABA"
                     is searched, this search will find the following source and target pair entities:
                     <ul style = 'color: green;'>
-                        <li> source node which contains: butyrate; target node which contains: inflammation </li>
-                        <li> source node which contains: inflammation; target node which contains: butyrate </li>
+                        <li> source node which contains: drought; target node which contains: ABA </li>
+                        <li> source node which contains: ABA; target node which contains: drought </li>
                     </ul>
                     However, it will not find source and target pair entities such as:
                     <br> <br>
                     <ul style = 'color: red;'>
-                        <li> source node which contains: butyrate; target node which contains: obesity </li>
+                        <li> source node which contains: drought; target node which contains: salicylic acid </li>
                     </ul>
-                </p>`;            
+                </p>`;
             break;
         default:
             help_text = `

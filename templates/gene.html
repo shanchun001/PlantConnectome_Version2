@@ -783,7 +783,7 @@
           }
       
           // Fetch the query term from backend
-          var queryTerms = "{{ search_term }}";  // Example: "Lactobacillus [bacterial genus], butyrate [metabolite]"
+          var queryTerms = "{{ search_term }}";
           var formattedQuery = queryTerms;
           var formattedQuery2 = extractEntityTypes(queryTerms);
       
@@ -810,49 +810,36 @@
             'enzyme': 'gene/protein', 'protein': 'gene/protein', 'gene': 'gene/protein',
             'transcription factor': 'gene/protein', 'gene set': 'gene/protein',
             'gene expression': 'gene/protein', 'receptor': 'gene/protein',
-            // MICROORGANISM
-            'bacterial genus': 'microorganism', 'bacterial species': 'microorganism',
-            'bacterial phylum': 'microorganism', 'bacterial family': 'microorganism',
-            'bacterial strain': 'microorganism', 'fungal genus': 'microorganism',
-            'fungal species': 'microorganism', 'probiotic bacterium': 'microorganism',
-            'bacterial order': 'microorganism', 'bacterial taxa': 'microorganism',
-            'microbial taxa': 'microorganism', 'bacterial group': 'microorganism',
-            // DISEASE/CONDITION
-            'disease': 'disease/condition', 'metabolic disease': 'disease/condition',
-            'metabolic disorder': 'disease/condition', 'disease model': 'disease/condition',
-            'pathological condition': 'disease/condition', 'disease category': 'disease/condition',
-            'inflammatory state': 'disease/condition',
+            'mutant': 'gene/protein', 'protein complex': 'gene/protein',
+            'protein domain': 'gene/protein', 'gene family': 'gene/protein',
+            'protein family': 'gene/protein', 'gene identifier': 'gene identifier',
+            // CELL/ORGAN/ORGANISM
+            'organism': 'cell/organ/organism', 'organ': 'cell/organ/organism',
+            'tissue': 'cell/organ/organism', 'cell type': 'cell/organ/organism',
+            'subcellular compartment': 'cell/organ/organism', 'organelle': 'cell/organ/organism',
+            'plant': 'cell/organ/organism', 'virus': 'cell/organ/organism',
             // CHEMICAL
-            'metabolite': 'chemical', 'short-chain fatty acid': 'chemical',
-            'microbial metabolite': 'chemical', 'amino acid': 'chemical',
-            'bacterial metabolite': 'chemical', 'metabolite class': 'chemical',
-            // BIOLOGICAL PROCESS
-            'metabolic pathway': 'biological process', 'metabolic process': 'biological process',
-            'biological process': 'biological process', 'signaling pathway': 'biological process',
-            'cellular process': 'biological process', 'immune process': 'biological process',
-            'immune response': 'biological process', 'ecological process': 'biological process',
-            'physiological process': 'biological process',
-            // CELL/COMPARTMENT
-            'organ': 'cell/compartment', 'tissue sample': 'cell/compartment',
-            'cell type': 'cell/compartment', 'immune cell type': 'cell/compartment',
-            // HOST/ORGANISM
-            'patient cohort': 'host/organism', 'patient population': 'host/organism',
-            'study population': 'host/organism',
+            'metabolite': 'chemical', 'hormone': 'chemical', 'phytohormone': 'chemical',
+            'amino acid': 'chemical', 'compound': 'chemical', 'molecule': 'chemical',
+            'chemical': 'chemical', 'polysaccharide': 'chemical',
             // PHENOTYPE
-            'phenotype': 'phenotype', 'behavioral phenotype': 'phenotype',
-            'clinical outcome': 'phenotype', 'bacterial phenotype': 'phenotype',
+            'phenotype': 'phenotype',
+            // BIOLOGICAL PROCESS
+            'process': 'biological process', 'biological process': 'biological process',
+            'metabolic pathway': 'biological process', 'signaling pathway': 'biological process',
+            'cellular process': 'biological process', 'metabolic process': 'biological process',
             // TREATMENT
-            'treatment': 'treatment', 'dietary intervention': 'treatment',
-            'therapeutic intervention': 'treatment', 'probiotic treatment': 'treatment',
-            'dietary treatment': 'treatment', 'dietary supplement': 'treatment',
-            'probiotic intervention': 'treatment',
-            // ENVIRONMENT
-            'environmental condition': 'environment', 'soil property': 'environment',
+            'treatment': 'treatment', 'condition': 'treatment',
+            'environment': 'treatment', 'environmental factor': 'treatment',
+            'abiotic stress': 'treatment', 'disease': 'treatment', 'stress': 'treatment',
+            // GENOMIC/TRANSCRIPTOMIC FEATURE
+            'genomic region': 'genomic/transcriptomic feature',
+            'mutation': 'genomic/transcriptomic feature', 'genome': 'genomic/transcriptomic feature',
+            'dna sequence': 'genomic/transcriptomic feature', 'rna': 'genomic/transcriptomic feature',
+            'genotype': 'genomic/transcriptomic feature',
             // METHOD
-            'analytical method': 'method', 'statistical test': 'method',
-            'sequencing method': 'method', 'statistical method': 'method',
-            'bioinformatics tool': 'method', 'bioinformatics software': 'method',
-            'microbiome profiling method': 'method',
+            'method': 'method', 'technique': 'method', 'tool': 'method',
+            'database': 'method', 'software': 'method', 'dataset': 'method',
           };
 
           // Default category
@@ -1808,7 +1795,7 @@
   
               Example of Correct Interpretation:
   
-              • "${formattedQuery} plays a role in microbial symbiosis, facilitating nitrogen fixation and improving soil fertility in leguminous crops (PMID: 45678901)."
+              • "${formattedQuery} plays a role in plant defense signaling, facilitating systemic acquired resistance and improving pathogen tolerance in Arabidopsis (PMID: 45678901)."
   
               Potential for Biotechnology or Environmental Engineering:
               Summarize the potential applications of ${formattedQuery} in biotechnology, environmental management, or other applied fields. How might this knowledge be used to improve agricultural productivity, soil health, or sustainability efforts? Ensure that each statement is accompanied by the corresponding PMID(s).

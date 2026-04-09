@@ -26,38 +26,23 @@ OPENAI_API_KEY=sk-...  # Required for AI summary generation and edge validation
 
 ## 3. Prepare Data Files
 
-You need two data files in the project root:
+You need the data file in the project root:
 
 | File | Description |
 |------|-------------|
-| `gut_microbiome_2_2k_most_recent_papers_semi-fixed.xlsx` | Knowledge graph relationships extracted from papers. Columns: `pmid`, `section`, `source`, `source_type`, `source_category`, `target`, `target_type`, `target_category`, `relationship`, `relationship_label`, `species`, `basis`, `source_extracted_definition`, `source_generated_definition`, `target_extracted_definition`, `target_generated_definition` |
-| `papers.with_citations.jsonl` | Full text of papers (one JSON object per line). Keys: `PMID`, `Title`, `Abstract`, `Intro`, `Methods`, `Results`, `Discuss`, `Concl`, `AuthorList`, `CitationCount` |
+| `oup_wly_elv_spr_sci_sciadv_all_kg.csv` | Knowledge graph relationships extracted from plant science papers. Columns: `custom_id`, `journal`, `year`, `month`, `title`, `section`, `filename`, `source`, `source_identifier`, `source_type`, `source_category`, `source_extracted_definition`, `source_generated_definition`, `relationship`, `relationship_category`, `target`, `target_identifier`, `target_type`, `target_category`, `target_extracted_definition`, `target_generated_definition`, `species`, `basis` |
 
 ## 4. Load Data into MongoDB
-
-Run the scripts in this order:
-
-### Step 1: Load KG relationships from Excel
 
 ```bash
 python load_data.py
 ```
 
 This populates:
-- **`all_dic`** collection — all KG relationships (entities, types, categories, edges, PMIDs, sections, definitions)
+- **`all_dic`** collection — all KG relationships (entities, types, categories, edges, definitions)
 - **`stats.txt`** — paper and relationship counts for the homepage
 - **`catalogue.pkl`** — alphabetical entity catalogue for browsing
-- **`utils/Microbiome_entities.csv`** — entity type-to-category mappings (updated from data)
-
-### Step 2: Load paper text and authors from JSONL
-
-```bash
-python load_papers.py
-```
-
-This populates:
-- **`scientific_chunks`** collection — paper text split by section (keys: `pmid` + `section`). Used for "Source Text" modal and edge validation.
-- **`authors`** collection — author lists per paper (keys: `authors` array + `pubmedID`). Used for author search.
+- **`utils/Connectome_entities.csv`** — entity type-to-category mappings (updated from data)
 
 ## 5. Start the Server
 
@@ -76,71 +61,28 @@ gunicorn -c gunicorn.conf.py app:app
 
 | Collection | Documents | Description |
 |---|---|---|
-| `all_dic` | ~586K | KG relationships with entity types, categories, definitions |
-| `scientific_chunks` | ~598K | Paper text by section (TITLE, ABSTRACT, INTRO, METHODS, RESULTS, DISCUSSION, CONCLUSION) |
-| `authors` | ~137K | Author lists per PMID |
-| `gene_alias` | varies | Gene name aliases for search expansion |
+| `all_dic` | ~11.1M | KG relationships with entity types, categories, definitions |
+| `scientific_chunks` | varies | Paper text by section (optional, for source text modals) |
+| `authors` | varies | Author lists per paper (optional, for author search) |
 
-## Entity Categories (22)
+## Entity Categories
 
-These are assigned during KG extraction and stored in `source_category` / `target_category`:
-
-| Prompt Category | Visualization Category |
+| Category | Examples |
 |---|---|
-| Gene / Protein | GENE/PROTEIN |
-| Genomic / Transcriptomic / Proteomic / Epigenomic Feature / Gene Mutant | GENE/PROTEIN |
-| Microbial Species | MICROORGANISM |
-| Virus | MICROORGANISM |
-| Taxonomic / Evolutionary / Phylogenetic Group | TAXONOMY |
-| Complex / Structure / Compartment / Cell / Organ / Organism | CELL/COMPARTMENT |
-| Clinical Phenotype / Clinical Trait / Host Condition | PHENOTYPE |
-| Non-Clinical Phenotype | PHENOTYPE |
-| Disease | DISEASE/CONDITION |
-| Treatment / Exposure / Perturbation | TREATMENT |
-| Metabolite | CHEMICAL |
-| Chemical / Cofactor / Ligand | CHEMICAL |
-| Biological Process / Function | BIOLOGICAL PROCESS |
-| Regulatory / Signaling Mechanism / Metabolic Pathway | BIOLOGICAL PROCESS |
-| Computational / Model / Algorithm / Data / Metric | METHOD |
-| Method / Assay / Experimental Setup / Parameter / Sample | METHOD |
-| Ecological / Soil / Aquatic / Climate Context | ENVIRONMENT |
-| Epidemiological / Population | HOST/ORGANISM |
-| Equipment / Device / Material / Instrument | METHOD |
-| Social / Economic / Policy / Management | OTHER |
-| Knowledge / Concept / Hypothesis / Theoretical Construct | OTHER |
-| Property / Measurement / Characterization | OTHER |
-
-## Relationship Labels (21)
-
-Stored in `relationship_label` and used for edge coloring/categorization:
-
-- Activation / Induction / Causation / Result
-- Repression / Inhibition / Negative Regulation
-- Regulation / Control
-- Expression / Detection / Identification
-- Association / Interaction / Binding
-- Localization / Containment / Composition
-- Requirement / Activity / Function / Participation
-- Encodes / Contains
-- Lacks / Dissimilar
-- Synthesis / Formation
-- Modification / Changes / Alters
-- Treatment / Exposure / Perturbation / Administration
-- Comparison / Evaluation / Benchmarking
-- Definition / Classification / Naming
-- Property / Characterization
-- Hypothesis / Assumption / Proposal
-- Temporal / Sequential Relationship
-- Is / Similarity / Equivalence / Analogy
-- Limitation / Innovation / Improvement / Advancement
-- No Effect / Null Relationship
-- Others: (custom label)
+| GENE/PROTEIN | Genes, proteins, enzymes, transcription factors, protein complexes, mutants |
+| PHENOTYPE | Observable characteristics, stress responses, growth traits |
+| CELL/ORGAN/ORGANISM | Organisms, organs, tissues, cell types, subcellular compartments |
+| CHEMICAL | Metabolites, hormones, compounds, molecules |
+| TREATMENT | Environmental conditions, experimental treatments, stress factors |
+| BIOLOGICAL PROCESS | Pathways, signaling, metabolic processes |
+| GENOMIC/TRANSCRIPTOMIC FEATURE | DNA sequences, mutations, chromosomes, gene expression |
+| METHOD | Techniques, databases, software, tools, datasets |
+| GENE IDENTIFIER | Gene identifiers (e.g., AT4G02770) |
 
 ## Updating Data
 
 To reload with new data:
 
-1. Replace `gut_microbiome_2_2k_most_recent_papers_semi-fixed.xlsx` and/or `papers.with_citations.jsonl`
+1. Replace `oup_wly_elv_spr_sci_sciadv_all_kg.csv`
 2. Re-run `python load_data.py` (drops and recreates `all_dic`)
-3. Re-run `python load_papers.py` (drops and recreates `scientific_chunks` and `authors`)
-4. Restart the server
+3. Restart the server

@@ -203,69 +203,6 @@ def find_terms(my_search, genes, search_type):
                         e2_vis = PROMPT_TO_VIS_CATEGORY.get(e2_cat.upper(), ENTITY_CATEGORIES_DICT.get((e2t or '').upper(), 'OTHER')) if e2_cat else ENTITY_CATEGORIES_DICT.get((e2t or '').upper(), 'OTHER')
                         preview_dict[(e2, e2t)] = (e2, e2t, entity_counts[(e2, e2t)], unique_node_count, e2_vis)
 
-    elif search_type == 'alias':
-        geneAlias_collection = db["gene_alias"]
-        gas = geneAlias_collection.find({
-            "$or": [
-                {"gene": {"$in": my_search}},
-                {"aliases": {"$in": my_search}}
-            ]
-        })
-        patterns = set()
-        for ga in gas:
-            patterns.add(ga['gene'].upper())
-            for a in ga.get('aliases', []):
-                patterns.add(a.upper())
-        if not patterns and my_search:
-            patterns.add(my_search[0].upper())
-
-        search_terms = " ".join(patterns)
-        query = {"$text": {"$search": search_terms}}
-        results = genes.find(query)
-        loop_start_time = time.time()
-
-        for doc in results:
-            e1, e1t = doc["entity1"], doc["entity1type"]
-            e2, e2t = doc["entity2"], doc["entity2type"]
-            entity_counts[(e1, e1t)] += 1
-            entity_counts[(e2, e2t)] += 1
-            entity_connections[(e1, e1t)].add((e2, e2t))
-            entity_connections[(e2, e2t)].add((e1, e1t))
-            if doc.get("entity1category"):
-                entity_cats[(e1, e1t)] = doc["entity1category"]
-            if doc.get("entity2category"):
-                entity_cats[(e2, e2t)] = doc["entity2category"]
-
-            forSending.append(Gene(
-                e1, e1t, e2, e2t,
-                doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"), doc.get("species"),
-                doc.get("basis"), doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                doc.get("target_extracted_definition"), doc.get("target_generated_definition")
-            ))
-            elements.append((
-                e1, e1t, e2, e2t,
-                doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"), doc.get("species"),
-                doc.get("basis"), doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                doc.get("target_extracted_definition"), doc.get("target_generated_definition")
-            ))
-
-            for word in patterns:
-                pattern = re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE)
-                if pattern.search(e1):
-                    unique_node_count = len(entity_connections[(e1, e1t)]) + 1
-                    if ((e1, e1t) not in preview_dict or
-                        entity_counts[(e1, e1t)] > preview_dict[(e1, e1t)][2]):
-                        e1_cat = entity_cats.get((e1, e1t), '')
-                        e1_vis = PROMPT_TO_VIS_CATEGORY.get(e1_cat.upper(), ENTITY_CATEGORIES_DICT.get((e1t or '').upper(), 'OTHER')) if e1_cat else ENTITY_CATEGORIES_DICT.get((e1t or '').upper(), 'OTHER')
-                        preview_dict[(e1, e1t)] = (e1, e1t, entity_counts[(e1, e1t)], unique_node_count, e1_vis)
-                if pattern.search(e2):
-                    unique_node_count = len(entity_connections[(e2, e2t)]) + 1
-                    if ((e2, e2t) not in preview_dict or
-                        entity_counts[(e2, e2t)] > preview_dict[(e2, e2t)][2]):
-                        e2_cat = entity_cats.get((e2, e2t), '')
-                        e2_vis = PROMPT_TO_VIS_CATEGORY.get(e2_cat.upper(), ENTITY_CATEGORIES_DICT.get((e2t or '').upper(), 'OTHER')) if e2_cat else ENTITY_CATEGORIES_DICT.get((e2t or '').upper(), 'OTHER')
-                        preview_dict[(e2, e2t)] = (e2, e2t, entity_counts[(e2, e2t)], unique_node_count, e2_vis)
-
     elif search_type == 'substring':
         escaped_patterns = [re.escape(word) for word in my_search]
         combined_or_regex = "(" + "|".join(escaped_patterns) + ")"

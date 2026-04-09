@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
       let loadingDiv = document.getElementById("loading");
       let warningDiv = document.getElementById("warning");
       if (userInput.value === "") {
-        userInput.value = "Lactobacillus";
+        userInput.value = "CESA";
       }
       let url = `/tldr/search?user_input=${encodeURIComponent(
         userInput.value
