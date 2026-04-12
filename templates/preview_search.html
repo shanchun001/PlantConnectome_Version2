@@ -433,7 +433,7 @@
       // Entity Category — join all categories with " / "
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = categories.map(c => c.toLowerCase()).join(' / ');
+      typeCell.textContent = categories.map(c => c.toLowerCase()).join(', ');
       row.appendChild(typeCell);
 
       // Unique Nodes
