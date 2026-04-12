@@ -156,33 +156,35 @@ def find_preview_fast(my_search, genes, search_type):
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
     # Merge by entity name: collect all distinct categories, sum counts
-    seen = {}      # entity -> {cat: count}
+    seen = {}       # entity -> {cat: count}
     seen_total = {} # entity -> total count
+    seen_type = {}  # entity -> most common raw type (for URL-safe use)
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
-        etype = r["_id"].get("type", "")
-        ecat = r["_id"].get("category", "")
+        etype = r["_id"].get("type", "") or ""
+        ecat = r["_id"].get("category", "") or ""
         count = r["count"]
         vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
         if entity not in seen:
             seen[entity] = {vis_cat: count}
             seen_total[entity] = count
+            seen_type[entity] = {etype: count}
         else:
             seen[entity][vis_cat] = seen[entity].get(vis_cat, 0) + count
             seen_total[entity] += count
+            seen_type[entity][etype] = seen_type[entity].get(etype, 0) + count
 
-    # Build result tuples: (entity, categories_list, count, count, primary_cat)
+    # Build result tuples: (entity, categories_list, count, count, primary_raw_type)
     results = []
     for entity, cat_counts in seen.items():
         total = seen_total[entity]
-        # Sort categories by count descending, exclude OTHER if other cats exist
         sorted_cats = sorted(cat_counts.items(), key=lambda x: -x[1])
         categories = [c for c, _ in sorted_cats if c != 'OTHER']
         if not categories:
             categories = ['OTHER']
-        primary_cat = categories[0]
-        # Store as (entity, categories_list, count, count, primary_cat)
-        results.append((entity, categories, total, total, primary_cat))
+        # Most common raw entity type (no slashes, safe for URL)
+        primary_type = max(seen_type[entity], key=seen_type[entity].get) or 'unknown'
+        results.append((entity, categories, total, total, primary_type))
 
     return sorted(results, key=lambda x: x[2], reverse=True)
 

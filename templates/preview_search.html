@@ -383,12 +383,10 @@
     filteredRowsData.forEach(item => {
       let entity, entity_type, edge_number, network_count, entity_category, categories;
       if (Array.isArray(item)) {
-        // tuple: (entity, categories_list_or_str, count, count, primary_cat)
+        // tuple: (entity, categories_list, count, count, primary_raw_type)
         [entity, entity_type, edge_number, network_count, entity_category] = item;
-        // entity_type may be an array of categories or a string
+        // entity_type is a list of display categories; entity_category is the raw type for URL
         categories = Array.isArray(entity_type) ? entity_type : [entity_type || entity_category || ''];
-        entity_category = categories[0] || '';
-        // For link href, use primary category
       } else {
         entity = item.entity;
         entity_type = item.entity_type;
