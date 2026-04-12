@@ -155,25 +155,25 @@ def find_preview_fast(my_search, genes, search_type):
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge by (entity, vis_category): sum counts across types/sides, deduplicate
-    seen = {}
+    # Merge by entity name: sum counts across types/sides, pick category with highest count
+    seen = {}      # entity -> (entity, cat, count, count, cat)
+    seen_cats = {} # entity -> {cat: count}
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "")
         ecat = r["_id"].get("category", "")
         count = r["count"]
         vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
-        # Group by entity name only — merge all categories/types into one row
-        key = entity
-        if key not in seen:
-            seen[key] = (entity, vis_cat, count, count, vis_cat)
+        if entity not in seen:
+            seen[entity] = (entity, vis_cat, count, count, vis_cat)
+            seen_cats[entity] = {vis_cat: count}
         else:
-            # Same entity, different category: sum counts, keep most informative category
-            prev = seen[key]
+            prev = seen[entity]
             merged_count = prev[2] + count
-            # If categories differ, mark as "NA" (ambiguous)
-            merged_cat = prev[1] if prev[1] == vis_cat else "NA"
-            seen[key] = (entity, merged_cat, merged_count, merged_count, merged_cat)
+            seen_cats[entity][vis_cat] = seen_cats[entity].get(vis_cat, 0) + count
+            # Use the category with the highest total count
+            best_cat = max(seen_cats[entity], key=seen_cats[entity].get)
+            seen[entity] = (entity, best_cat, merged_count, merged_count, best_cat)
 
     # Return sorted by count desc
     return sorted(seen.values(), key=lambda x: x[2], reverse=True)
