@@ -121,65 +121,94 @@ def normalize_relationship_label(label):
 
 
 def generate_cytoscape_js(elements, ab, fa):
-    nodes = set()
-    edges = []
 
     def escape_js_string(value):
         if not value:
             return ''
         return str(value).replace("'", "").replace('"', '').replace('\n', '').replace('\\', '').replace('`', '').replace('${', '')
 
-    def format_node(name, node_type, node_category=''):
-        # Use stored category from KG if available, otherwise fall back to CSV
+    def get_node_category(node_category, node_type):
         if node_category:
-            category = PROMPT_TO_VIS_CATEGORY.get(node_category.upper(), 'OTHER')
-        else:
-            category = ENTITY_CATEGORIES_DICT.get(node_type.upper(), 'OTHER')
-        return f"{escape_js_string(name)}|{escape_js_string(node_type)}|{category}"
+            return PROMPT_TO_VIS_CATEGORY.get(node_category.upper(), 'OTHER')
+        return ENTITY_CATEGORIES_DICT.get(node_type.upper(), 'OTHER')
 
-    def get_relationship_category(interaction, relationship_label=''):
-        # Use stored relationship_label if available
+    def get_edge_category(relationship_label, interaction):
+        """Return the relationship_label as-is (it is the category from the prompt)."""
         if relationship_label:
-            normalized = normalize_relationship_label(relationship_label)
-            # Check if it matches any key in RELATIONSHIP_CATEGORIES
-            for category in RELATIONSHIP_CATEGORIES:
-                if normalized == category or normalized.startswith(category.split('/')[0]):
-                    return category
-            # If it starts with "Others:", map to OTHERS
-            if normalized.startswith('OTHERS'):
-                return 'OTHERS'
-            return normalized
-        # Fall back to verb synonym lookup
-        interaction_upper = interaction.upper()
-        for category, relationships in RELATIONSHIP_CATEGORIES.items():
-            if interaction_upper in relationships:
-                return category
-        return "NA"
+            label = relationship_label.strip()
+            # Normalise capitalisation to Title Case
+            return label
+        return interaction or 'NA'
 
-    for i, edge in enumerate(elements):
-        source_cat = edge.get("sourcecategory", "")
-        target_cat = edge.get("targetcategory", "")
+    # ── Nodes: merge by entity name (same name = same node) ──────────────
+    node_data = {}  # name -> {category: count, type: most_common_type}
+    node_type_counts = {}  # name -> {type: count}
+    for edge in elements:
+        for name, ntype, ncat in [
+            (edge["source"], edge["sourcetype"], edge.get("sourcecategory", "")),
+            (edge["target"], edge["targettype"], edge.get("targetcategory", ""))
+        ]:
+            cat = get_node_category(ncat, ntype)
+            if name not in node_data:
+                node_data[name] = {cat: 1}
+                node_type_counts[name] = {ntype: 1}
+            else:
+                node_data[name][cat] = node_data[name].get(cat, 0) + 1
+                node_type_counts[name][ntype] = node_type_counts[name].get(ntype, 0) + 1
+
+    nodes_js = []
+    for name, cat_counts in node_data.items():
+        # Pick category with highest count (exclude OTHER if others exist)
+        non_other = {c: v for c, v in cat_counts.items() if c != 'OTHER'}
+        best_cat = max(non_other, key=non_other.get) if non_other else 'OTHER'
+        best_type = max(node_type_counts[name], key=node_type_counts[name].get)
+        safe_name = escape_js_string(name)
+        nodes_js.append(
+            f"{{ data: {{ id: '{safe_name}', originalId: '{safe_name}', type: '{escape_js_string(best_type)}', category: '{escape_js_string(best_cat)}' }} }}"
+        )
+
+    # ── Edges: merge by (source, target, edge_category) ─────────────────
+    edge_map = {}  # (src, tgt, cat) -> {pmids, interaction, first_edge_data}
+    for edge in elements:
+        src = edge["source"]
+        tgt = edge["target"]
         rel_label = edge.get("relationship_label", "")
+        interaction = edge.get("interaction", "")
+        cat = get_edge_category(rel_label, interaction)
+        key = (src, tgt, cat)
+        pmid = edge.get("pmid", "")
+        if key not in edge_map:
+            edge_map[key] = {
+                "pmids": {pmid} if pmid else set(),
+                "category": cat,
+                "interaction": rel_label or interaction,
+                "edge": edge
+            }
+        else:
+            if pmid:
+                edge_map[key]["pmids"].add(pmid)
 
-        nodes.add(format_node(edge["source"], edge["sourcetype"], source_cat))
-        nodes.add(format_node(edge["target"], edge["targettype"], target_cat))
-        edges.append(f"""{{
+    edges_js = []
+    for i, ((src, tgt, cat), data) in enumerate(edge_map.items()):
+        e = data["edge"]
+        pmids_str = ", ".join(sorted(data["pmids"]))
+        edges_js.append(f"""{{
             data: {{
                 id: 'edge{i}',
-                source: '{escape_js_string(edge["source"])}',
-                sourcetype: '{escape_js_string(edge["sourcetype"])}',
-                target: '{escape_js_string(edge["target"])}',
-                targettype: '{escape_js_string(edge["targettype"])}',
-                category: '{escape_js_string(get_relationship_category(edge["interaction"], rel_label))}',
-                interaction: '{escape_js_string(edge["interaction"])}',
-                p_source: '{escape_js_string(edge["p_source"])}',
-                pmid: '{escape_js_string(edge["pmid"])}',
-                species: '{escape_js_string(edge["species"])}',
-                basis: '{escape_js_string(edge["basis"])}',
-                source_extracted_definition: '{escape_js_string(edge["source_extracted_definition"])}',
-                source_generated_definition: '{escape_js_string(edge["source_generated_definition"])}',
-                target_extracted_definition: '{escape_js_string(edge["target_extracted_definition"])}',
-                target_generated_definition: '{escape_js_string(edge["target_generated_definition"])}'
+                source: '{escape_js_string(src)}',
+                sourcetype: '{escape_js_string(e["sourcetype"])}',
+                target: '{escape_js_string(tgt)}',
+                targettype: '{escape_js_string(e["targettype"])}',
+                category: '{escape_js_string(cat)}',
+                interaction: '{escape_js_string(data["interaction"])}',
+                p_source: '{escape_js_string(e["p_source"])}',
+                pmid: '{escape_js_string(pmids_str)}',
+                species: '{escape_js_string(e["species"])}',
+                basis: '{escape_js_string(e["basis"])}',
+                source_extracted_definition: '{escape_js_string(e["source_extracted_definition"])}',
+                source_generated_definition: '{escape_js_string(e["source_generated_definition"])}',
+                target_extracted_definition: '{escape_js_string(e["target_extracted_definition"])}',
+                target_generated_definition: '{escape_js_string(e["target_generated_definition"])}'
             }}
         }}""")
 
@@ -187,14 +216,9 @@ def generate_cytoscape_js(elements, ab, fa):
         template = template_file.read()
 
     return template.replace(
-        '_INSERT_NODES_HERE_',
-        ', '.join([
-            f"{{ data: {{ id: '{node.split('|')[0]}', type: '{node.split('|')[1]}', category: '{node.split('|')[2]}' }} }}"
-            for node in nodes
-        ])
+        '_INSERT_NODES_HERE_', ', '.join(nodes_js)
     ).replace(
-        '_INSERT_EDGES_HERE_',
-        ', '.join(edges)
+        '_INSERT_EDGES_HERE_', ', '.join(edges_js)
     ).replace('REPLACE_AB', json.dumps(ab)).replace('REPLACE_FA', json.dumps(fa))
 
 
