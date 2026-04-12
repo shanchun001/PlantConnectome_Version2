@@ -51,7 +51,7 @@
               <input type="checkbox" id="selectAllCheckbox">
             </th>
             <th>Entity Name</th>
-            <th onclick="sortTable(2)" class="sortable-th">Entity Type &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(2)" class="sortable-th">Entity Category &#x25B2;&#x25BC;</th>
             <th onclick="sortTable(3)" class="sortable-th">Unique Nodes &#x25B2;&#x25BC;</th>
           </tr>
         </thead>
@@ -380,14 +380,17 @@
     const fragment = document.createDocumentFragment();
 
     filteredRowsData.forEach(item => {
-      let entity, entity_type, edge_number, network_count;
+      let entity, entity_type, edge_number, network_count, entity_category;
       if (Array.isArray(item)) {
-        [entity, entity_type, edge_number, network_count] = item;
+        // tuple: (entity, vis_cat, count, count, vis_cat)
+        [entity, entity_type, edge_number, network_count, entity_category] = item;
+        entity_category = entity_category || entity_type;
       } else {
         entity = item.entity;
         entity_type = item.entity_type;
         edge_number = item.edge_number;
         network_count = item.network_count;
+        entity_category = item.entity_category || entity_type;
       }
 
       const row = document.createElement('tr');
@@ -422,10 +425,10 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Entity Type
+      // Entity Category
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = entity_type;
+      typeCell.textContent = entity_category ? entity_category.toLowerCase() : '';
       row.appendChild(typeCell);
 
       // Unique Nodes

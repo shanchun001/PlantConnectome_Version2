@@ -155,20 +155,28 @@ def find_preview_fast(my_search, genes, search_type):
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge: for each entity, take max count across e1 and e2 sides
+    # Merge by (entity, vis_category): sum counts across types/sides, deduplicate
     seen = {}
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "")
         ecat = r["_id"].get("category", "")
         count = r["count"]
-        key = (entity, etype)
-        if key not in seen or count > seen[key][2]:
-            vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
-            seen[key] = (entity, etype, count, count, vis_cat)  # use count as unique_nodes approximation
+        vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
+        # Group by entity name only — merge all categories/types into one row
+        key = entity
+        if key not in seen:
+            seen[key] = (entity, vis_cat, count, count, vis_cat)
+        else:
+            # Same entity, different category: sum counts, keep most informative category
+            prev = seen[key]
+            merged_count = prev[2] + count
+            # If categories differ, mark as "NA" (ambiguous)
+            merged_cat = prev[1] if prev[1] == vis_cat else "NA"
+            seen[key] = (entity, merged_cat, merged_count, merged_count, merged_cat)
 
     # Return sorted by count desc
-    return sorted(seen.values(), key=lambda x: (x[2], x[3]), reverse=True)
+    return sorted(seen.values(), key=lambda x: x[2], reverse=True)
 
 
 def find_terms(my_search, genes, search_type):
