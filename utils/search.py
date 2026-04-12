@@ -155,9 +155,9 @@ def find_preview_fast(my_search, genes, search_type):
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge by entity name: sum counts across types/sides, pick category with highest count
-    seen = {}      # entity -> (entity, cat, count, count, cat)
-    seen_cats = {} # entity -> {cat: count}
+    # Merge by entity name: collect all distinct categories, sum counts
+    seen = {}      # entity -> {cat: count}
+    seen_total = {} # entity -> total count
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "")
@@ -165,18 +165,26 @@ def find_preview_fast(my_search, genes, search_type):
         count = r["count"]
         vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
         if entity not in seen:
-            seen[entity] = (entity, vis_cat, count, count, vis_cat)
-            seen_cats[entity] = {vis_cat: count}
+            seen[entity] = {vis_cat: count}
+            seen_total[entity] = count
         else:
-            prev = seen[entity]
-            merged_count = prev[2] + count
-            seen_cats[entity][vis_cat] = seen_cats[entity].get(vis_cat, 0) + count
-            # Use the category with the highest total count
-            best_cat = max(seen_cats[entity], key=seen_cats[entity].get)
-            seen[entity] = (entity, best_cat, merged_count, merged_count, best_cat)
+            seen[entity][vis_cat] = seen[entity].get(vis_cat, 0) + count
+            seen_total[entity] += count
 
-    # Return sorted by count desc
-    return sorted(seen.values(), key=lambda x: x[2], reverse=True)
+    # Build result tuples: (entity, categories_list, count, count, primary_cat)
+    results = []
+    for entity, cat_counts in seen.items():
+        total = seen_total[entity]
+        # Sort categories by count descending, exclude OTHER if other cats exist
+        sorted_cats = sorted(cat_counts.items(), key=lambda x: -x[1])
+        categories = [c for c, _ in sorted_cats if c != 'OTHER']
+        if not categories:
+            categories = ['OTHER']
+        primary_cat = categories[0]
+        # Store as (entity, categories_list, count, count, primary_cat)
+        results.append((entity, categories, total, total, primary_cat))
+
+    return sorted(results, key=lambda x: x[2], reverse=True)
 
 
 def find_terms(my_search, genes, search_type):

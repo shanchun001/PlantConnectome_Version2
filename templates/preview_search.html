@@ -51,7 +51,8 @@
               <input type="checkbox" id="selectAllCheckbox">
             </th>
             <th>Entity Name</th>
-            <th onclick="sortTable(2)" class="sortable-th">Entity Category &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(2)" class="sortable-th">Category 1 &#x25B2;&#x25BC;</th>
+            <th>Category 2</th>
             <th onclick="sortTable(3)" class="sortable-th">Unique Nodes &#x25B2;&#x25BC;</th>
           </tr>
         </thead>
@@ -353,18 +354,19 @@
     const typeFilter = document.getElementById('entityTypeFilter').value.toLowerCase();
 
     filteredRowsData = allRowsData.filter(item => {
-      let entity, entity_type, vis_category;
+      let entity, entity_type, vis_category, categories;
       if (Array.isArray(item)) {
         entity = item[0];
         entity_type = item[1];
-        vis_category = (item[4] || 'OTHER').toLowerCase();
+        categories = Array.isArray(entity_type) ? entity_type : [item[4] || 'OTHER'];
+        vis_category = categories.map(c => c.toLowerCase());
       } else {
         entity = item.entity;
         entity_type = item.entity_type;
-        vis_category = (item.vis_category || 'OTHER').toLowerCase();
+        vis_category = [(item.vis_category || 'OTHER').toLowerCase()];
       }
       const nameMatch = entity.toLowerCase().includes(searchValue);
-      const categoryMatch = typeFilter === '' || vis_category === typeFilter;
+      const categoryMatch = typeFilter === '' || vis_category.some(c => c === typeFilter);
       return nameMatch && categoryMatch;
     });
 
@@ -380,17 +382,21 @@
     const fragment = document.createDocumentFragment();
 
     filteredRowsData.forEach(item => {
-      let entity, entity_type, edge_number, network_count, entity_category;
+      let entity, entity_type, edge_number, network_count, entity_category, categories;
       if (Array.isArray(item)) {
-        // tuple: (entity, vis_cat, count, count, vis_cat)
+        // tuple: (entity, categories_list_or_str, count, count, primary_cat)
         [entity, entity_type, edge_number, network_count, entity_category] = item;
-        entity_category = entity_category || entity_type;
+        // entity_type may be an array of categories or a string
+        categories = Array.isArray(entity_type) ? entity_type : [entity_type || entity_category || ''];
+        entity_category = categories[0] || '';
+        // For link href, use primary category
       } else {
         entity = item.entity;
         entity_type = item.entity_type;
         edge_number = item.edge_number;
         network_count = item.network_count;
         entity_category = item.entity_category || entity_type;
+        categories = [entity_category];
       }
 
       const row = document.createElement('tr');
@@ -425,11 +431,17 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Entity Category
+      // Category 1
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = entity_category ? entity_category.toLowerCase() : '';
+      typeCell.textContent = categories[0] ? categories[0].toLowerCase() : '';
       row.appendChild(typeCell);
+
+      // Category 2
+      const typeCell2 = document.createElement('td');
+      typeCell2.classList.add('entity-type');
+      typeCell2.textContent = categories[1] ? categories[1].toLowerCase() : '';
+      row.appendChild(typeCell2);
 
       // Unique Nodes
       const networkCell = document.createElement('td');
