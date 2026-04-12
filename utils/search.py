@@ -582,15 +582,15 @@ def generate_search_route2(search_type):
             preview = stored_data["preview"]
             summaryText = stored_data["summaryText"]
 
+        # Filter by entity name; entity_type from URL may be a category string,
+        # so match by name only (or also by type if it's a raw type like 'gene')
         filtered_forSending = [
             g for g in forSending
-            if ((g.id == query and g.idtype == entity_type) or
-                (g.target == query and g.targettype == entity_type))
+            if (g.id == query or g.target == query)
         ]
         filtered_elements = [
             e for e in elements
-            if ((e[0] == query and e[1] == entity_type) or
-                (e[2] == query and e[3] == entity_type))
+            if (e[0] == query or e[2] == query)
         ]
         updatedElements = process_network(filtered_elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)

@@ -51,8 +51,7 @@
               <input type="checkbox" id="selectAllCheckbox">
             </th>
             <th>Entity Name</th>
-            <th onclick="sortTable(2)" class="sortable-th">Category 1 &#x25B2;&#x25BC;</th>
-            <th>Category 2</th>
+            <th onclick="sortTable(2)" class="sortable-th">Entity Category &#x25B2;&#x25BC;</th>
             <th onclick="sortTable(3)" class="sortable-th">Unique Nodes &#x25B2;&#x25BC;</th>
           </tr>
         </thead>
@@ -409,7 +408,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.classList.add('entity-checkbox');
-      checkbox.value = `${entity}|${entity_type}`;
+      checkbox.value = `${entity}|${entity_category}`;
       checkbox.addEventListener('change', updateTotalNodeCount);
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
@@ -418,7 +417,7 @@
       const nameCell = document.createElement('td');
       nameCell.classList.add('entity-name');
       const link = document.createElement('a');
-      link.href = `/${search_type === 'non-alphanumeric' ? 'non_alpha' : search_type}/${encodeURIComponent(entity)}/results/${entity_type}?uid=${unique_id}`;
+      link.href = `/${search_type === 'non-alphanumeric' ? 'non_alpha' : search_type}/${encodeURIComponent(entity)}/results/${encodeURIComponent(entity_category)}?uid=${unique_id}`;
       link.classList.add('table-link');
       const searchInput = document.getElementById('entityNameSearchInput').value;
       if (searchInput && entity.toLowerCase().includes(searchInput.toLowerCase())) {
@@ -431,17 +430,11 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Category 1
+      // Entity Category — join all categories with " / "
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = categories[0] ? categories[0].toLowerCase() : '';
+      typeCell.textContent = categories.map(c => c.toLowerCase()).join(' / ');
       row.appendChild(typeCell);
-
-      // Category 2
-      const typeCell2 = document.createElement('td');
-      typeCell2.classList.add('entity-type');
-      typeCell2.textContent = categories[1] ? categories[1].toLowerCase() : '';
-      row.appendChild(typeCell2);
 
       // Unique Nodes
       const networkCell = document.createElement('td');
