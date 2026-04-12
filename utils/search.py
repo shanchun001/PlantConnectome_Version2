@@ -8,6 +8,30 @@ from flask import request, render_template, redirect, url_for
 
 from mongo import db
 from my_cache import cache
+
+entity_lookup = db["entity_lookup"]
+
+def lookup_entity_names(search_term, mode="substring"):
+    """
+    Use entity_lookup collection for fast entity name discovery.
+    Returns a list of lowercase entity names matching the search term.
+    mode: 'substring' (prefix-anchored regex on _id, uses B-tree index), 'exact'
+    """
+    term_lower = search_term.lower()
+    limit = 500
+    if mode == "substring":
+        # Prefix-anchored regex uses B-tree index on _id → fast
+        # No sort (sorting defeats index use on 11M docs)
+        results = entity_lookup.find(
+            {"_id": {"$regex": "^" + re.escape(term_lower)}},
+            {"_id": 1}
+        ).limit(limit)
+    elif mode == "exact":
+        results = entity_lookup.find(
+            {"_id": term_lower},
+            {"_id": 1}
+        ).limit(1)
+    return [doc["_id"] for doc in results]
 from cytoscape import generate_cytoscape_js, process_network, PROMPT_TO_VIS_CATEGORY, ENTITY_CATEGORIES_DICT
 from text import make_text
 
@@ -81,21 +105,10 @@ def find_terms(my_search, genes, search_type):
 
     if search_type == "normal":
         search_term = my_search[0]
-        special_characters = r"[!@#$%^&*()_+={}[\]:;\"'<>,.?/~`\\|-]"
-        contains_special = bool(re.search(special_characters, search_term))
-        multiple_words = len(my_search) > 1
-
-        if contains_special or multiple_words:
-            escaped_term = re.escape(search_term)
-            regex_pattern = re.compile(f".*{escaped_term}.*", re.IGNORECASE)
-            query = {"$or": [
-                {"entity1": {"$regex": regex_pattern}},
-                {"entity2": {"$regex": regex_pattern}}
-            ]}
-        else:
-            query = {"$text": {"$search": search_term}}
-
-        result_list = list(genes.find(query))
+        # Use text index on all_dic directly — fast (~1-2s) and handles word boundaries
+        # Limit to 10000 results to prevent loading 250K+ docs for common terms
+        query = {"$text": {"$search": search_term}}
+        result_list = list(genes.find(query).limit(10000))
 
         for doc in result_list:
             e1, e1t = doc["entity1"], doc.get("entity1type")
@@ -146,10 +159,11 @@ def find_terms(my_search, genes, search_type):
     elif search_type == "exact":
         search_term = my_search[0]
         if len(search_term.split()) > 1 or contains_special_characters(search_term):
-            regex_pattern = re.escape(search_term)
+            # Exact match on _lower field (B-tree index, very fast)
+            term_lower = search_term.lower()
             query = {"$or": [
-                {"entity1": {"$regex": regex_pattern, "$options": "i"}},
-                {"entity2": {"$regex": regex_pattern, "$options": "i"}}
+                {"entity1_lower": term_lower},
+                {"entity2_lower": term_lower}
             ]}
             result_list = list(genes.find(query))
         else:
@@ -204,21 +218,22 @@ def find_terms(my_search, genes, search_type):
                         preview_dict[(e2, e2t)] = (e2, e2t, entity_counts[(e2, e2t)], unique_node_count, e2_vis)
 
     elif search_type == 'substring':
-        escaped_patterns = [re.escape(word) for word in my_search]
-        combined_or_regex = "(" + "|".join(escaped_patterns) + ")"
-        combined_nor_regex = "(" + "|".join(escaped_patterns) + ")"
-        query = {
-            "$and": [
-                {"$or": [
-                    {"entity1": {"$regex": combined_or_regex, "$options": "i"}},
-                    {"entity2": {"$regex": combined_or_regex, "$options": "i"}}
-                ]},
-                {"$nor": [
-                    {"entity1": {"$regex": rf"^{combined_nor_regex}$", "$options": "i"}},
-                    {"entity2": {"$regex": rf"^{combined_nor_regex}$", "$options": "i"}}
-                ]}
-            ]
-        }
+        # Use entity_lookup for fast substring discovery
+        all_matched = set()
+        for word in my_search:
+            matched = lookup_entity_names(word, mode="substring")
+            # Exclude exact matches (substring means contains but not equals)
+            word_lower = word.lower()
+            matched = [m for m in matched if m != word_lower]
+            all_matched.update(matched)
+        matched_list = list(all_matched)
+        if matched_list:
+            query = {"$or": [
+                {"entity1_lower": {"$in": matched_list}},
+                {"entity2_lower": {"$in": matched_list}}
+            ]}
+        else:
+            query = {"_id": None}  # no results
         results = genes.find(query)
         loop_start_time = time.time()
 
@@ -319,16 +334,16 @@ def find_terms(my_search, genes, search_type):
 
     elif search_type == 'paired_entity':
         patterns = [word for key in my_search for word in key.split('$')]
-        escaped_patterns = [re.escape(word) for word in patterns]
+        escaped_patterns = [re.escape(word.lower()) for word in patterns]
         if len(escaped_patterns) == 2:
             p1, p2 = escaped_patterns
             condition1 = [{"$and": [
-                {"entity1": {"$regex": rf"\b{p1}\b", "$options": "i"}},
-                {"entity2": {"$regex": rf"\b{p2}\b", "$options": "i"}}
+                {"entity1_lower": {"$regex": rf"\b{p1}\b"}},
+                {"entity2_lower": {"$regex": rf"\b{p2}\b"}}
             ]}]
             condition2 = [{"$and": [
-                {"entity1": {"$regex": rf"\b{p2}\b", "$options": "i"}},
-                {"entity2": {"$regex": rf"\b{p1}\b", "$options": "i"}}
+                {"entity1_lower": {"$regex": rf"\b{p2}\b"}},
+                {"entity2_lower": {"$regex": rf"\b{p1}\b"}}
             ]}]
             query = {"$or": condition1 + condition2}
             results = genes.find(query)
