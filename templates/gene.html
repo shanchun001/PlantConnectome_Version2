@@ -683,45 +683,45 @@
       <div id="nodes-legend" style="position:absolute; top:35px; left:0px; z-index:10;">
         <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Nodes Legend <span class="legend-chevron">&#9660;</span></h6>
         <ul>
-          <li><span class="shape ellipse"></span> Gene/Protein</li>
-          <li><span class="shape micro-octagon"></span> Microorganism</li>
-          <li><span class="shape vee"></span> Disease/Condition</li>
-          <li><span class="shape diamond"></span> Chemical</li>
-          <li><span class="shape bio-hexagon"></span> Biological Process</li>
-          <li><span class="shape tag"></span> Cell/Compartment</li>
-          <li><span class="shape heptagon"></span> Host/Organism</li>
-          <li><span class="shape rectangle"></span> Phenotype</li>
-          <li><span class="shape pentagon"></span> Treatment</li>
-          <li><span class="shape concave-hexagon"></span> Environment</li>
-          <li><span class="shape triangle"></span> Method</li>
-          <li><span class="shape cut-rectangle"></span> Taxonomy</li>
-          <li><span class="shape star"></span> Other</li>
+          <li><span class="shape ellipse" style="background:#89CFF0;"></span> Gene / Protein</li>
+          <li><span class="shape round-rectangle" style="background:#AFEEEE;"></span> Genomic / Transcriptomic / Proteomic / Epigenomic Feature</li>
+          <li><span class="shape rectangle" style="background:#90EE90;"></span> Phenotype / Trait / Disease</li>
+          <li><span class="shape hexagon" style="background:#FFB6C1;"></span> Complex / Structure / Compartment / Cell / Organ / Organism</li>
+          <li><span class="shape heptagon" style="background:#F0E68C;"></span> Taxonomic / Evolutionary / Phylogenetic Group</li>
+          <li><span class="shape diamond" style="background:#FFD700;"></span> Chemical / Metabolite / Cofactor / Ligand</li>
+          <li><span class="shape pentagon" style="background:#E0FFFF;"></span> Treatment / Perturbation / Stress / Mutant</li>
+          <li><span class="shape triangle" style="background:#D2B48C;"></span> Method / Assay / Experimental Setup / Parameter / Sample</li>
+          <li><span class="shape ellipse" style="background:#D8BFD8;"></span> Biological Process / Pathway / Function</li>
+          <li><span class="shape ellipse" style="background:#D8BFD8; border:1px dashed #999;"></span> Regulatory / Signaling Mechanism</li>
+          <li><span class="shape triangle" style="background:#D2B48C; border:1px dashed #999;"></span> Computational / Model / Algorithm / Data / Metric</li>
+          <li><span class="shape concave-hexagon" style="background:#87CEEB;"></span> Environmental / Ecological / Soil / Climate Context</li>
+          <li><span class="shape vee" style="background:#FF6B6B;"></span> Clinical / Epidemiological / Population</li>
+          <li><span class="shape star" style="background:#FFA07A;"></span> Other</li>
         </ul>
       </div>
       <!-- Legend for edges -->
       <div id="edges-legend" style="position:absolute; top:35px; right:0px; z-index:10;">
         <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Edges Legend <span class="legend-chevron">&#9660;</span></h6>
         <ul>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#32CD32;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#32CD32;"/></svg> Activation/Induction/Causation</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DC143C;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#DC143C;"/></svg> Repression/Inhibition</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#4682B4;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#4682B4;"/></svg> Regulation/Control</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF8C00;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#FF8C00;"/></svg> Expression/Detection</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#8A2BE2;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#8A2BE2;"/></svg> Association/Interaction/Binding</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#3CB371;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#3CB371;"/></svg> Localization/Containment</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#B22222;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#B22222;"/></svg> Requirement/Activity/Function</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#9370DB;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#9370DB;"/></svg> Encodes/Contains</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#808080;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#808080;"/></svg> Lacks/Dissimilar</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DAA520;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#DAA520;"/></svg> Synthesis/Formation</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF6347;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#FF6347;"/></svg> Modification/Changes/Alters</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#20B2AA;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#20B2AA;"/></svg> Treatment/Exposure/Perturbation</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#778899;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#778899;"/></svg> Comparison/Evaluation/Benchmarking</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#6495ED;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#6495ED;"/></svg> Definition/Classification</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#BC8F8F;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#BC8F8F;"/></svg> Property/Characterization</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DEB887;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#DEB887;"/></svg> Hypothesis/Assumption</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#5F9EA0;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#5F9EA0;"/></svg> Temporal/Sequential</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#7B68EE;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#7B68EE;"/></svg> Is/Similarity/Equivalence</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#66CDAA;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#66CDAA;"/></svg> Limitation/Innovation/Improvement</li>
-          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#D3D3D3;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#D3D3D3;"/></svg> No Effect/Null</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#32CD32;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#32CD32;"/></svg> Activation / Induction / Causation / Result</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DC143C;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#DC143C;"/></svg> Repression / Inhibition / Negative Regulation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#4682B4;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#4682B4;"/></svg> Regulation / Control</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF8C00;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#FF8C00;"/></svg> Expression / Detection / Identification</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#8A2BE2;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#8A2BE2;"/></svg> Association / Interaction / Binding</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#3CB371;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#3CB371;"/></svg> Localization / Containment / Composition</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#B22222;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#B22222;"/></svg> Requirement / Activity / Function / Participation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#9370DB;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#9370DB;"/></svg> Encodes / Contains</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#808080;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#808080;"/></svg> Lacks / Dissimilar</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DAA520;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#DAA520;"/></svg> Synthesis / Formation</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#FF6347;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#FF6347;"/></svg> Modification / Changes / Alters</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#778899;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#778899;"/></svg> Comparison / Evaluation / Benchmarking</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#6495ED;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#6495ED;"/></svg> Definition / Classification / Naming</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#BC8F8F;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#BC8F8F;"/></svg> Property / Characterization</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#DEB887;stroke-width:2"/><polygon points="32,15 38,10 43,15 38,20" style="fill:#DEB887;"/></svg> Hypothesis / Assumption / Proposal</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#5F9EA0;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#5F9EA0;"/></svg> Temporal / Sequential Relationship</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#7B68EE;stroke-width:2"/><circle cx="38" cy="15" r="5" style="fill:#7B68EE;"/></svg> Is / Similarity / Equivalence / Analogy</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#66CDAA;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#66CDAA;"/></svg> Limitation / Innovation / Improvement / Advancement</li>
+          <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#D3D3D3;stroke-width:2"/><rect x="35" y="12" width="4" height="7" style="fill:#D3D3D3;"/></svg> No Effect / Null Relationship</li>
           <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#C0C0C0;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#C0C0C0;"/></svg> Others</li>
         </ul>
       </div>
@@ -2105,9 +2105,9 @@
           <tbody id="body_results">
             {% for gene in genes %}
             <tr>
-              <td>{{ gene.id }} [{{ gene.idtype }}]</td>
-              <td>{{ gene.inter_type }}</td>
-              <td>{{ gene.target }} [{{ gene.targettype }}]</td>
+              <td>{{ gene.id }} [{{ gene.idcategory or gene.idtype }}]</td>
+              <td>{{ gene.relationship_label or gene.inter_type }}</td>
+              <td>{{ gene.target }} [{{ gene.targetcategory or gene.targettype }}]</td>
               <td>
                 <a href="https://pubmed.ncbi.nlm.nih.gov/{{ gene.publication }}" target="_blank" class="pubmed-link pubmed-hyperlink">
                   {{ gene.publication }}

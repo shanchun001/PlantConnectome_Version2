@@ -63,7 +63,8 @@ class Gene:
         inter_type=None, publication=None, p_source=None,
         species=None, basis=None,
         source_extracted_definition=None, source_generated_definition=None,
-        target_extracted_definition=None, target_generated_definition=None
+        target_extracted_definition=None, target_generated_definition=None,
+        idcategory=None, targetcategory=None, relationship_label=None
     ):
         self.id = id
         self.idtype = idtype
@@ -78,6 +79,9 @@ class Gene:
         self.source_generated_definition = source_generated_definition
         self.target_extracted_definition = target_extracted_definition
         self.target_generated_definition = target_generated_definition
+        self.idcategory = PROMPT_TO_VIS_CATEGORY.get((idcategory or '').upper(), '') if idcategory else ''
+        self.targetcategory = PROMPT_TO_VIS_CATEGORY.get((targetcategory or '').upper(), '') if targetcategory else ''
+        self.relationship_label = relationship_label or inter_type or ''
 
     def __repr__(self):
         return str(self.__dict__)
@@ -227,7 +231,8 @@ def find_terms(my_search, genes, search_type):
                 doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                doc.get("target_extracted_definition"), doc.get("target_generated_definition")
+                doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -289,7 +294,8 @@ def find_terms(my_search, genes, search_type):
                 doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                doc.get("target_extracted_definition"), doc.get("target_generated_definition")
+                doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
