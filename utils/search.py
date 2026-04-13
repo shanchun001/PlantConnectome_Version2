@@ -128,7 +128,7 @@ _CAT_SHORT = {
     'CELL/ORGAN/ORGANISM': 'Cell/Organism', 'CHEMICAL': 'Chemical',
     'TREATMENT': 'Treatment', 'BIOLOGICAL PROCESS': 'Biological Process',
     'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic Feature',
-    'METHOD': 'Method', 'GENE IDENTIFIER': 'Gene Identifier',
+    'METHOD': 'Method',
     'NA': 'Mixed', 'OTHER': 'Other', 'OTHERS': 'Other',
 }
 
