@@ -37,6 +37,40 @@ from text import make_text
 
 cache = {}
 
+# Human-readable display names for raw category strings from the database
+CATEGORY_DISPLAY_NAMES = {
+    'gene / protein': 'Gene/Protein',
+    'genomic / transcriptomic / proteomic / epigenomic feature': 'Genomic/Transcriptomic Feature',
+    'genomic / transcriptomic / proteomic / epigenomic feature / gene mutant': 'Genomic/Transcriptomic Feature',
+    'genomic / transcriptomic / epigenomic feature': 'Genomic/Transcriptomic Feature',
+    'complex / structure / compartment / cell / organ / organism': 'Cell/Organ/Organism',
+    'complex / structure / compartment / cell / organism': 'Cell/Organ/Organism',
+    'taxonomic / evolutionary / phylogenetic group': 'Taxonomic/Organism',
+    'chemical / metabolite / cofactor / ligand': 'Chemical/Metabolite',
+    'treatment / perturbation / stress / mutant': 'Treatment/Stress',
+    'method / assay / experimental setup / parameter / sample': 'Method/Assay',
+    'biological process / pathway / function / regulatory / signaling mechanism': 'Biological Process',
+    'biological process / pathway / function': 'Biological Process',
+    'biological process / function': 'Biological Process',
+    'regulatory / signaling mechanism / metabolic pathway': 'Biological Process',
+    'regulatory / signaling mechanism': 'Biological Process',
+    'environmental / ecological / soil / climate context': 'Environment',
+    'phenotype / trait / disease': 'Phenotype/Disease',
+    'computational / model / algorithm / data / metric': 'Computational/Model',
+    'equipment / device / material / instrument': 'Equipment/Material',
+    'clinical / epidemiological / population': 'Clinical/Population',
+    'social / economic / policy / management': 'Other',
+    'knowledge / concept / hypothesis / theoretical construct': 'Other',
+    'property / measurement / characterization': 'Other',
+    'property / characterization': 'Other',
+}
+
+def get_display_category(raw_category):
+    """Map raw DB category string to clean human-readable display name."""
+    if not raw_category:
+        return 'Other'
+    return CATEGORY_DISPLAY_NAMES.get(raw_category.strip().lower(), raw_category.strip())
+
 def normalize_text(text):
     return unicodedata.normalize("NFKC", text.strip().upper())
 
@@ -98,38 +132,38 @@ class Gene:
 _CAT_SHORT = {
     # Official categories from the GPT extraction prompt
     'GENE / PROTEIN':                                                            'Gene/Protein',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic Feature',
-    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organism',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Taxonomy',
-    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical',
-    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment',
-    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic/Transcriptomic Feature',
+    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype/Disease',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organ/Organism',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Taxonomic/Organism',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical/Metabolite',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment/Stress',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method/Assay',
     'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
-    'REGULATORY / SIGNALING MECHANISM':                                          'Regulatory/Signaling',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Computational',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Environment',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Clinical',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Equipment',
-    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Social/Policy',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Concept',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Property',
+    'REGULATORY / SIGNALING MECHANISM':                                          'Biological Process',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Computational/Model',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Environmental Context',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Clinical/Population',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Equipment/Material',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Other',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Other',
     # Variant forms encountered in the actual data
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic Feature',
-    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE':                             'Genomic Feature',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGANISM':                       'Cell/Organism',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic/Transcriptomic Feature',
+    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE':                             'Genomic/Transcriptomic Feature',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGANISM':                       'Cell/Organ/Organism',
     'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'Biological Process',
     'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
-    'REGULATORY / SIGNALING MECHANISM / METABOLIC PATHWAY':                      'Regulatory/Signaling',
-    'PROPERTY / CHARACTERIZATION':                                               'Property',
-    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
+    'REGULATORY / SIGNALING MECHANISM / METABOLIC PATHWAY':                      'Biological Process',
+    'PROPERTY / CHARACTERIZATION':                                               'Other',
+    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment/Stress',
     # Short forms already in data
-    'GENE/PROTEIN': 'Gene/Protein', 'PHENOTYPE': 'Phenotype',
-    'CELL/ORGAN/ORGANISM': 'Cell/Organism', 'CHEMICAL': 'Chemical',
-    'TREATMENT': 'Treatment', 'BIOLOGICAL PROCESS': 'Biological Process',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic Feature',
-    'METHOD': 'Method',
-    'NA': 'Mixed', 'OTHER': 'Other', 'OTHERS': 'Other',
+    'GENE/PROTEIN': 'Gene/Protein', 'PHENOTYPE': 'Phenotype/Disease',
+    'CELL/ORGAN/ORGANISM': 'Cell/Organ/Organism', 'CHEMICAL': 'Chemical/Metabolite',
+    'TREATMENT': 'Treatment/Stress', 'BIOLOGICAL PROCESS': 'Biological Process',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic/Transcriptomic Feature',
+    'METHOD': 'Method/Assay',
+    'NA': 'Other', 'OTHER': 'Other', 'OTHERS': 'Other',
 }
 
 def _short_cat(raw_cat, raw_type=''):
@@ -186,7 +220,7 @@ def find_preview_fast(my_search, genes, search_type):
         {"entity2_lower": {"$in": matched_names}}
     ]}
 
-    # Aggregate entity1 side
+    # Group by (entity, category) to collect ALL distinct categories per entity
     pipeline_e1 = [
         {"$match": match_q},
         {"$group": {
@@ -194,7 +228,7 @@ def find_preview_fast(my_search, genes, search_type):
             "count": {"$sum": 1}
         }},
         {"$sort": {"count": -1}},
-        {"$limit": 200}
+        {"$limit": 500}
     ]
 
     pipeline_e2 = [
@@ -204,39 +238,39 @@ def find_preview_fast(my_search, genes, search_type):
             "count": {"$sum": 1}
         }},
         {"$sort": {"count": -1}},
-        {"$limit": 200}
+        {"$limit": 500}
     ]
 
     # Run both aggregations
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge by entity name.
-    # Track: most common entity_type (for the URL), display category, total count
-    seen = {}  # entity -> [best_etype, best_count, total_count, vis_cat]
+    # Merge: group by entity, track best_etype (for URL), collect all display categories, sum counts
+    seen = {}  # entity -> [best_etype, best_count, total_count, categories_set]
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "") or ""
         ecat = r["_id"].get("category", "") or ""
         count = r["count"]
-        vis_cat = _short_cat(ecat, etype)
+        display_cat = _short_cat(ecat, etype)
         if entity not in seen:
-            seen[entity] = [etype, count, count, vis_cat]
+            seen[entity] = [etype, count, count, {display_cat}]
         else:
             entry = seen[entity]
-            entry[2] += count  # sum total count
-            if count > entry[1]:  # keep most common type for the URL
+            entry[2] += count
+            entry[3].add(display_cat)
+            if count > entry[1]:  # keep most common type for URL
                 entry[0] = etype
                 entry[1] = count
-                entry[3] = vis_cat  # update category to match dominant type
 
-    # Return as tuples: (entity, entity_type, count, count, vis_cat)
-    # - entity_type (index 1): most common type — used in the URL for gene.html route
-    # - vis_cat (index 4): display category label — shown in the table column
-    results = [
-        (entity, entry[0], entry[2], entry[2], entry[3])
-        for entity, entry in seen.items()
-    ]
+    # Return as tuples: (entity, entity_type, count, count, categories_str)
+    # - entity_type (index 1): most common type — used in URL for gene.html route
+    # - categories_str (index 4): all distinct categories, sorted, comma-separated
+    results = []
+    for entity, entry in seen.items():
+        cats = sorted(c for c in entry[3] if c and c != 'Other') or ['Other']
+        cats_str = ", ".join(cats)
+        results.append((entity, entry[0], entry[2], entry[2], cats_str))
     return sorted(results, key=lambda x: x[2], reverse=True)
 
 
