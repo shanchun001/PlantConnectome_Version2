@@ -278,6 +278,48 @@
     'other'
   ]);
 
+  // Short display aliases for visualization categories (covers both short and long DB values)
+  const CAT_ALIAS = {
+    // Short simplified keys
+    'GENE/PROTEIN':                                                              'Gene/Protein',
+    'PHENOTYPE':                                                                 'Phenotype',
+    'CELL/ORGAN/ORGANISM':                                                       'Cell/Organism',
+    'CHEMICAL':                                                                  'Chemical',
+    'TREATMENT':                                                                 'Treatment',
+    'BIOLOGICAL PROCESS':                                                        'Biological Process',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE':                                            'Genomic/Transcriptomic',
+    'METHOD':                                                                    'Method',
+    'GENE IDENTIFIER':                                                           'Gene Identifier',
+    'NA':                                                                        'Mixed',
+    'OTHER':                                                                     'Other',
+    // Long DB category strings
+    'GENE / PROTEIN':                                                            'Gene/Protein',
+    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic/Transcriptomic',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic/Transcriptomic',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic/Transcriptomic',
+    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organism',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Cell/Organism',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment',
+    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
+    'REGULATORY / SIGNALING MECHANISM':                                          'Biological Process',
+    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Method',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Method',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Treatment',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Phenotype',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Method',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Method',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
+  };
+  function catAlias(cat) {
+    if (!cat) return '—';
+    return CAT_ALIAS[cat] || CAT_ALIAS[cat.toUpperCase()] || cat;
+  }
+
   function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -288,10 +330,11 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    [...categorySet].sort().forEach(category => {
+    // Build dropdown from CAT_ALIAS keys (the vis_cat values we actually use)
+    Object.entries(CAT_ALIAS).sort((a, b) => a[1].localeCompare(b[1])).forEach(([visCat, label]) => {
       const option = document.createElement("option");
-      option.value = category;
-      option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+      option.value = label.toLowerCase();
+      option.textContent = label;
       dropdown.appendChild(option);
     });
 
@@ -301,14 +344,15 @@
 
     document.getElementById('selectAllCheckbox').addEventListener('click', toggleSelectAll);
 
-    const cachedData = getCachedSearch(search_term, search_type);
-    if (cachedData) {
+    const CACHE_VERSION = 'v3';
+    const cachedData = getCachedSearch(search_term + CACHE_VERSION, search_type);
+    if (cachedData && cachedData.preview_results && cachedData.preview_results.length > 0) {
       allRowsData = cachedData.preview_results;
       applyFilterAndRender();
     } else {
       allRowsData = {{ preview_results | tojson }};
       applyFilterAndRender();
-      cacheSearchResults(search_term, search_type, {
+      cacheSearchResults(search_term + CACHE_VERSION, search_type, {
         preview_results: allRowsData,
         unique_id: unique_id
       });
@@ -353,19 +397,10 @@
     const typeFilter = document.getElementById('entityTypeFilter').value.toLowerCase();
 
     filteredRowsData = allRowsData.filter(item => {
-      let entity, entity_type, vis_category, categories;
-      if (Array.isArray(item)) {
-        entity = item[0];
-        entity_type = item[1];
-        categories = Array.isArray(entity_type) ? entity_type : [item[4] || 'OTHER'];
-        vis_category = categories.map(c => c.toLowerCase());
-      } else {
-        entity = item.entity;
-        entity_type = item.entity_type;
-        vis_category = [(item.vis_category || 'OTHER').toLowerCase()];
-      }
+      const entity = Array.isArray(item) ? item[0] : item.entity;
+      const dominant_cat = Array.isArray(item) ? (item[1] || 'OTHER') : (item.entity_type || 'OTHER');
       const nameMatch = entity.toLowerCase().includes(searchValue);
-      const categoryMatch = typeFilter === '' || vis_category.some(c => c === typeFilter);
+      const categoryMatch = typeFilter === '' || catAlias(dominant_cat).toLowerCase() === typeFilter || dominant_cat.toLowerCase() === typeFilter;
       return nameMatch && categoryMatch;
     });
 
@@ -381,19 +416,18 @@
     const fragment = document.createDocumentFragment();
 
     filteredRowsData.forEach(item => {
-      let entity, entity_type, edge_number, network_count, entity_category, categories;
+      let entity, entity_type, edge_number, network_count, display_cat;
       if (Array.isArray(item)) {
-        // tuple: (entity, categories_list, count, count, primary_raw_type)
-        [entity, entity_type, edge_number, network_count, entity_category] = item;
-        // entity_type is a list of display categories; entity_category is the raw type for URL
-        categories = Array.isArray(entity_type) ? entity_type : [entity_type || entity_category || ''];
+        // tuple: (entity, entity_type, count, count, vis_cat)
+        // entity_type (index 1): used in URL for routing
+        // vis_cat (index 4): shown in the category column
+        [entity, entity_type, edge_number, network_count, display_cat] = item;
       } else {
         entity = item.entity;
-        entity_type = item.entity_type;
+        entity_type = item.entity_type || '';
         edge_number = item.edge_number;
         network_count = item.network_count;
-        entity_category = item.entity_category || entity_type;
-        categories = [entity_category];
+        display_cat = item.display_cat || entity_type;
       }
 
       const row = document.createElement('tr');
@@ -401,21 +435,21 @@
       row.dataset.entityType = entity_type;
       row.dataset.networkCount = network_count;
 
-      // Checkbox
+      // Checkbox — value uses entity|entity_type for routing
       const checkboxCell = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.classList.add('entity-checkbox');
-      checkbox.value = `${entity}|${entity_category}`;
+      checkbox.value = `${entity}|${entity_type}`;
       checkbox.addEventListener('change', updateTotalNodeCount);
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
 
-      // Entity Name
+      // Entity Name — link uses entity_type for the route
       const nameCell = document.createElement('td');
       nameCell.classList.add('entity-name');
       const link = document.createElement('a');
-      link.href = `/${search_type === 'non-alphanumeric' ? 'non_alpha' : search_type}/${encodeURIComponent(entity)}/results/${encodeURIComponent(entity_category)}?uid=${unique_id}`;
+      link.href = `/${search_type === 'non-alphanumeric' ? 'non_alpha' : search_type}/${encodeURIComponent(entity)}/results/${encodeURIComponent(entity_type)}?uid=${unique_id}`;
       link.classList.add('table-link');
       const searchInput = document.getElementById('entityNameSearchInput').value;
       if (searchInput && entity.toLowerCase().includes(searchInput.toLowerCase())) {
@@ -428,10 +462,10 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Entity Category — join all categories with " / "
+      // Entity Category — show vis_cat (display_cat), not the raw entity_type
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = categories.map(c => c.toLowerCase()).join(', ');
+      typeCell.textContent = display_cat || entity_type;
       row.appendChild(typeCell);
 
       // Unique Nodes

@@ -93,6 +93,51 @@ class Gene:
         return (self.id, self.idtype, self.target, self.targettype, self.inter_type)
 
 
+# Map long DB category strings to short display labels (mirrors CAT_ALIAS in JS)
+_CAT_SHORT = {
+    'GENE / PROTEIN':                                                            'Gene/Protein',
+    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic/Transcriptomic',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic/Transcriptomic',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic/Transcriptomic',
+    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organism',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Cell/Organism',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment',
+    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
+    'REGULATORY / SIGNALING MECHANISM':                                          'Biological Process',
+    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Method',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Method',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Treatment',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Phenotype',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Method',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Method',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
+    # Already-short forms
+    'GENE/PROTEIN': 'Gene/Protein', 'PHENOTYPE': 'Phenotype',
+    'CELL/ORGAN/ORGANISM': 'Cell/Organism', 'CHEMICAL': 'Chemical',
+    'TREATMENT': 'Treatment', 'BIOLOGICAL PROCESS': 'Biological Process',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic/Transcriptomic',
+    'METHOD': 'Method', 'GENE IDENTIFIER': 'Gene Identifier',
+    'NA': 'Mixed', 'OTHER': 'Other',
+}
+
+def _short_cat(raw_cat, raw_type=''):
+    """Resolve a raw DB category (and optional type) to a short display label."""
+    if raw_cat:
+        hit = _CAT_SHORT.get(raw_cat.upper()) or _CAT_SHORT.get(raw_cat.upper().strip())
+        if hit:
+            return hit
+    if raw_type:
+        hit = ENTITY_CATEGORIES_DICT.get(raw_type.upper(), '')
+        if hit:
+            return _CAT_SHORT.get(hit, hit)
+    return 'Other'
+
+
 def find_preview_fast(my_search, genes, search_type):
     """
     Fast preview computation using MongoDB aggregation.
@@ -159,37 +204,32 @@ def find_preview_fast(my_search, genes, search_type):
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge by entity name: collect all distinct categories, sum counts
-    seen = {}       # entity -> {cat: count}
-    seen_total = {} # entity -> total count
-    seen_type = {}  # entity -> most common raw type (for URL-safe use)
+    # Merge by entity name.
+    # Track: most common entity_type (for the URL), display category, total count
+    seen = {}  # entity -> [best_etype, best_count, total_count, vis_cat]
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "") or ""
         ecat = r["_id"].get("category", "") or ""
         count = r["count"]
-        vis_cat = PROMPT_TO_VIS_CATEGORY.get(ecat.upper(), ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')) if ecat else ENTITY_CATEGORIES_DICT.get(etype.upper(), 'OTHER')
+        vis_cat = _short_cat(ecat, etype)
         if entity not in seen:
-            seen[entity] = {vis_cat: count}
-            seen_total[entity] = count
-            seen_type[entity] = {etype: count}
+            seen[entity] = [etype, count, count, vis_cat]
         else:
-            seen[entity][vis_cat] = seen[entity].get(vis_cat, 0) + count
-            seen_total[entity] += count
-            seen_type[entity][etype] = seen_type[entity].get(etype, 0) + count
+            entry = seen[entity]
+            entry[2] += count  # sum total count
+            if count > entry[1]:  # keep most common type for the URL
+                entry[0] = etype
+                entry[1] = count
+                entry[3] = vis_cat  # update category to match dominant type
 
-    # Build result tuples: (entity, categories_list, count, count, primary_raw_type)
-    results = []
-    for entity, cat_counts in seen.items():
-        total = seen_total[entity]
-        sorted_cats = sorted(cat_counts.items(), key=lambda x: -x[1])
-        categories = [c for c, _ in sorted_cats if c != 'OTHER']
-        if not categories:
-            categories = ['OTHER']
-        # Most common raw entity type (no slashes, safe for URL)
-        primary_type = max(seen_type[entity], key=seen_type[entity].get) or 'unknown'
-        results.append((entity, categories, total, total, primary_type))
-
+    # Return as tuples: (entity, entity_type, count, count, vis_cat)
+    # - entity_type (index 1): most common type — used in the URL for gene.html route
+    # - vis_cat (index 4): display category label — shown in the table column
+    results = [
+        (entity, entry[0], entry[2], entry[2], entry[3])
+        for entity, entry in seen.items()
+    ]
     return sorted(results, key=lambda x: x[2], reverse=True)
 
 
