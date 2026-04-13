@@ -646,30 +646,45 @@ def generate_search_route2(search_type):
     def search_route(query, entity_type):
         categories = [value for key, value in request.args.items() if key.startswith('category_')]
         uid = request.args.get('uid')
-        if not uid:
-            return "Error: No unique_id provided in ?uid=."
-        if uid not in cache:
-            return "Error: This search data is not available or may have expired."
-        stored_data = cache[uid]
-        # Compute full data on demand if deferred
-        if stored_data.get("deferred"):
-            collection = db["all_dic"]
+        collection = db["all_dic"]
+
+        # If uid is missing or stale, re-run the search from URL params
+        if not uid or uid not in cache:
+            # Derive the original search term from the entity name
+            # The search term is usually the entity name itself
+            search_term = query.upper()
+            trimmed_search = [kw.strip() for kw in search_term.split(';') if kw.strip()]
             elements, forSending, elementsAb, node_fa, preview = find_terms(
-                stored_data["trimmed_search"], collection, stored_data["search_type"]
+                trimmed_search, collection, search_type
             )
             summaryText = make_text(forSending)
-            stored_data.update({
+            # Cache it for subsequent requests
+            new_uid = str(uuid.uuid4())
+            cache[new_uid] = {
                 "elements": elements, "forSending": forSending,
                 "elementsAb": elementsAb, "node_fa": node_fa,
-                "summaryText": summaryText, "deferred": False
-            })
+                "preview": preview, "summaryText": summaryText, "deferred": False
+            }
         else:
-            elements = stored_data["elements"]
-            forSending = stored_data["forSending"]
-            elementsAb = stored_data["elementsAb"]
-            node_fa = stored_data["node_fa"]
-            preview = stored_data["preview"]
-            summaryText = stored_data["summaryText"]
+            stored_data = cache[uid]
+            # Compute full data on demand if deferred
+            if stored_data.get("deferred"):
+                elements, forSending, elementsAb, node_fa, preview = find_terms(
+                    stored_data["trimmed_search"], collection, stored_data["search_type"]
+                )
+                summaryText = make_text(forSending)
+                stored_data.update({
+                    "elements": elements, "forSending": forSending,
+                    "elementsAb": elementsAb, "node_fa": node_fa,
+                    "summaryText": summaryText, "deferred": False
+                })
+            else:
+                elements = stored_data["elements"]
+                forSending = stored_data["forSending"]
+                elementsAb = stored_data["elementsAb"]
+                node_fa = stored_data["node_fa"]
+                preview = stored_data["preview"]
+                summaryText = stored_data["summaryText"]
 
         # Filter by entity name; entity_type from URL may be a category string,
         # so match by name only (or also by type if it's a raw type like 'gene')
@@ -728,15 +743,28 @@ def generate_multi_search_route(search_type):
             ))
 
         uid = request.args.get("uid")
-        if not uid:
-            return render_template('error.html', message="Session ended. Please re-run the search.")
-        if uid not in cache:
-            return render_template('error.html', message="Session ended or not in cache.")
+        collection = db["all_dic"]
+
+        if not uid or uid not in cache:
+            # Cache expired — redirect back to fresh search from the query in the URL
+            search_term = multi_query.replace("_multi", "").upper()
+            trimmed_search = [kw.strip() for kw in search_term.split(';') if kw.strip()]
+            elements, forSending, elementsAb, node_fa, preview = find_terms(
+                trimmed_search, collection, search_type
+            )
+            summaryText = make_text(forSending)
+            new_uid = str(uuid.uuid4())
+            cache[new_uid] = {
+                "elements": elements, "forSending": forSending,
+                "elementsAb": elementsAb, "node_fa": node_fa,
+                "preview": preview, "summaryText": summaryText,
+                "deferred": False
+            }
+            uid = new_uid
 
         stored_data = cache[uid]
         # Compute full data on demand if deferred
         if stored_data.get("deferred"):
-            collection = db["all_dic"]
             elements, forSending, elementsAb, node_fa, preview = find_terms(
                 stored_data["trimmed_search"], collection, stored_data["search_type"]
             )
