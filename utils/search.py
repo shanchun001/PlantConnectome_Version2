@@ -93,36 +93,43 @@ class Gene:
         return (self.id, self.idtype, self.target, self.targettype, self.inter_type)
 
 
-# Map long DB category strings to short display labels (mirrors CAT_ALIAS in JS)
+# Map long DB category strings to short display labels
+# Uses exact strings from the data extraction prompt
 _CAT_SHORT = {
+    # Official categories from the GPT extraction prompt
     'GENE / PROTEIN':                                                            'Gene/Protein',
-    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic/Transcriptomic',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic/Transcriptomic',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic/Transcriptomic',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic Feature',
     'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype',
     'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organism',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Cell/Organism',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Taxonomy',
     'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical',
     'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment',
-    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
-    'REGULATORY / SIGNALING MECHANISM':                                          'Biological Process',
-    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
     'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Method',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Method',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Treatment',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Phenotype',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Method',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Method',
-    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
-    # Already-short forms
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
+    'REGULATORY / SIGNALING MECHANISM':                                          'Regulatory/Signaling',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Computational',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Environment',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Clinical',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Equipment',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Social/Policy',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Concept',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Property',
+    # Variant forms encountered in the actual data
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic Feature',
+    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE':                             'Genomic Feature',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGANISM':                       'Cell/Organism',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'Biological Process',
+    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
+    'REGULATORY / SIGNALING MECHANISM / METABOLIC PATHWAY':                      'Regulatory/Signaling',
+    'PROPERTY / CHARACTERIZATION':                                               'Property',
+    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
+    # Short forms already in data
     'GENE/PROTEIN': 'Gene/Protein', 'PHENOTYPE': 'Phenotype',
     'CELL/ORGAN/ORGANISM': 'Cell/Organism', 'CHEMICAL': 'Chemical',
     'TREATMENT': 'Treatment', 'BIOLOGICAL PROCESS': 'Biological Process',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic/Transcriptomic',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic Feature',
     'METHOD': 'Method', 'GENE IDENTIFIER': 'Gene Identifier',
-    'NA': 'Mixed', 'OTHER': 'Other',
+    'NA': 'Mixed', 'OTHER': 'Other', 'OTHERS': 'Other',
 }
 
 def _short_cat(raw_cat, raw_type=''):
