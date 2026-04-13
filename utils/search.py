@@ -113,8 +113,8 @@ class Gene:
         self.source_generated_definition = source_generated_definition
         self.target_extracted_definition = target_extracted_definition
         self.target_generated_definition = target_generated_definition
-        self.idcategory = PROMPT_TO_VIS_CATEGORY.get((idcategory or '').upper(), '') if idcategory else ''
-        self.targetcategory = PROMPT_TO_VIS_CATEGORY.get((targetcategory or '').upper(), '') if targetcategory else ''
+        self.idcategory = get_display_category(idcategory) if idcategory else ''
+        self.targetcategory = get_display_category(targetcategory) if targetcategory else ''
         self.relationship_label = relationship_label or inter_type or ''
 
     def __repr__(self):
@@ -596,49 +596,44 @@ def find_terms(my_search, genes, search_type):
 
 def generate_search_route(search_type):
     def search_route(query):
-        start_time = time.time()
-        categories = [value for key, value in request.args.items() if key.startswith('category_')]
         if not query:
             query = 'DEFAULT'
-        if len(query) > 0:
-            my_search = query.upper().split(';')
-            trimmed_search = [keyword.strip() for keyword in my_search if keyword.strip()]
-            collection = db["all_dic"]
+        categories = [value for key, value in request.args.items() if key.startswith('category_')]
+        my_search = query.upper().split(';')
+        trimmed_search = [kw.strip() for kw in my_search if kw.strip()]
+        collection = db["all_dic"]
 
-            # Fast path: use aggregation to build entity preview list only
-            # Full relationship data is deferred until user selects entities
-            preview = find_preview_fast(trimmed_search, collection, search_type)
+        # Fast preview list via aggregation
+        preview = find_preview_fast(trimmed_search, collection, search_type)
+        if not preview:
+            return render_template('not_found.html', search_term=query)
 
-            if preview:
-                unique_id = str(uuid.uuid4())
-                # Store minimal deferred info — full data computed on demand
-                cache[unique_id] = {
-                    "deferred": True,
-                    "trimmed_search": trimmed_search,
-                    "search_type": search_type,
-                    "preview": preview,
-                }
-                patterns_title = query.upper()
-                return render_template(
-                    'preview_search.html',
-                    genes=[],
-                    selected_categories=categories,
-                    cytoscape_js_code="",
-                    search_term=patterns_title,
-                    warning="",
-                    summary="",
-                    node_ab=[],
-                    node_fa={},
-                    is_node=True,
-                    search_type=search_type,
-                    preview_results=preview,
-                    unique_id=unique_id,
-                    entity_categories=PROMPT_TO_VIS_CATEGORY,
-                    entity_categories_csv={}  # Not needed for preview — saves 13MB per request
-                )
-            else:
-                return render_template('not_found.html', search_term=query)
-        return render_template('not_found.html', search_term=query)
+        # Store search params — full data loaded per-entity when user clicks
+        unique_id = str(uuid.uuid4())
+        cache[unique_id] = {
+            "trimmed_search": trimmed_search,
+            "search_type": search_type,
+            "preview": preview,
+            "deferred": True,
+        }
+
+        return render_template(
+            'preview_search.html',
+            genes=[],
+            selected_categories=categories,
+            cytoscape_js_code="",
+            search_term=query.upper(),
+            warning="",
+            summary="",
+            node_ab=[],
+            node_fa={},
+            is_node=True,
+            search_type=search_type,
+            preview_results=preview,
+            unique_id=unique_id,
+            entity_categories=PROMPT_TO_VIS_CATEGORY,
+            entity_categories_csv={}
+        )
     return search_route
 
 
@@ -648,62 +643,25 @@ def generate_search_route2(search_type):
         uid = request.args.get('uid')
         collection = db["all_dic"]
 
-        # If uid is missing or stale, re-run the search from URL params
-        if not uid or uid not in cache:
-            # Derive the original search term from the entity name
-            # The search term is usually the entity name itself
-            search_term = query.upper()
-            trimmed_search = [kw.strip() for kw in search_term.split(';') if kw.strip()]
-            elements, forSending, elementsAb, node_fa, preview = find_terms(
-                trimmed_search, collection, search_type
-            )
-            summaryText = make_text(forSending)
-            # Cache it for subsequent requests
-            new_uid = str(uuid.uuid4())
-            cache[new_uid] = {
-                "elements": elements, "forSending": forSending,
-                "elementsAb": elementsAb, "node_fa": node_fa,
-                "preview": preview, "summaryText": summaryText, "deferred": False
-            }
-        else:
-            stored_data = cache[uid]
-            # Compute full data on demand if deferred
-            if stored_data.get("deferred"):
-                elements, forSending, elementsAb, node_fa, preview = find_terms(
-                    stored_data["trimmed_search"], collection, stored_data["search_type"]
-                )
-                summaryText = make_text(forSending)
-                stored_data.update({
-                    "elements": elements, "forSending": forSending,
-                    "elementsAb": elementsAb, "node_fa": node_fa,
-                    "summaryText": summaryText, "deferred": False
-                })
-            else:
-                elements = stored_data["elements"]
-                forSending = stored_data["forSending"]
-                elementsAb = stored_data["elementsAb"]
-                node_fa = stored_data["node_fa"]
-                preview = stored_data["preview"]
-                summaryText = stored_data["summaryText"]
+        # Run find_terms for this entity — works whether cache hit or miss
+        entity_search = [query.upper()]
+        elements, forSending, elementsAb, node_fa, preview_entity = find_terms(
+            entity_search, collection, "exact"
+        )
+        summaryText = make_text(forSending)
+        preview = cache[uid]["preview"] if uid and uid in cache else preview_entity
 
-        # Filter by entity name; entity_type from URL may be a category string,
-        # so match by name only (or also by type if it's a raw type like 'gene')
-        filtered_forSending = [
-            g for g in forSending
-            if (g.id == query or g.target == query)
-        ]
-        filtered_elements = [
-            e for e in elements
-            if (e[0] == query or e[2] == query)
-        ]
-        updatedElements = process_network(filtered_elements)
+        # find_terms was run for exactly this entity, so no further filtering needed
+        updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        patterns_title = f"{query.upper()} [{entity_type.upper()}]" if entity_type else query.upper()
+        # Show category name in title instead of raw entity type
+        category_name = PROMPT_TO_VIS_CATEGORY.get(entity_type.upper(), ENTITY_CATEGORIES_DICT.get(entity_type.upper(), entity_type.upper())) if entity_type else ""
+        patterns_title = f"{query.upper()} [{category_name}]" if category_name else query.upper()
 
-        if filtered_forSending:
+        if forSending:
             return render_template(
                 'gene.html',
-                genes=filtered_forSending,
+                genes=forSending,
                 selected_categories=categories,
                 cytoscape_js_code=cytoscape_js_code,
                 search_term=patterns_title,
@@ -743,44 +701,20 @@ def generate_multi_search_route(search_type):
             ))
 
         uid = request.args.get("uid")
-        collection = db["all_dic"]
 
         if not uid or uid not in cache:
-            # Cache expired — redirect back to fresh search from the query in the URL
-            search_term = multi_query.replace("_multi", "").upper()
-            trimmed_search = [kw.strip() for kw in search_term.split(';') if kw.strip()]
-            elements, forSending, elementsAb, node_fa, preview = find_terms(
-                trimmed_search, collection, search_type
-            )
-            summaryText = make_text(forSending)
-            new_uid = str(uuid.uuid4())
-            cache[new_uid] = {
-                "elements": elements, "forSending": forSending,
-                "elementsAb": elementsAb, "node_fa": node_fa,
-                "preview": preview, "summaryText": summaryText,
-                "deferred": False
-            }
-            uid = new_uid
+            # Cache expired — redirect back to search
+            search_term = multi_query.replace("_multi", "")
+            return redirect(url_for('normal', query=search_term) if search_type == 'normal'
+                            else url_for('substring', query=search_term))
 
         stored_data = cache[uid]
-        # Compute full data on demand if deferred
-        if stored_data.get("deferred"):
-            elements, forSending, elementsAb, node_fa, preview = find_terms(
-                stored_data["trimmed_search"], collection, stored_data["search_type"]
-            )
-            summaryText = make_text(forSending)
-            stored_data.update({
-                "elements": elements, "forSending": forSending,
-                "elementsAb": elementsAb, "node_fa": node_fa,
-                "summaryText": summaryText, "deferred": False
-            })
-        else:
-            elements = stored_data.get("elements", [])
-            forSending = stored_data.get("forSending", [])
-            elementsAb = stored_data.get("elementsAb", {})
-            node_fa = stored_data.get("node_fa", [])
-            preview = stored_data.get("preview", [])
-            summaryText = stored_data.get("summaryText", "")
+        elements = stored_data.get("elements", [])
+        forSending = stored_data.get("forSending", [])
+        elementsAb = stored_data.get("elementsAb", {})
+        node_fa = stored_data.get("node_fa", [])
+        preview = stored_data.get("preview", [])
+        summaryText = stored_data.get("summaryText", "")
 
         raw_pairs = stored_data.get("multi_selected_entities", [])
         pairs = []
