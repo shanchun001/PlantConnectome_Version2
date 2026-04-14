@@ -2,6 +2,7 @@ import unicodedata
 import re
 import time
 import uuid
+import json
 from collections import defaultdict
 
 from flask import request, render_template, redirect, url_for
@@ -761,108 +762,86 @@ def generate_multi_search_route(search_type):
 
     def search_route(multi_query):
         if request.method == 'POST':
-            data = request.get_json(silent=True) or {}
-            selected_list = data.get("selected_entities", [])
-            search_term = data.get("search_term", "")
-            uid = request.args.get("uid")
-            if not uid:
-                return render_template('error.html', message="No uid provided in ?uid=..."), 400
-            if uid not in cache:
-                return render_template('error.html', message="Session ended or not in cache."), 400
-            cache[uid]["multi_selected_entities"] = selected_list
-            if not search_term:
-                search_term = "placeholder"
-            return redirect(url_for(
-                request.endpoint,
-                multi_query=f"{search_term}_multi",
-                uid=uid
-            ))
+            # Accept both JSON body and form data (hidden form submission)
+            data = request.get_json(silent=True)
+            if not data:
+                raw_json = request.form.get("selected_entities_json", "{}")
+                data = json.loads(raw_json) if raw_json else {}
+            raw_pairs = data.get("selected_entities", [])
+            if not raw_pairs:
+                return render_template('not_found.html', search_term=multi_query)
 
-        uid = request.args.get("uid")
+            # Extract entity names from selected pairs (format: "entity_name|category")
+            selected_entity_names = set()
+            display_labels = []
+            for item in raw_pairs:
+                if '|' in item:
+                    entityName, entityCat = item.split('|', 1)
+                else:
+                    entityName = item
+                    entityCat = ""
+                selected_entity_names.add(entityName.upper())
+                display_labels.append(f"{entityName} [{entityCat}]" if entityCat else entityName)
 
-        if not uid or uid not in cache:
-            # Cache expired — redirect back to search
-            search_term = multi_query.replace("_multi", "")
-            return redirect(url_for('normal', query=search_term) if search_type == 'normal'
-                            else url_for('substring', query=search_term))
+            # Query MongoDB directly for the selected entities
+            collection = db["all_dic"]
+            name_list_lower = [n.lower() for n in selected_entity_names]
+            query = {"$or": [
+                {"entity1_lower": {"$in": name_list_lower}},
+                {"entity2_lower": {"$in": name_list_lower}}
+            ]}
+            result_list = list(collection.find(query).limit(10000))
 
-        stored_data = cache[uid]
+            forSending = []
+            elements = []
+            for doc in result_list:
+                e1, e1t = doc["entity1"], doc.get("entity1type", "")
+                e2, e2t = doc["entity2"], doc.get("entity2type", "")
+                if e1.upper() in selected_entity_names or e2.upper() in selected_entity_names:
+                    forSending.append(Gene(
+                        e1, e1t, e2, e2t,
+                        doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                        doc.get("species"), doc.get("basis"),
+                        doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                        doc.get("target_extracted_definition"), doc.get("target_generated_definition")
+                    ))
+                    elements.append((
+                        e1, e1t, e2, e2t,
+                        doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                        doc.get("species"), doc.get("basis"),
+                        doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                        doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                    ))
 
-        raw_pairs = stored_data.get("multi_selected_entities", [])
-        if not raw_pairs:
-            return render_template('not_found.html', search_term=multi_query)
+            if not forSending:
+                return render_template('not_found.html', search_term=multi_query)
 
-        # Extract entity names from selected pairs (format: "entity_name|category")
-        selected_entity_names = set()
-        display_labels = []
-        for item in raw_pairs:
-            if '|' in item:
-                entityName, entityCat = item.split('|', 1)
-            else:
-                entityName = item
-                entityCat = ""
-            selected_entity_names.add(entityName.upper())
-            display_labels.append(f"{entityName} [{entityCat}]" if entityCat else entityName)
+            updatedElements = process_network(list(set(elements)))
+            cytoscape_js_code = generate_cytoscape_js(updatedElements, {}, {})
+            finalSummaryText = make_text(forSending)
+            all_pairs_label = ", ".join(label.upper() for label in display_labels)
+            number_papers = len({g.publication for g in forSending})
 
-        # Query MongoDB directly for the selected entities — no need for cached elements
-        collection = db["all_dic"]
-        name_list = list(selected_entity_names)
-        name_list_lower = [n.lower() for n in name_list]
-        query = {"$or": [
-            {"entity1_lower": {"$in": name_list_lower}},
-            {"entity2_lower": {"$in": name_list_lower}}
-        ]}
-        result_list = list(collection.find(query).limit(10000))
+            return render_template(
+                'gene.html',
+                genes=forSending,
+                cytoscape_js_code=cytoscape_js_code,
+                search_term=all_pairs_label,
+                number_papers=number_papers,
+                warning="",
+                summary=finalSummaryText,
+                node_ab=[],
+                node_fa={},
+                is_node=True,
+                search_type=search_type,
+                preview_results=[]
+            )
 
-        forSending = []
-        elements = []
-        for doc in result_list:
-            e1, e1t = doc["entity1"], doc.get("entity1type", "")
-            e2, e2t = doc["entity2"], doc.get("entity2type", "")
-            # Only include docs where at least one entity matches a selected name
-            if e1.upper() in selected_entity_names or e2.upper() in selected_entity_names:
-                forSending.append(Gene(
-                    e1, e1t, e2, e2t,
-                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
-                    doc.get("species"), doc.get("basis"),
-                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                    doc.get("target_extracted_definition"), doc.get("target_generated_definition")
-                ))
-                elements.append((
-                    e1, e1t, e2, e2t,
-                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
-                    doc.get("species"), doc.get("basis"),
-                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                    doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                    doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
-                ))
-
-        node_fa = stored_data.get("node_fa", [])
-        preview = stored_data.get("preview", [])
-
-        if not forSending:
-            return render_template('not_found.html', search_term=multi_query)
-
-        updatedElements = process_network(list(set(elements)))
-        cytoscape_js_code = generate_cytoscape_js(updatedElements, {}, node_fa)
-        finalSummaryText = make_text(forSending)
-        all_pairs_label = ", ".join(label.upper() for label in display_labels)
-        number_papers = len({g.publication for g in forSending})
-
-        return render_template(
-            'gene.html',
-            genes=forSending,
-            cytoscape_js_code=cytoscape_js_code,
-            search_term=all_pairs_label,
-            number_papers=number_papers,
-            warning="",
-            summary=finalSummaryText,
-            node_ab=[],
-            node_fa=node_fa,
-            is_node=True,
-            search_type=search_type,
-            preview_results=preview
-        )
+        # GET fallback — redirect back to search
+        search_term = multi_query.replace("_multi", "")
+        return redirect(url_for('normal', query=search_term) if search_type == 'normal'
+                        else url_for('substring', query=search_term))
     return search_route
 
 

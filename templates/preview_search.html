@@ -550,19 +550,17 @@
     }
     const selectedArray = Array.from(selectedEntities);
     const pathSegment = (search_type === 'non-alphanumeric') ? 'non_alpha' : search_type;
-    fetch(`/${pathSegment}/${encodeURIComponent(search_term)}_multi/results?uid=${encodeURIComponent(unique_id)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ selected_entities: selectedArray, search_term: search_term })
-    })
-    .then(response => {
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else {
-        return response.text().then(text => console.log('Response:', text));
-      }
-    })
-    .catch(err => console.error('Error:', err));
+    // Use a hidden form to POST + navigate (avoids fetch redirect issues with multi-worker gunicorn)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/${pathSegment}/${encodeURIComponent(search_term)}_multi/results`;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'selected_entities_json';
+    input.value = JSON.stringify({ selected_entities: selectedArray, search_term: search_term });
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
   }
 
   // =========================
