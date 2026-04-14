@@ -1324,10 +1324,10 @@
     });
   
     // 7) Finally, hide any visible node that ends up with no visible edges
-    //    unless it's a query node you want to force-display
+    //    unless it's a central (query) node — those always stay visible
     cy.nodes(':visible').forEach((node) => {
       const isIsolated = node.connectedEdges(':visible').length === 0;
-      if (isIsolated) {
+      if (isIsolated && !isCentralNode(node)) {
         node.hide();
       }
     });
