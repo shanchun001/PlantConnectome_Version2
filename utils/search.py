@@ -714,16 +714,15 @@ def generate_search_route2(search_type):
         # find_terms was run for exactly this entity, so no further filtering needed
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        # Show category in title — look up from the actual data
-        # entity_type param from URL is the raw type; get the category from forSending
-        entity_category = ""
+        # Collect ALL distinct categories for this entity across all docs
+        entity_categories = set()
         for g in forSending:
-            if g.id.upper() == query.upper() or g.target.upper() == query.upper():
-                cat = g.idcategory if g.id.upper() == query.upper() else g.targetcategory
-                if cat:
-                    entity_category = cat
-                    break
-        patterns_title = f"{query.upper()} [{entity_category}]" if entity_category else query.upper()
+            if g.id.upper() == query.upper() and g.idcategory:
+                entity_categories.add(g.idcategory)
+            if g.target.upper() == query.upper() and g.targetcategory:
+                entity_categories.add(g.targetcategory)
+        cats_str = ", ".join(sorted(c for c in entity_categories if c and c != 'Other')) or ""
+        patterns_title = f"{query.upper()} [{cats_str}]" if cats_str else query.upper()
 
         if forSending:
             return render_template(
