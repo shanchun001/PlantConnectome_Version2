@@ -11,6 +11,63 @@ from my_cache import cache
 
 entity_lookup = db["entity_lookup"]
 
+# Comprehensive type -> category mapping (from GitHub PlantConnectome categoryMap)
+_CATEGORY_MAP = {
+    'biological process': [
+        'metabolic pathway', 'function', 'pathway', 'signaling pathway',
+        'metabolic process', 'cell process', 'biochemical process', 'cellular process',
+        'molecular function', 'signalling pathway', 'genetic process', 'biological pathway', 'process'
+    ],
+    'cell/organ/organism': [
+        'organism', 'organ', 'subcellular compartment', 'tissue', 'cell type',
+        'organelle', 'virus', 'organelles', 'cell structure', 'plant', 'organism part'
+    ],
+    'chemical': [
+        'metabolite', 'molecule', 'compound', 'chemical', 'hormone', 'phytohormone',
+        'polysaccharide', 'material', 'polymer', 'chemical structure', 'biopolymer',
+        'chemical compound', 'plant hormone', 'chemical group'
+    ],
+    'gene/protein': [
+        'gene', 'protein', 'mutant', 'protein complex', 'enzyme', 'protein domain',
+        'genetic element', 'gene family', 'protein family', 'protein structure', 'peptide',
+        'protein motif', 'enzyme activity', 'protein region', 'gene feature', 'gene region',
+        'gene structure', 'protein feature', 'transcription factor', 'gene cluster', 'gene group',
+        'promoter', 'subunit', 'transcript', 'gene element', 'allele', 'protein sequence',
+        'protein modification', 'post-translational modification', 'genetic locus',
+        'protein subunit', 'genes', 'qtl', 'protein function', 'amino acid residue',
+        'histone modification', 'protein fragment', 'receptor', 'genetic event', 'protein kinase',
+        'protein class', 'protein group', 'gene product', 'antibody', 'proteins',
+        'protein interaction', 'gene module', 'gene identifier'
+    ],
+    'genomic/transcriptomic feature': [
+        'genomic region', 'genome', 'amino acid', 'genomic feature', 'dna sequence', 'rna',
+        'sequence', 'mutation', 'chromosome', 'gene expression', 'genetic material', 'genotype',
+        'genomic element', 'genetic marker', 'epigenetic mark', 'genetic variation',
+        'regulatory element', 'epigenetic modification', 'dna element', 'mirna', 'genomic location',
+        'subfamily', 'dna', 'activity', 'genetic feature', 'sequence motif', 'genetic variant',
+        'motif', 'mrna', 'residue', 'region', 'genomic sequence', 'cis-element', 'clade',
+        'accession', 'plasmid', 'genomic data', 'cultivar', 'genomic event', 'genomic resource',
+        'ecotype', 'marker', 'lncrna', 'genetic construct', 'sequence feature', 'genus',
+        'genetic concept'
+    ],
+    'method': [
+        'method', 'technique', 'tool', 'database', 'software', 'dataset', 'concept', 'study',
+        'description', 'model', 'modification', 'location', 'author', 'measurement', 'experiment',
+        'researcher', 'mechanism', 'system', 'feature', 'parameter', 'algorithm', 'event',
+        'reaction', 'resource', 'interaction', 'device', 'metric', 'technology', 'network',
+        'construct', 'vector', 'category', 'data', 'research', 'geographical location',
+        'document', 'analysis', 'person', 'project', 'research field', 'researchers',
+        'gene network', 'relationship'
+    ],
+    'phenotype': ['phenotype'],
+    'treatment': [
+        'treatment', 'environment', 'condition', 'time', 'environmental factor', 'disease',
+        'developmental stage', 'time point', 'stress', 'geographic location', 'abiotic stress',
+        'time period'
+    ]
+}
+TYPE_TO_CATEGORY = {t: cat for cat, types in _CATEGORY_MAP.items() for t in types}
+
 def lookup_entity_names(search_term, mode="substring"):
     """
     Use entity_lookup collection for fast entity name discovery.
@@ -657,8 +714,16 @@ def generate_search_route2(search_type):
         # find_terms was run for exactly this entity, so no further filtering needed
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        # Show entity type in title (the original type from the database)
-        patterns_title = f"{query.upper()} [{entity_type}]" if entity_type else query.upper()
+        # Show category in title — look up from the actual data
+        # entity_type param from URL is the raw type; get the category from forSending
+        entity_category = ""
+        for g in forSending:
+            if g.id.upper() == query.upper() or g.target.upper() == query.upper():
+                cat = g.idcategory if g.id.upper() == query.upper() else g.targetcategory
+                if cat:
+                    entity_category = cat
+                    break
+        patterns_title = f"{query.upper()} [{entity_category}]" if entity_category else query.upper()
 
         if forSending:
             return render_template(
