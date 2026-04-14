@@ -96,30 +96,30 @@ cache = {}
 
 # Human-readable display names for raw category strings from the database
 CATEGORY_DISPLAY_NAMES = {
-    'gene / protein': 'Gene/Protein',
-    'genomic / transcriptomic / proteomic / epigenomic feature': 'Genomic/Transcriptomic Feature',
-    'genomic / transcriptomic / proteomic / epigenomic feature / gene mutant': 'Genomic/Transcriptomic Feature',
-    'genomic / transcriptomic / epigenomic feature': 'Genomic/Transcriptomic Feature',
-    'complex / structure / compartment / cell / organ / organism': 'Cell/Organ/Organism',
-    'complex / structure / compartment / cell / organism': 'Cell/Organ/Organism',
-    'taxonomic / evolutionary / phylogenetic group': 'Taxonomic/Organism',
-    'chemical / metabolite / cofactor / ligand': 'Chemical/Metabolite',
-    'treatment / perturbation / stress / mutant': 'Treatment/Stress',
-    'method / assay / experimental setup / parameter / sample': 'Method/Assay',
-    'biological process / pathway / function / regulatory / signaling mechanism': 'Biological Process',
-    'biological process / pathway / function': 'Biological Process',
-    'biological process / function': 'Biological Process',
-    'regulatory / signaling mechanism / metabolic pathway': 'Biological Process',
-    'regulatory / signaling mechanism': 'Biological Process',
-    'environmental / ecological / soil / climate context': 'Environment',
-    'phenotype / trait / disease': 'Phenotype/Disease',
-    'computational / model / algorithm / data / metric': 'Computational/Model',
-    'equipment / device / material / instrument': 'Equipment/Material',
-    'clinical / epidemiological / population': 'Clinical/Population',
-    'social / economic / policy / management': 'Other',
-    'knowledge / concept / hypothesis / theoretical construct': 'Other',
-    'property / measurement / characterization': 'Other',
-    'property / characterization': 'Other',
+    'gene / protein': 'Gene / Protein',
+    'genomic / transcriptomic / proteomic / epigenomic feature': 'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
+    'genomic / transcriptomic / proteomic / epigenomic feature / gene mutant': 'Genomic / Transcriptomic / Proteomic / Epigenomic Feature / Gene Mutant',
+    'genomic / transcriptomic / epigenomic feature': 'Genomic / Transcriptomic / Epigenomic Feature',
+    'complex / structure / compartment / cell / organ / organism': 'Complex / Structure / Compartment / Cell / Organ / Organism',
+    'complex / structure / compartment / cell / organism': 'Complex / Structure / Compartment / Cell / Organism',
+    'taxonomic / evolutionary / phylogenetic group': 'Taxonomic / Evolutionary / Phylogenetic Group',
+    'chemical / metabolite / cofactor / ligand': 'Chemical / Metabolite / Cofactor / Ligand',
+    'treatment / perturbation / stress / mutant': 'Treatment / Perturbation / Stress / Mutant',
+    'method / assay / experimental setup / parameter / sample': 'Method / Assay / Experimental Setup / Parameter / Sample',
+    'biological process / pathway / function / regulatory / signaling mechanism': 'Biological Process / Pathway / Function / Regulatory / Signaling Mechanism',
+    'biological process / pathway / function': 'Biological Process / Pathway / Function',
+    'biological process / function': 'Biological Process / Function',
+    'regulatory / signaling mechanism / metabolic pathway': 'Regulatory / Signaling Mechanism / Metabolic Pathway',
+    'regulatory / signaling mechanism': 'Regulatory / Signaling Mechanism',
+    'environmental / ecological / soil / climate context': 'Environmental / Ecological / Soil / Climate Context',
+    'phenotype / trait / disease': 'Phenotype / Trait / Disease',
+    'computational / model / algorithm / data / metric': 'Computational / Model / Algorithm / Data / Metric',
+    'equipment / device / material / instrument': 'Equipment / Device / Material / Instrument',
+    'clinical / epidemiological / population': 'Clinical / Epidemiological / Population',
+    'social / economic / policy / management': 'Social / Economic / Policy / Management',
+    'knowledge / concept / hypothesis / theoretical construct': 'Knowledge / Concept / Hypothesis / Theoretical Construct',
+    'property / measurement / characterization': 'Property / Measurement / Characterization',
+    'property / characterization': 'Property / Characterization',
 }
 
 def get_display_category(raw_category):
@@ -309,7 +309,7 @@ def find_preview_fast(my_search, genes, search_type):
         etype = r["_id"].get("type", "") or ""
         ecat = r["_id"].get("category", "") or ""
         count = r["count"]
-        display_cat = _short_cat(ecat, etype)
+        display_cat = get_display_category(ecat) if ecat else get_display_category(etype)
         if entity not in seen:
             seen[entity] = [etype, count, count, {display_cat}]
         else:
