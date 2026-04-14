@@ -538,7 +538,6 @@
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
         <span class="node-tp-type">Type: ${typeDisplay}</span>
-        <span class="category-badge">Category: ${node.data().category || 'N/A'}</span>
       </div>
     `;
 
@@ -564,7 +563,6 @@
             <span class="edge-tp-target">${edge.data().originaltarget} <small>[${edge.data().targettype}]</small></span>
           </div>
           <div class="node-tp-edge-meta">
-            <span class="category-badge">Category: ${edge.data().category || 'N/A'}</span>
             <span class="edge-tp-interaction" style="font-size:11px;">${edge.data().interaction}</span>
           </div>
           <div class="edge-tp-def-group">
@@ -615,14 +613,13 @@
     abTitle.innerHTML = `
       <div class="edge-tp-header">
         <span class="edge-tp-interaction">${interactionText}</span>
-        <span class="category-badge">Category: ${categoryText}</span>
       </div>
     `;
 
     ab.innerHTML = `
       <div class="edge-tp-connection">
         <span class="edge-tp-source">${srcName} <small>[${srcType}]</small></span>
-        <span class="edge-tp-arrow">&rarr;</span>
+        <span class="edge-tp-arrow">&xrarr; <em>${interactionText}</em> &xrarr;</span>
         <span class="edge-tp-target">${tgtName} <small>[${tgtType}]</small></span>
       </div>
 

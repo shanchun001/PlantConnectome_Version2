@@ -654,9 +654,8 @@ def generate_search_route2(search_type):
         # find_terms was run for exactly this entity, so no further filtering needed
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        # Show category name in title instead of raw entity type
-        category_name = PROMPT_TO_VIS_CATEGORY.get(entity_type.upper(), ENTITY_CATEGORIES_DICT.get(entity_type.upper(), entity_type.upper())) if entity_type else ""
-        patterns_title = f"{query.upper()} [{category_name}]" if category_name else query.upper()
+        # Show entity type in title (the original type from the database)
+        patterns_title = f"{query.upper()} [{entity_type}]" if entity_type else query.upper()
 
         if forSending:
             return render_template(
