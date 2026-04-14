@@ -167,80 +167,41 @@ const change_help_text = (button, text) => {
     })
 
     switch (text) {
-        case 'word':
+        case 'gene / word':
             help_text = `
-            <p>
-            Find all entities that contain the search query as a <b>whole</b> word. For instance, if "CESA" is searched, the following entities will be identified:
-                <ul style = 'color: green;'>
-                    <li> CESA </li>
-                    <li> CESA1 </li>
-                    <li> CESA complex </li>
-                </ul>
-                However, it will not find entities such as:
-                <br> <br>
-                <ul style = 'color: red;'>
-                    <li> cellulose (i.e., not containing CESA as a word) </li>
-                </ul>
-                </p>`;
-            break;
-        case 'exact':
-            help_text = `
-            <p>
-                Finds the entity that <b>exactly</b> matches the search query. For instance, if "salicylic acid" is searched, the following entity will be found:
-                <ul style = 'color: green;'>
-                    <li> salicylic acid </li>
-                </ul>
-                However, it will not find entities such as:
-                <br> <br>
-                <ul style = 'color: red;'>
-                    <li> salicylic acid signaling </li>
-                    <li> methyl salicylic acid </li>
-                </ul>
-            </p>`;
+              <p>
+                Find all entities where your query appears as a <em>standalone</em> word,
+                even if it contains hyphens or other non-alphanumeric characters.
+                For instance, if "CESA" is searched, the following entities will be identified:
+              </p>
+              <ul style="color: green;">
+                <li>CESA</li>
+                <li>Primary wall CESA-complex (hyphenated)</li>
+                <li>CesA/CSL superfamily (slash-delimited)</li>
+                <li>CESA genes</li>
+              </ul>
+              <p>However, it will not find entities such as:</p>
+              <ul style="color: red;">
+                <li>CESA3 (contains alphanumericals in the same word)</li>
+                <li>ATCESA (embedded in a larger word)</li>
+              </ul>
+              <p>You can search for <em>Arabidopsis thaliana</em> genes by entering an AGI number or an alias. For example, 'CESA1' would return:</p>
+              <ul style="color: green;">
+                <li>(ATCESA1, CESA1, RSW1, AT4G32410, ANY1)</li>
+                <li>(ATCESA1, CESA1, RSW1, AT4G32410, ANY1) mutant</li>
+              </ul>`;
             break;
         case 'substring':
             help_text = `
             <p>
-                Finds all entities that contain the search query as a <b>substring</b>. For instance, if "Arabidop" is searched, this search will find the
+                Finds all entities that contain the search query. For instance, if "hair" is searched, this search will find the
                 following entities:
                 <ul style = 'color: green;'>
-                    <li> Arabidopsis </li>
-                    <li> Arabidopsis thaliana </li>
-                    <li> Arabidopsis lyrata </li>
+                    <li> root hair </li>
+                    <li> root hairs </li>
+                    <li> hairy roots </li>
                 </ul>
             </p>`;
-            break;
-        case 'non-alphanumeric':
-            help_text = `
-            <p>
-                Finds all entities that contain the search query <b>followed by a non-alphanumeric character</b> (eg. "/", "-"). For instance, if "AT4G"
-                is searched, this search will find the following entities:
-                <ul style = 'color: green;'>
-                    <li> AT4G02770 </li>
-                    <li> AT4G18780 </li>
-                </ul>
-                However, it will not find entities such as:
-                <br> <br>
-                <ul style = 'color: red;'>
-                    <li> AT5G01530 </li>
-                </ul>
-            </p>`;
-            break;
-        case 'paired-entity':
-                help_text = `
-                <p>
-                    Finds all <b>paired entities</b> matches the search query split by "$". For instance, if "drought$ABA"
-                    is searched, this search will find the following source and target pair entities:
-                    <ul style = 'color: green;'>
-                        <li> source node which contains: drought; target node which contains: ABA </li>
-                        <li> source node which contains: ABA; target node which contains: drought </li>
-                    </ul>
-                    However, it will not find source and target pair entities such as:
-                    <br> <br>
-                    <ul style = 'color: red;'>
-                        <li> source node which contains: drought; target node which contains: salicylic acid </li>
-                    </ul>
-                </p>`;
             break;
         default:
             help_text = `
