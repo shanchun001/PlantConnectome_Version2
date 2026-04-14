@@ -496,15 +496,21 @@
 {% block content %}
 <div class="grid-container align-center gene-page" style="padding-left: 2px; padding-right: 2px; width: 100%;">
   {% if genes %}
-    {% set terms = search_term.split(',') %}
+    {% if '[' in search_term %}
+      {% set entity_name = search_term.split('[')[0].strip() %}
+      {% set entity_cats = search_term.split('[')[1].rstrip(']').strip() %}
+    {% else %}
+      {% set entity_name = search_term %}
+      {% set entity_cats = '' %}
+    {% endif %}
     <div class="search-header" style="margin-top: 16px;">
       <div>
         <h3 style="margin: 0 0 4px 0; font-weight: 700; font-size: 1.5em; color: #111827;">Search results for:</h3>
         <span class="search-term-container">
-          {% for term in terms %}
-            {% set clean_term = term.strip() %}
-            <span class="term">{{ clean_term }}</span>
-          {% endfor %}
+          <span class="term">{{ entity_name }}</span>
+          {% if entity_cats %}
+            <span style="font-size: 0.85em; color: #6b7280; margin-left: 8px;">{{ entity_cats }}</span>
+          {% endif %}
         </span>
       </div>
       <small class="graph-info">
