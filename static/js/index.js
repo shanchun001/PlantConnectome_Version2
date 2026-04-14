@@ -170,38 +170,38 @@ const change_help_text = (button, text) => {
         case 'gene / word':
             help_text = `
               <p>
-                Find all entities where your query appears as a <em>standalone</em> word,
-                even if it contains hyphens or other non-alphanumeric characters.
-                For instance, if "CESA" is searched, the following entities will be identified:
+                Find all entities where your query appears as a <b>word</b> (case-insensitive).
+                MongoDB's full-text search tokenizes entity names on spaces, hyphens, and special characters.
               </p>
+              <p>For instance, if <b>"CESA"</b> is searched:</p>
               <ul style="color: green;">
                 <li>CESA</li>
-                <li>Primary wall CESA-complex (hyphenated)</li>
-                <li>CesA/CSL superfamily (slash-delimited)</li>
-                <li>CESA genes</li>
+                <li>CesA genes</li>
+                <li>CESA-associated proteins (hyphenated &mdash; "CESA" is a token)</li>
+                <li>cellulose synthase (CESA) complexes</li>
               </ul>
-              <p>However, it will not find entities such as:</p>
+              <p>However, it will not find:</p>
               <ul style="color: red;">
-                <li>CESA3 (contains alphanumericals in the same word)</li>
-                <li>ATCESA (embedded in a larger word)</li>
-              </ul>
-              <p>You can search for <em>Arabidopsis thaliana</em> genes by entering an AGI number or an alias. For example, 'CESA1' would return:</p>
-              <ul style="color: green;">
-                <li>(ATCESA1, CESA1, RSW1, AT4G32410, ANY1)</li>
-                <li>(ATCESA1, CESA1, RSW1, AT4G32410, ANY1) mutant</li>
+                <li>ATCESA (embedded in a larger token)</li>
               </ul>`;
             break;
         case 'substring':
             help_text = `
             <p>
-                Finds all entities that contain the search query. For instance, if "hair" is searched, this search will find the
-                following entities:
-                <ul style = 'color: green;'>
-                    <li> root hair </li>
-                    <li> root hairs </li>
-                    <li> hairy roots </li>
-                </ul>
-            </p>`;
+                Finds all entities that <b>contain</b> the search query as a substring (case-insensitive),
+                excluding exact matches.
+            </p>
+            <p>For instance, if <b>"hair"</b> is searched:</p>
+            <ul style="color: green;">
+                <li>root hair</li>
+                <li>root hairs</li>
+                <li>hairy roots</li>
+                <li>root hair growth</li>
+            </ul>
+            <p>However, it will not find:</p>
+            <ul style="color: red;">
+                <li>hair (exact match is excluded)</li>
+            </ul>`;
             break;
         default:
             help_text = `

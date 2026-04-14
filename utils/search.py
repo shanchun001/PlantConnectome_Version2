@@ -77,10 +77,10 @@ def lookup_entity_names(search_term, mode="substring"):
     term_lower = search_term.lower()
     limit = 500
     if mode == "substring":
-        # Prefix-anchored regex uses B-tree index on _id → fast
-        # No sort (sorting defeats index use on 11M docs)
+        # Contains regex on entity_lookup._id (lowercase entity names)
+        # No sort (sorting defeats index use)
         results = entity_lookup.find(
-            {"_id": {"$regex": "^" + re.escape(term_lower)}},
+            {"_id": {"$regex": re.escape(term_lower)}},
             {"_id": 1}
         ).limit(limit)
     elif mode == "exact":
@@ -302,32 +302,44 @@ def find_preview_fast(my_search, genes, search_type):
     results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
     results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
 
-    # Merge: group by entity, track best_etype (for URL), collect all display categories, sum counts
-    seen = {}  # entity -> [best_etype, best_count, total_count, categories_set]
+    def resolve_vis_category(ecat, etype):
+        """Resolve raw DB category (possibly comma-separated) to short vis category."""
+        if ecat:
+            # Try full string first
+            vis = PROMPT_TO_VIS_CATEGORY.get(ecat.strip().upper())
+            if vis:
+                return vis
+            # Split on comma and try each part
+            for part in ecat.split(','):
+                vis = PROMPT_TO_VIS_CATEGORY.get(part.strip().upper())
+                if vis:
+                    return vis
+        # Fallback to entity type lookup
+        return ENTITY_CATEGORIES_DICT.get((etype or '').upper(), 'OTHER')
+
+    # Merge: group by entity, track best_etype (for URL), map to short vis category, sum counts
+    seen = {}  # entity -> [best_etype, best_count, total_count, vis_cat]
     for r in results_e1 + results_e2:
         entity = r["_id"]["entity"]
         etype = r["_id"].get("type", "") or ""
         ecat = r["_id"].get("category", "") or ""
         count = r["count"]
-        display_cat = get_display_category(ecat) if ecat else get_display_category(etype)
+        vis_cat = resolve_vis_category(ecat, etype)
         if entity not in seen:
-            seen[entity] = [etype, count, count, {display_cat}]
+            seen[entity] = [etype, count, count, vis_cat]
         else:
             entry = seen[entity]
             entry[2] += count
-            entry[3].add(display_cat)
-            if count > entry[1]:  # keep most common type for URL
+            if count > entry[1]:
                 entry[0] = etype
                 entry[1] = count
 
-    # Return as tuples: (entity, entity_type, count, count, categories_str)
+    # Return as tuples: (entity, entity_type, count, count, vis_category)
     # - entity_type (index 1): most common type — used in URL for gene.html route
-    # - categories_str (index 4): all distinct categories, sorted, comma-separated
+    # - vis_category (index 4): short category name for display
     results = []
     for entity, entry in seen.items():
-        cats = sorted(c for c in entry[3] if c and c != 'Other') or ['Other']
-        cats_str = ", ".join(cats)
-        results.append((entity, entry[0], entry[2], entry[2], cats_str))
+        results.append((entity, entry[0], entry[2], entry[2], entry[3]))
     return sorted(results, key=lambda x: x[2], reverse=True)
 
 
@@ -775,67 +787,71 @@ def generate_multi_search_route(search_type):
                             else url_for('substring', query=search_term))
 
         stored_data = cache[uid]
-        elements = stored_data.get("elements", [])
-        forSending = stored_data.get("forSending", [])
-        elementsAb = stored_data.get("elementsAb", {})
-        node_fa = stored_data.get("node_fa", [])
-        preview = stored_data.get("preview", [])
-        summaryText = stored_data.get("summaryText", "")
 
         raw_pairs = stored_data.get("multi_selected_entities", [])
-        pairs = []
+        if not raw_pairs:
+            return render_template('not_found.html', search_term=multi_query)
+
+        # Extract entity names from selected pairs (format: "entity_name|category")
+        selected_entity_names = set()
+        display_labels = []
         for item in raw_pairs:
             if '|' in item:
-                entityName, entityType = item.split('|', 1)
-                pairs.append(f"{entityName} [{entityType}]")
+                entityName, entityCat = item.split('|', 1)
             else:
-                pairs.append(item)
+                entityName = item
+                entityCat = ""
+            selected_entity_names.add(entityName.upper())
+            display_labels.append(f"{entityName} [{entityCat}]" if entityCat else entityName)
 
-        if not pairs:
+        # Query MongoDB directly for the selected entities — no need for cached elements
+        collection = db["all_dic"]
+        name_list = list(selected_entity_names)
+        name_list_lower = [n.lower() for n in name_list]
+        query = {"$or": [
+            {"entity1_lower": {"$in": name_list_lower}},
+            {"entity2_lower": {"$in": name_list_lower}}
+        ]}
+        result_list = list(collection.find(query).limit(10000))
+
+        forSending = []
+        elements = []
+        for doc in result_list:
+            e1, e1t = doc["entity1"], doc.get("entity1type", "")
+            e2, e2t = doc["entity2"], doc.get("entity2type", "")
+            # Only include docs where at least one entity matches a selected name
+            if e1.upper() in selected_entity_names or e2.upper() in selected_entity_names:
+                forSending.append(Gene(
+                    e1, e1t, e2, e2t,
+                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                    doc.get("species"), doc.get("basis"),
+                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                    doc.get("target_extracted_definition"), doc.get("target_generated_definition")
+                ))
+                elements.append((
+                    e1, e1t, e2, e2t,
+                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                    doc.get("species"), doc.get("basis"),
+                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                    doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                    doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                ))
+
+        node_fa = stored_data.get("node_fa", [])
+        preview = stored_data.get("preview", [])
+
+        if not forSending:
             return render_template('not_found.html', search_term=multi_query)
 
-        combined_elements = set()
-        combined_forSending = []
-        combined_preview = []
-        display_labels = []
-
-        for pair in pairs:
-            match = bracket_pattern.match(pair)
-            if match:
-                entityName = match.group(1).strip()
-                entityType = match.group(2).strip()
-                display_label = f"{entityName} [{entityType}]"
-            else:
-                entityName = pair
-                entityType = "UNKNOWN"
-                display_label = f"{entityName} [UNKNOWN]"
-            display_labels.append(display_label)
-
-            partial_forSending = [
-                g for g in forSending
-                if ((g.id.upper() == entityName.upper() and g.idtype.upper() == entityType.upper())
-                    or (g.target.upper() == entityName.upper() and g.targettype.upper() == entityType.upper()))
-            ]
-            partial_elements = [
-                e for e in elements
-                if ((e[0].upper() == entityName.upper() and e[1].upper() == entityType.upper())
-                    or (e[2].upper() == entityName.upper() and e[3].upper() == entityType.upper()))
-            ]
-            combined_forSending.extend(partial_forSending)
-            combined_elements.update(partial_elements)
-
-        if not combined_forSending:
-            return render_template('not_found.html', search_term=multi_query)
-
-        updatedElements = process_network(list(combined_elements))
+        updatedElements = process_network(list(set(elements)))
         cytoscape_js_code = generate_cytoscape_js(updatedElements, {}, node_fa)
-        finalSummaryText = make_text(combined_forSending)
+        finalSummaryText = make_text(forSending)
         all_pairs_label = ", ".join(label.upper() for label in display_labels)
-        number_papers = len({g.publication for g in combined_forSending})
+        number_papers = len({g.publication for g in forSending})
 
         return render_template(
             'gene.html',
-            genes=combined_forSending,
+            genes=forSending,
             cytoscape_js_code=cytoscape_js_code,
             search_term=all_pairs_label,
             number_papers=number_papers,
@@ -845,7 +861,7 @@ def generate_multi_search_route(search_type):
             node_fa=node_fa,
             is_node=True,
             search_type=search_type,
-            preview_results=combined_preview
+            preview_results=preview
         )
     return search_route
 

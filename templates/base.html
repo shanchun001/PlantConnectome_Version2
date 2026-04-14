@@ -3,13 +3,20 @@
 <head>
     {% block dependencies %}
     <title>PlantConnectome</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="{{ url_for('static', filename='js/vendor/jquery.js') }}"></script>
     <script src="{{ url_for('static', filename='js/vendor/what-input.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/foundation.min.css') }}">
     <style>
-      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 14px;
+        color: #2c3e50;
+        margin: 0;
+      }
+
       /* ── Navbar ── */
       .list-item {
         display: flex;
@@ -20,6 +27,7 @@
         height: 30px;
         margin-right: 20px;
       }
+
     </style>
     {% endblock %}
 </head>
