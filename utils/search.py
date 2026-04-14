@@ -440,7 +440,8 @@ def find_terms(my_search, genes, search_type):
                 e1, e1t, e2, e2t,
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
-                doc["target_extracted_definition"], doc["target_generated_definition"]
+                doc["target_extracted_definition"], doc["target_generated_definition"],
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -493,7 +494,8 @@ def find_terms(my_search, genes, search_type):
                 e1, e1t, e2, e2t,
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
-                doc["target_extracted_definition"], doc["target_generated_definition"]
+                doc["target_extracted_definition"], doc["target_generated_definition"],
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -555,7 +557,8 @@ def find_terms(my_search, genes, search_type):
                 e1, e1t, e2, e2t,
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
-                doc["target_extracted_definition"], doc["target_generated_definition"]
+                doc["target_extracted_definition"], doc["target_generated_definition"],
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,

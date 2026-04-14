@@ -181,7 +181,7 @@ def generate_cytoscape_js(elements, ab, fa):
             edge_map[key] = {
                 "pmids": {pmid} if pmid else set(),
                 "category": cat,
-                "interaction": rel_label or interaction,
+                "interaction": interaction,  # actual relationship verb, not the category
                 "edge": edge
             }
         else:
