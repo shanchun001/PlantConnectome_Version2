@@ -340,12 +340,9 @@
             <button class="button secondary" onclick="recalculateLayout()">Recalculate layout</button>
             <button class="button alert" onclick="edgecloseForm()"><b>Close Options</b></button>
           </div>
-          <input type="text" id="edgeTypeSearch"
-                placeholder="Search edge types..."
-                onkeyup="filterCheckboxes('edgeTypeSearch', 'edgeTypeCheckboxes')">
-          <h5>Edge Filters:</h5>
-          <div id="edgeTypeCheckboxes" class="checkbox-grid"></div>
-          <hr/>
+          <!-- Hidden div to prevent JS errors -->
+          <div id="edgeTypeCheckboxes" style="display:none;"></div>
+
           <input type="text" id="edgeCategorySearch"
                 placeholder="Search edge categories..."
                 onkeyup="filterCheckboxes('edgeCategorySearch', 'edgeCategoryCheckboxes')">

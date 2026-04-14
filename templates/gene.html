@@ -667,15 +667,9 @@
             reorderCheckboxes(checkboxesContainerId);
           }
             </script>
-          <!-- Search box for edge type -->
-          <input type="text" id="edgeTypeSearch" 
-                placeholder="Search edge types..." 
-                onkeyup="filterCheckboxes('edgeTypeSearch', 'edgeTypeCheckboxes')">
-          <h5>Edge Filters:</h5>
+          <!-- Hidden div to prevent JS errors from network.js referencing edgeTypeCheckboxes -->
+          <div id="edgeTypeCheckboxes" style="display:none;"></div>
 
-          <div id="edgeTypeCheckboxes" class="checkbox-grid">
-          </div>
-          <hr/>
           <input type="text" id="edgeCategorySearch"
                 placeholder="Search edge categories..."
                 onkeyup="filterCheckboxes('edgeCategorySearch', 'edgeCategoryCheckboxes')">

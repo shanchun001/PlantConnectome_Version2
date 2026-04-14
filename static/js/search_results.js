@@ -121,6 +121,11 @@ function recalculateLayout(batchSize = 200) {
 */
 
 function recalculateLayout() {
+  // Apply all checkbox filters first (node category + edge type + edge category)
+  if (typeof applyAllFilters === 'function') {
+    applyAllFilters();
+  }
+
   const cy = document.getElementById("cy")._cyreg.cy;
 
   // Get visible nodes and edges
