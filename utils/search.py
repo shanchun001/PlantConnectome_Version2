@@ -272,15 +272,13 @@ def find_preview_fast(my_search, genes, search_type):
         if not matched_names:
             return []
 
-    # Use $in on indexed _lower fields — very fast
-    match_q = {"$or": [
-        {"entity1_lower": {"$in": matched_names}},
-        {"entity2_lower": {"$in": matched_names}}
-    ]}
+    matched_set = set(matched_names)
 
-    # Group by (entity, category) to collect ALL distinct categories per entity
+    # Only aggregate the MATCHED side — not the neighbor
+    # When entity1 matches, group by entity1 (not entity2)
+    # When entity2 matches, group by entity2 (not entity1)
     pipeline_e1 = [
-        {"$match": match_q},
+        {"$match": {"entity1_lower": {"$in": matched_names}}},
         {"$group": {
             "_id": {"entity": "$entity1", "type": "$entity1type", "category": "$entity1category"},
             "count": {"$sum": 1}
@@ -290,7 +288,7 @@ def find_preview_fast(my_search, genes, search_type):
     ]
 
     pipeline_e2 = [
-        {"$match": match_q},
+        {"$match": {"entity2_lower": {"$in": matched_names}}},
         {"$group": {
             "_id": {"entity": "$entity2", "type": "$entity2type", "category": "$entity2category"},
             "count": {"$sum": 1}
