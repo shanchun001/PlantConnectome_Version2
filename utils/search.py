@@ -307,11 +307,11 @@ def find_preview_fast(my_search, genes, search_type):
             "type": {"$first": "$type"},
             "category": {"$first": "$category"},
         }},
-        # Count unique neighbors per entity
+        # Count unique neighbors per entity + collect ALL distinct categories
         {"$group": {
             "_id": "$_id.entity",
             "type": {"$first": "$type"},
-            "category": {"$first": "$category"},
+            "categories": {"$addToSet": "$category"},
             "node_count": {"$sum": 1}
         }},
         {"$sort": {"node_count": -1}},
@@ -331,9 +331,11 @@ def find_preview_fast(my_search, genes, search_type):
     for r in results_combined:
         entity = r["_id"]
         etype = r.get("type", "") or ""
-        ecat = r.get("category", "") or ""
+        raw_cats = r.get("categories", [])
         node_count = r["node_count"]
-        vis_cat = resolve_vis_category(ecat, etype)
+        # Join all distinct non-empty categories
+        cats = sorted(set(c.strip() for c in raw_cats if c and c.strip()))
+        vis_cat = ", ".join(cats) if cats else "Other"
         # +1 to include the entity itself (gene.html counts all nodes including self)
         results.append((entity, etype, node_count + 1, node_count + 1, vis_cat))
 
