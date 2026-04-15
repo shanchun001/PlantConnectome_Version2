@@ -13,6 +13,28 @@
     </div>
   </div>
 
+  <!-- How to use -->
+  <div id="howToUse" style="background:#eaf2f8;border:1px solid #aed6f1;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#2c3e50;line-height:1.6;">
+    <div style="display:flex;justify-content:space-between;align-items:start;">
+      <div>
+        <strong style="font-size:14px;">How to use this page</strong>
+        <ol style="margin:6px 0 0 0;padding-left:20px;">
+          <li><strong>Filter</strong> &mdash; Use the search box and category dropdown to narrow down entities.</li>
+          <li><strong>Select</strong> &mdash; Check the entities you want to explore. The node count updates as you select.</li>
+          <li><strong>Find Similar</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to identify semantically similar names (uses AI embeddings). You can then keep only the canonical form.</li>
+          <li><strong>Visualize</strong> &mdash; Click <strong style="color:#3498db;">Show Selected Entities</strong> to generate the knowledge network graph.</li>
+        </ol>
+      </div>
+      <button onclick="this.parentElement.parentElement.style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;padding:0 0 0 12px;" title="Dismiss">&times;</button>
+    </div>
+  </div>
+
+  <!-- Step 1: Filter & Select -->
+  <div style="margin-bottom:4px;">
+    <span style="display:inline-block;background:#3498db;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 1</span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Filter and select entities</span>
+  </div>
+
   <!-- Search & Filter Controls -->
   <div class="preview-controls">
     <input
@@ -62,32 +84,39 @@
     </div>
   </div>
 
-  <!-- Action Buttons -->
-  <div class="preview-actions" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+  <!-- Step 2: Optional similarity -->
+  <div style="margin-top:16px;margin-bottom:4px;">
+    <span style="display:inline-block;background:#8e44ad;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 2</span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Deduplicate similar entities <em style="font-weight:400;color:#6b7280;">(optional)</em></span>
+  </div>
+
+  <div style="background:#f8f4fc;border:1px solid #d2b4de;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <p style="margin:0;font-size:12px;color:#6b7280;max-width:500px;">
+        Uses AI to find entities with similar names (e.g. "CesA genes" &amp; "cellulose synthase genes").
+        Adjust the threshold slider &mdash; lower values find more matches.
+      </p>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:#6b7280;">Similarity:</label>
+        <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.70"
+               style="width:80px;" oninput="document.getElementById('simThresholdVal').textContent=this.value">
+        <span id="simThresholdVal" style="font-size:12px;font-weight:600;width:30px;">0.70</span>
+        <button id="findSimilarBtn" onclick="findSimilarEntities()" style="font-size:12px;padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500;">Find Similar</button>
+      </div>
+    </div>
+    <div id="similarityResults" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Step 3: Visualize -->
+  <div style="margin-bottom:4px;">
+    <span style="display:inline-block;background:#27ae60;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 3</span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Generate knowledge network</span>
+  </div>
+
+  <div class="preview-actions">
     <button id="showSelectedButton" class="preview-submit-btn" onclick="getSelectedEntities()">
       Show Selected Entities
     </button>
-    <button id="findSimilarBtn" class="preview-submit-btn" style="background-color:#8e44ad;" onclick="findSimilarEntities()">
-      Find Similar Entities
-    </button>
-  </div>
-
-  <!-- Similarity Results Panel -->
-  <div id="similarityPanel" style="display:none; margin-top:16px;">
-    <div style="background:#f8f4fc;border:1px solid #d2b4de;border-radius:8px;padding:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h4 style="margin:0;color:#6c3483;">Similar Entity Groups</h4>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <label style="font-size:12px;color:#6b7280;">Threshold:</label>
-          <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.70"
-                 style="width:100px;" oninput="document.getElementById('simThresholdVal').textContent=this.value">
-          <span id="simThresholdVal" style="font-size:12px;font-weight:600;width:30px;">0.70</span>
-          <button onclick="findSimilarEntities()" style="font-size:11px;padding:4px 10px;background:#8e44ad;color:white;border:none;border-radius:4px;cursor:pointer;">Recalculate</button>
-          <button onclick="document.getElementById('similarityPanel').style.display='none'" style="font-size:11px;padding:4px 10px;background:#e74c3c;color:white;border:none;border-radius:4px;cursor:pointer;">Close</button>
-        </div>
-      </div>
-      <div id="similarityResults"></div>
-    </div>
   </div>
 </div>
 
@@ -641,9 +670,8 @@
   // =========================
   function findSimilarEntities() {
     const btn = document.getElementById('findSimilarBtn');
-    const panel = document.getElementById('similarityPanel');
     const resultsDiv = document.getElementById('similarityResults');
-    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.85);
+    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.70);
 
     // Get all entity names from current data
     const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
@@ -653,8 +681,7 @@
       return;
     }
 
-    // Show panel with loading state
-    panel.style.display = 'block';
+    // Show loading state in results div
     resultsDiv.innerHTML = `
       <div style="text-align:center;padding:20px;">
         <div style="display:inline-block;width:20px;height:20px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
