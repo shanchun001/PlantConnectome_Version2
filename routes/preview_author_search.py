@@ -19,10 +19,12 @@ def preview_author_search(query):
     authors_list = []
     try:
         query_upper = query.strip().upper()
+        logging.info(f"Author search: query='{query}', upper='{query_upper}'")
         docs = list(authors_collection.find(
             {"authors": {"$regex": query_upper}},
             {"authors": 1}
         ))
+        logging.info(f"Author search: found {len(docs)} docs")
         # Count matching author names
         from collections import Counter
         name_counts = Counter()
@@ -46,7 +48,7 @@ def preview_author_search(query):
     if authors_list:
         return render_template(
             'preview_authorsearch.html',
-            authors_list=authors_list,
+            authors=authors_list,
             search_term=query
         )
     else:

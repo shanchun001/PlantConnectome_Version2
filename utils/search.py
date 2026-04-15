@@ -865,7 +865,11 @@ def generate_multi_search_route(search_type):
                         doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
                         doc.get("species"), doc.get("basis"),
                         doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                        doc.get("target_extracted_definition"), doc.get("target_generated_definition")
+                        doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                        doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                        doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                        doc.get("relevant_citations", "")
                     ))
                     elements.append((
                         e1, e1t, e2, e2t,
