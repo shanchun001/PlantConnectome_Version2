@@ -179,24 +179,19 @@
    * Initialize Cytoscape
    */
   let cy = cytoscape({
-    container: document.getElementById('cy'), // HTML container
-    autoungrabify: true, // Disable ungrabify on tap
-    zoomingEnabled: true, // Enable zooming
-    wheelSensitivity: 0.2, // Set custom wheel sensitivity
-    textureOnViewport: false, // Allows rendering optimizations for large graphs
-    elements: [...filteredNodes, ...filteredEdges], // Render nodes and edges
-    motionBlur: false, // Enable motion blur for smoother animations
-    motionBlurOpacity: 0.2, // Set opacity during motion blur
-    pixelRatio: '1', // Set pixel ratio
-    style: generateStyles(), // Apply styles to the graph
-    layout: {
-      name: 'preset', // Use the preset layout for initial positioning
-    },
-  });
-
-  cy.ready(() => {
-    cy.zoom(0.08);
-    cy.pan({ x: 200, y: 0 });
+    container: document.getElementById('cy'),
+    autoungrabify: false,      // allow drag-to-move nodes
+    zoomingEnabled: true,
+    userPanningEnabled: true,
+    wheelSensitivity: 0.3,
+    textureOnViewport: true,   // GPU texture for large graphs — smoother pan/zoom
+    hideEdgesOnViewport: filteredNodes.length > 500,  // hide edges while panning on big graphs
+    hideLabelsOnViewport: filteredNodes.length > 800,  // hide labels while panning on big graphs
+    elements: [...filteredNodes, ...filteredEdges],
+    motionBlur: false,
+    pixelRatio: 'auto',
+    style: generateStyles(),
+    layout: { name: 'preset' },
   });
 
   /**
@@ -326,37 +321,59 @@
         selector: 'node',
         style: {
           label: (ele) => ele.data('originalId'),
-          width: '50px',
-          height: '50px',
-          color: '#000000',
-          'font-size': '14px',
-          'min-zoomed-font-size': 9,
+          width: 40,
+          height: 40,
+          color: '#1a1a2e',
+          'font-size': '11px',
+          'min-zoomed-font-size': 7,
           'text-halign': 'center',
-          'text-valign': 'center',
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
           'text-wrap': 'wrap',
-          'text-max-width': 30,
+          'text-max-width': 100,
+          'border-width': 1.5,
+          'border-color': '#ffffff',
+          'border-opacity': 0.8,
           shape: (ele) => resolveNodeStyle(ele.data('category'), nodeStyles.shapes, nodeStyles.defaultShape),
           'background-color': (ele) => resolveNodeStyle(ele.data('category'), nodeStyles.colors, nodeStyles.defaultColor),
+          'background-opacity': 0.9,
+          'text-background-color': '#ffffff',
+          'text-background-opacity': 0.7,
+          'text-background-padding': '2px',
+          'text-background-shape': 'roundrectangle',
         },
       },
       // Edge style
       {
         selector: 'edge',
         style: {
-          width: 2,
+          width: 1.5,
           'line-color': (ele) => edgeStyles.colors[ele.data('category')] || edgeStyles.defaultColor,
+          'line-opacity': 0.6,
           'target-arrow-color': (ele) => edgeStyles.colors[ele.data('category')] || edgeStyles.defaultColor,
           'target-arrow-shape': (ele) => edgeStyles.arrows[ele.data('category')] || edgeStyles.defaultArrow,
+          'arrow-scale': 0.8,
           'curve-style': 'bezier',
-          'min-zoomed-font-size': 9,
-          opacity: 0.8,
+          'min-zoomed-font-size': 8,
           label: (ele) => titleCaseCategory(ele.data('category')),
-          'font-size': '12px',
+          'font-size': '9px',
+          'color': '#555',
           'text-wrap': 'wrap',
-          'text-max-width': 50,
+          'text-max-width': 80,
           'text-rotation': 'autorotate',
-          'text-margin-x': '9px',
-          'text-margin-y': '-9px',
+          'text-margin-y': -8,
+          'text-background-color': '#ffffff',
+          'text-background-opacity': 0.6,
+          'text-background-padding': '1px',
+        },
+      },
+      // Highlighted/selected node
+      {
+        selector: 'node:selected',
+        style: {
+          'border-width': 3,
+          'border-color': '#e74c3c',
+          'background-opacity': 1,
         },
       },
     ];
@@ -371,19 +388,23 @@
    */
   function styleCentralNodes(queryTerm) {
     cy.startBatch();
-    console.log(queryTerm);
     cy.nodes().forEach((node) => {
       if (queryTerm.some((term) => node.id() === term)) {
         node.style({
-          width: '80px',
-          height: '80px',
-          opacity: 1,
-          color: '#8B0000',
-          'font-size': '25px',
+          width: 65,
+          height: 65,
+          'background-opacity': 1,
+          'border-width': 3,
+          'border-color': '#2c3e50',
+          color: '#c0392b',
+          'font-size': '14px',
+          'font-weight': 'bold',
           'text-halign': 'center',
-          'text-valign': 'center',
+          'text-valign': 'bottom',
+          'text-margin-y': 5,
           'text-wrap': 'wrap',
-          'text-max-width': 50,
+          'text-max-width': 120,
+          'text-background-opacity': 0.85,
           'z-index': 9999,
         });
       }
@@ -923,9 +944,13 @@
 
     const layout = neighborhood.layout({
       name: 'cose',
-      animate: false,
-      padding: 10,
+      animate: true,
+      animationDuration: 800,
+      padding: 30,
       fit: true,
+      nodeRepulsion: 600000,
+      idealEdgeLength: 80,
+      gravity: 50,
       nodeDimensionsIncludeLabels: true,
     });
     layout.run();
@@ -1691,40 +1716,54 @@
 
     let layout = null;
 
-    if (numNodes <= 1000) {
-      console.log('Small graph detected. Applying COSE layout...');
+    if (numNodes <= 500) {
+      console.log('Small graph. Applying cose layout...');
       layout = cy.layout({
         ...layoutOptions,
         name: 'cose',
         animate: true,
-        refresh: 4,
-        boundingBox: undefined,
+        animationDuration: 1500,
         randomize: true,
-        debug: false,
-        nodeRepulsion: 400000,
-        idealEdgeLength: 30,
-        edgeElasticity: 50,
-        gravity: 100,
-        numIter: 100,
-        initialTemp: 200,
+        nodeRepulsion: 800000,
+        idealEdgeLength: 80,
+        edgeElasticity: 100,
+        gravity: 50,
+        numIter: 200,
+        initialTemp: 300,
         coolingFactor: 0.95,
         minTemp: 1.0,
+        nestingFactor: 1.2,
+        nodeDimensionsIncludeLabels: true,
       });
-    } else {
-      console.log('Large graph detected. FCOSE layout applied.');
-      if (numNodes > 2000) {
-        layoutOptions.animate = false;
-      }
+    } else if (numNodes <= 2000) {
+      console.log('Medium graph. Applying fcose layout...');
       layout = cy.layout({
         ...layoutOptions,
         name: 'fcose',
+        animate: true,
+        animationDuration: 1000,
         quality: 'default',
         randomize: true,
-        nodeRepulsion: () => 4500,
-        gravityRangeCompound: 1.5,
-        gravity: 0.25,
+        nodeRepulsion: () => 8000,
+        idealEdgeLength: () => 120,
         edgeElasticity: () => 0.45,
-        ...(numNodes <= 2000 ? { idealEdgeLength: () => 400 } : {}),
+        gravity: 0.3,
+        gravityRange: 3.8,
+        nodeDimensionsIncludeLabels: true,
+      });
+    } else {
+      console.log('Large graph. Applying fcose layout (no animation)...');
+      layout = cy.layout({
+        ...layoutOptions,
+        name: 'fcose',
+        animate: false,
+        quality: 'default',
+        randomize: true,
+        nodeRepulsion: () => 6000,
+        idealEdgeLength: () => 80,
+        edgeElasticity: () => 0.3,
+        gravity: 0.4,
+        nodeDimensionsIncludeLabels: false,
       });
     }
 
