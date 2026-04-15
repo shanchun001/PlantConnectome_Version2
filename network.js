@@ -1776,19 +1776,24 @@
     });
     layout.on('layoutstop', () => {
       console.log('Layout completed.');
-      cy.fit(cy.elements(), 50);
+      cy.fit(cy.elements(), 40);
       cy.center();
-      // Re-apply central node styles after layout completes (layout animation can override styles)
       styleCentralNodes(queryTerm);
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
     });
     layout.run();
-    // Safety fallback: hide loading overlay after 30s in case layoutstop doesn't fire
+    // Safety fallback
     setTimeout(() => {
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
+      cy.resize();
+      cy.fit(cy.elements(), 40);
+      cy.center();
     }, 30000);
+
+    // Recenter on window resize
+    window.addEventListener('resize', () => { cy.resize(); cy.fit(cy.elements(), 40); });
   }
 
   /**
