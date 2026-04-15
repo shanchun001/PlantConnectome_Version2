@@ -722,10 +722,7 @@
 
     abTitle.innerHTML = `
       <div class="edge-tp-header">
-        <span class="edge-tp-interaction">${interactionText}</span>
-        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
-          ? `<div style="margin-top:2px;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${categoryText}</span></div>`
-          : ''}
+        <span class="edge-tp-interaction">Edge Details</span>
       </div>
     `;
 
@@ -733,18 +730,17 @@
       <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-connection">
         <span class="edge-tp-source"><strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge">${srcCat}</span>` : ''}${srcIdent ? ` <small style="color:#6b7280;">ID: ${srcIdent}</small>` : ''}</span>
-        <span class="edge-tp-arrow">&xrarr; <em style="color:#DC143C;font-weight:600;">${interactionText}</em> &xrarr;</span>
+        <span class="edge-tp-arrow">&xrarr; <span style="color:#DC143C;font-weight:600;">${interactionText}</span> &xrarr;</span>
         <span class="edge-tp-target"><strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge">${tgtCat}</span>` : ''}${tgtIdent ? ` <small style="color:#6b7280;">ID: ${tgtIdent}</small>` : ''}</span>
       </div>
+      ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
+        ? `<div style="margin:4px 0 8px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${categoryText}</span></div>`
+        : ''}
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
 
-      <div class="edge-tp-section-title">Relationship Details</div>
+      <div class="edge-tp-section-title">Details</div>
       <div class="edge-tp-meta">
-        <div class="edge-tp-row"><span class="edge-tp-label">Relationship</span><span><strong>${interactionText}</strong></span></div>
-        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
-          ? `<div class="edge-tp-row"><span class="edge-tp-label">Relationship Category</span><span>${categoryText}</span></div>`
-          : ''}
         ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species / Organism</span><span>${speciesText}</span></div>` : ''}
         ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence Basis</span><span>${basisText}</span></div>` : ''}
       </div>
