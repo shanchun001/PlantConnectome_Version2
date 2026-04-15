@@ -146,7 +146,21 @@
 <script>
   function validateForm(inputId) {
     const el = document.getElementById(inputId);
-    if (!el.value.trim()) { alert('Please enter a value to search.'); el.focus(); return false; }
+    // Fill in defaults for empty fields
+    const defaults = {
+      'gene_id': 'CESA',
+      'author': 'Mutwil M',
+      'title': '38050352'
+    };
+    if (!el.value.trim()) {
+      if (defaults[inputId]) {
+        el.value = defaults[inputId];
+      } else {
+        alert('Please enter a value to search.');
+        el.focus();
+        return false;
+      }
+    }
     return true;
   }
   function updateHelpText(text) {
