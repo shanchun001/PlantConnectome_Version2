@@ -2193,7 +2193,7 @@
               <th>Target</th>
               <th>Target Type</th>
               <th>Target Category</th>
-              <th>Section</th>
+              <th>Source Section</th>
             </tr>
           </thead>
           <tbody id="body_results">
@@ -2207,7 +2207,7 @@
               <td>{{ gene.target }}</td>
               <td style="color:#6b7280;font-size:12px;">{{ gene.targettype }}</td>
               <td><span style="font-size:11px;color:#3498db;background:#eaf2f8;border:1px solid #aed6f1;border-radius:3px;padding:1px 5px;">{{ gene.targetcategory or 'Other' }}</span></td>
-              <td style="color:#6b7280;font-size:12px;">{{ gene.p_source }}</td>
+              <td style="color:#6b7280;font-size:12px;" title="Publication: {{ gene.publication }}">{{ gene.p_source }}</td>
             </tr>
             {% endfor %}
           </tbody>
