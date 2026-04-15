@@ -1856,10 +1856,18 @@
           window._spacingTimer = setTimeout(() => { applyLayout(); }, 500);
           break;
         case 'edgeLabels':
-          cy.edges().style('label', value ? (ele) => ele.data('interaction') || '' : '');
+          if (value) {
+            cy.edges().forEach(e => e.style('label', e.data('interaction') || ''));
+          } else {
+            cy.edges().style('label', '');
+          }
           break;
         case 'nodeLabels':
-          cy.nodes().style('label', value ? (ele) => ele.data('originalId') : '');
+          if (value) {
+            cy.nodes().forEach(n => n.style('label', n.data('originalId') || ''));
+          } else {
+            cy.nodes().style('label', '');
+          }
           break;
       }
       cy.endBatch();
