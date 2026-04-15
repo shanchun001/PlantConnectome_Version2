@@ -1724,10 +1724,13 @@
     // Dynamic layout parameters scale with graph size and density
     console.log(`Graph: ${numNodes} nodes, ${numEdges} edges, density=${density.toFixed(1)}`);
 
+    // Apply user spacing setting as a multiplier (default 80 = 1x)
+    const spacingMult = currentSpacing / 80;
+
     if (numNodes <= 500) {
       // Small: cose with params tuned to size
-      const repulsion = Math.max(200000, 1000000 - numNodes * 1200);
-      const edgeLen = Math.max(40, 120 - numNodes * 0.15);
+      const repulsion = Math.max(200000, 1000000 - numNodes * 1200) * spacingMult;
+      const edgeLen = Math.max(40, 120 - numNodes * 0.15) * spacingMult;
       const grav = Math.min(80, 30 + density * 5);
       const iters = Math.max(100, 300 - numNodes * 0.3);
       console.log(`cose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(0)}, iters=${iters.toFixed(0)}`);
@@ -1749,8 +1752,8 @@
       });
     } else {
       // Medium/Large: fcose with params tuned to size
-      const repulsion = numNodes <= 1000 ? 10000 - numNodes * 4 : 4000;
-      const edgeLen = numNodes <= 1000 ? Math.max(60, 150 - numNodes * 0.08) : 50;
+      const repulsion = (numNodes <= 1000 ? 10000 - numNodes * 4 : 4000) * spacingMult;
+      const edgeLen = (numNodes <= 1000 ? Math.max(60, 150 - numNodes * 0.08) : 50) * spacingMult;
       const grav = numNodes <= 1000 ? 0.25 + density * 0.03 : 0.5;
       const animate = numNodes <= 1500;
       console.log(`fcose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}`);
@@ -1817,10 +1820,57 @@
     // Let nodes be grabbed if desired
     cy.autoungrabify(false);
 
-    // Global function for filter buttons
+    // Global functions for buttons
     window.recalculateLayout = function() {
       applyAllFilters();
       applyLayout();
+    };
+
+    window.fitGraph = function() {
+      cy.fit(cy.elements(':visible'), 40);
+      cy.center();
+    };
+
+    window.toggleViewSettings = function() {
+      const panel = document.getElementById('viewSettingsPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
+
+    // Current spacing value for layout re-runs
+    let currentSpacing = 80;
+
+    window.updateViewSetting = function(setting, value) {
+      cy.startBatch();
+      switch (setting) {
+        case 'nodeSize':
+          document.getElementById('vs-node-size-val').textContent = value;
+          cy.nodes().forEach(n => {
+            // Keep central nodes slightly larger
+            const isCentral = queryTerm.some(t => n.id() === t);
+            const size = isCentral ? parseInt(value) * 1.4 : parseInt(value);
+            n.style({ width: size, height: size });
+          });
+          break;
+        case 'fontSize':
+          document.getElementById('vs-font-size-val').textContent = value;
+          cy.nodes().style('font-size', value + 'px');
+          break;
+        case 'edgeWidth':
+          document.getElementById('vs-edge-width-val').textContent = value;
+          cy.edges().style('width', parseFloat(value));
+          break;
+        case 'spacing':
+          document.getElementById('vs-spacing-val').textContent = value;
+          currentSpacing = parseInt(value);
+          break;
+        case 'edgeLabels':
+          cy.edges().style('label', value ? (ele) => ele.data('interaction') || '' : '');
+          break;
+        case 'nodeLabels':
+          cy.nodes().style('label', value ? (ele) => ele.data('originalId') : '');
+          break;
+      }
+      cy.endBatch();
     };
   }
 

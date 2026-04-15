@@ -575,13 +575,59 @@
         </div>
       </div>
 
-      <!-- Existing Filter Buttons -->
+      <!-- Filter & View Buttons -->
       <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 4px; left: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
         Node Filter
+      </button>
+      <button class="open-button button secondary small-button" onclick="toggleViewSettings()" style="top: 4px; left: 50%; transform: translateX(-50%); position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        View Settings
       </button>
       <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 4px; right: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
         Edge Filter
       </button>
+
+      <!-- View Settings Panel -->
+      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:360px; z-index:999;">
+        <div class="form-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h5 style="margin:0;">View Settings</h5>
+            <button class="button alert" onclick="toggleViewSettings()" style="font-size:0.7rem; padding:3px 8px; margin:0;">Close</button>
+          </div>
+
+          <div class="view-setting-row">
+            <label>Node Size</label>
+            <input type="range" id="vs-node-size" min="15" max="80" value="40" oninput="updateViewSetting('nodeSize', this.value)">
+            <span id="vs-node-size-val">40</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Font Size</label>
+            <input type="range" id="vs-font-size" min="6" max="24" value="14" oninput="updateViewSetting('fontSize', this.value)">
+            <span id="vs-font-size-val">14</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Edge Width</label>
+            <input type="range" id="vs-edge-width" min="0.5" max="5" value="1.5" step="0.5" oninput="updateViewSetting('edgeWidth', this.value)">
+            <span id="vs-edge-width-val">1.5</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Node Spacing</label>
+            <input type="range" id="vs-spacing" min="20" max="200" value="80" oninput="updateViewSetting('spacing', this.value)">
+            <span id="vs-spacing-val">80</span>
+          </div>
+
+          <div class="view-setting-row">
+            <label><input type="checkbox" id="vs-edge-labels" checked onchange="updateViewSetting('edgeLabels', this.checked)"> Show Edge Labels</label>
+          </div>
+          <div class="view-setting-row">
+            <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="button secondary" onclick="recalculateLayout()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Re-run Layout</button>
+            <button class="button secondary" onclick="fitGraph()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Fit to Screen</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Node Filter Form -->
       <div class="form-popup" id="nodeFilterForm" style="display:none; position:absolute; top:35px; left:0px;">

@@ -429,6 +429,38 @@ footer {
     accent-color: #3498db;
   }
 
+/* ── View Settings Panel ─────────────────────────────────────────────── */
+.view-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.view-setting-row label {
+  font-size: 0.72rem;
+  color: #374151;
+  min-width: 75px;
+  flex-shrink: 0;
+}
+.view-setting-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  accent-color: #3498db;
+  cursor: pointer;
+}
+.view-setting-row span {
+  font-size: 0.68rem;
+  color: #6b7280;
+  min-width: 24px;
+  text-align: right;
+}
+.view-setting-row input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  margin: 0 4px 0 0;
+  accent-color: #3498db;
+}
+
 /* ── Definitions Section ──────────────────────────────────────────────── */
 .definitions-wrapper {
     display: grid;
