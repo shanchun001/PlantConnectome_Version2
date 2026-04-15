@@ -742,10 +742,11 @@ def generate_search_route2(search_type):
                 doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
             ))
         elements = list(set(elements))
+        elementsAb = {}
+        node_fa = {}
         summaryText = make_text(forSending)
-        preview = cache[uid]["preview"] if uid and uid in cache else preview_entity
+        preview = cache[uid]["preview"] if uid and uid in cache else []
 
-        # find_terms was run for exactly this entity, so no further filtering needed
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
         # Collect ALL distinct categories for this entity across all docs
