@@ -1727,14 +1727,16 @@
     // Apply user spacing setting as a multiplier (default 80 = 1x)
     const spacingMult = currentSpacing / 80;
 
-    // Use fcose for all sizes — much faster than cose
-    const repulsion = Math.max(3000, 12000 - numNodes * 8) * spacingMult;
-    const edgeLen = Math.max(40, 150 - numNodes * 0.1) * spacingMult;
-    const grav = Math.min(1.0, 0.2 + density * 0.05);
-    const animate = numNodes <= 300;
-    const quality = numNodes <= 500 ? 'default' : 'draft';
+    // fcose params scaled by graph size
+    // Larger graphs need MORE repulsion to spread out, not less
+    const repulsion = (numNodes <= 200 ? 8000 : numNodes <= 500 ? 6000 : 4500) * spacingMult;
+    const edgeLen = (numNodes <= 200 ? 120 : numNodes <= 500 ? 80 : 50) * spacingMult;
+    const grav = numNodes <= 200 ? 0.25 : numNodes <= 500 ? 0.4 : 0.8;
+    const animate = numNodes <= 200;
+    // Always use 'default' quality — 'draft' produces broken layouts
+    const quality = 'default';
 
-    console.log(`fcose: repulsion=${repulsion.toFixed(0)}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}, quality=${quality}`);
+    console.log(`fcose: nodes=${numNodes}, edges=${numEdges}, repulsion=${repulsion.toFixed(0)}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}`);
 
     layout = cy.layout({
       ...layoutOptions,
@@ -1748,7 +1750,8 @@
       edgeElasticity: () => 0.45,
       gravity: grav,
       gravityRange: 3.8,
-      nodeDimensionsIncludeLabels: numNodes <= 200,
+      nodeDimensionsIncludeLabels: false,
+      sampleSize: numNodes > 500 ? 100 : 25,
     });
 
     layout.on('layoutstart', () => console.log(`${layout.options.name} layout started...`));
@@ -1758,6 +1761,13 @@
     });
     layout.on('layoutstop', () => {
       console.log('Layout completed.');
+      // Check if layout produced a valid result (not all nodes at same position)
+      const positions = cy.nodes().map(n => n.position());
+      const allSame = positions.length > 1 && positions.every(p => Math.abs(p.x - positions[0].x) < 1 && Math.abs(p.y - positions[0].y) < 1);
+      if (allSame) {
+        console.warn('Layout collapsed all nodes to one point — falling back to circle.');
+        cy.layout({ name: 'circle', fit: true, padding: 40 }).run();
+      }
       cy.fit(cy.elements(), 40);
       cy.center();
       styleCentralNodes(queryTerm);
@@ -1768,12 +1778,12 @@
     try {
       layout.run();
     } catch (e) {
-      console.error('Layout error:', e);
-      // If fcose fails, fall back to simple grid layout
-      cy.layout({ name: 'grid', fit: true, padding: 40 }).run();
+      console.error('fcose layout error, falling back to circle:', e);
+      cy.layout({ name: 'circle', fit: true, padding: 40 }).run();
+      cy.fit(cy.elements(), 40);
+      styleCentralNodes(queryTerm);
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
-      styleCentralNodes(queryTerm);
     }
 
     // Safety fallback: hide overlay after 5s in case layoutstop doesn't fire
