@@ -251,21 +251,10 @@
       defaultColor: '#FFA07A',
     };
 
-    // Lookup helper: tries exact match first, then prefix match on first 20 chars
+    // Lookup helper: exact match only
     function resolveNodeStyle(category, styleMap, fallback) {
       if (!category) return fallback;
-      const cat = category.toUpperCase();
-      // Exact match
-      if (styleMap[cat]) return styleMap[cat];
-      // Handle multi-category (pipe or semicolon separated) — use first part
-      const first = cat.split(/[|;]/)[0].trim();
-      if (styleMap[first]) return styleMap[first];
-      // Prefix match: find key that shares the longest common prefix
-      const prefix = first.substring(0, 20);
-      for (const key of Object.keys(styleMap)) {
-        if (key.substring(0, 20) === prefix) return styleMap[key];
-      }
-      return fallback;
+      return styleMap[category.toUpperCase()] || fallback;
     }
 
     // Edge styles keyed by exact relationship_label values from the database
