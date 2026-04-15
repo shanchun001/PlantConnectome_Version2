@@ -574,11 +574,11 @@
       </div>
 
       <!-- Existing Filter Buttons -->
-      <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 0px; left: 0px; position: absolute; z-index: 11;">
-        Node Filter Layout
+      <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 4px; left: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        Node Filter
       </button>
-      <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 0px; right: 0px; position: absolute; z-index: 11;">
-        Edge Filter Layout
+      <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 4px; right: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        Edge Filter
       </button>
 
       <!-- Node Filter Form -->
@@ -588,7 +588,7 @@
             <button id="applyNodeFilter" class="button secondary" onclick="recalculateLayout()"> Recalculate layout </button>
             <button class="button alert" onclick="nodecloseForm()"> <b> Close Options </b> </button>
           </div>
-          <h5>Node Filters:</h5>     <p>(Query nodes with existing edges will remain visible)</p>
+          <h5>Node Filters</h5><p>Query nodes with existing edges will remain visible</p>
 
           <div id="nodeTypeCheckboxes" class="checkbox-grid"></div>
         </div>
@@ -673,7 +673,7 @@
           <input type="text" id="edgeCategorySearch"
                 placeholder="Search edge categories..."
                 onkeyup="filterCheckboxes('edgeCategorySearch', 'edgeCategoryCheckboxes')">
-          <h5>Edge Category Filter:</h5>
+          <h5>Edge Category Filter</h5>
           <div id="edgeCategoryCheckboxes" class="checkbox-grid">
           </div>
         </div>
