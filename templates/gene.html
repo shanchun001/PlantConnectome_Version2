@@ -622,6 +622,15 @@
           </div>
 
           <div class="view-setting-row">
+            <label>Overlap Removal</label>
+            <select id="vs-overlap" onchange="updateViewSetting('overlap', this.value)" style="font-size:0.72rem; padding:2px 4px; flex:1;">
+              <option value="none">None</option>
+              <option value="moderate">Moderate</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+
+          <div class="view-setting-row">
             <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
           </div>
           <div class="view-setting-row">

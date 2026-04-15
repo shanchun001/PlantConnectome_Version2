@@ -1822,6 +1822,41 @@
     // Let nodes be grabbed if desired
     cy.autoungrabify(false);
 
+    /**
+     * Push overlapping nodes apart iteratively.
+     * strength: 'none' | 'moderate' | 'aggressive'
+     */
+    function removeOverlaps(strength) {
+      if (strength === 'none') return;
+      const padding = strength === 'aggressive' ? 60 : 30;
+      const iterations = strength === 'aggressive' ? 15 : 8;
+      const nodes = cy.nodes(':visible');
+
+      cy.startBatch();
+      for (let iter = 0; iter < iterations; iter++) {
+        nodes.forEach((nodeA) => {
+          const posA = nodeA.position();
+          nodes.forEach((nodeB) => {
+            if (nodeA.id() >= nodeB.id()) return;
+            const posB = nodeB.position();
+            const dx = posB.x - posA.x;
+            const dy = posB.y - posA.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+            const minDist = (nodeA.width() + nodeB.width()) / 2 + padding;
+            if (dist < minDist) {
+              const push = (minDist - dist) / 2;
+              const nx = (dx / dist) * push;
+              const ny = (dy / dist) * push;
+              nodeA.position({ x: posA.x - nx, y: posA.y - ny });
+              nodeB.position({ x: posB.x + nx, y: posB.y + ny });
+            }
+          });
+        });
+      }
+      cy.endBatch();
+      cy.fit(cy.elements(':visible'), 40);
+    }
+
     // Global functions for buttons
     window.recalculateLayout = function() {
       applyAllFilters();
@@ -1878,6 +1913,9 @@
           break;
         case 'whiteBg':
           document.getElementById('cy_wrapper').style.backgroundColor = value ? '#ffffff' : '#fafafa';
+          break;
+        case 'overlap':
+          removeOverlaps(value);
           break;
           break;
       }
