@@ -824,7 +824,7 @@
 
     // Create a header with a minimize button
     const header = document.createElement("div");
-    header.style.background = '#0d9488';
+    header.style.background = '#3498db';
     header.style.color = 'white';
     header.style.padding = '5px'; // Reduced header padding
     header.style.fontWeight = 'bold';
