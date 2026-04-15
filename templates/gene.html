@@ -601,38 +601,39 @@
             <span id="vs-node-size-val">40</span>
           </div>
           <div class="view-setting-row">
-            <label>Font Size</label>
+            <label>Label Size</label>
             <input type="range" id="vs-font-size" min="6" max="24" value="14" oninput="updateViewSetting('fontSize', this.value)">
             <span id="vs-font-size-val">14</span>
           </div>
           <div class="view-setting-row">
-            <label>Edge Width</label>
-            <input type="range" id="vs-edge-width" min="0.5" max="5" value="1.5" step="0.5" oninput="updateViewSetting('edgeWidth', this.value)">
-            <span id="vs-edge-width-val">1.5</span>
-          </div>
-          <div class="view-setting-row">
-            <label>Edge Label Size</label>
+            <label>Edge Labels</label>
             <input type="range" id="vs-edge-font" min="0" max="16" value="8" oninput="updateViewSetting('edgeFontSize', this.value)">
             <span id="vs-edge-font-val">8</span>
           </div>
           <div class="view-setting-row">
-            <label>Node Spacing</label>
+            <label>Spread</label>
             <input type="range" id="vs-spacing" min="20" max="200" value="80" oninput="updateViewSetting('spacing', this.value)">
             <span id="vs-spacing-val">80</span>
           </div>
-
           <div class="view-setting-row">
-            <label>Overlap Removal</label>
+            <label>De-overlap</label>
             <input type="range" id="vs-overlap" min="0" max="100" value="0" oninput="updateViewSetting('overlap', this.value)">
             <span id="vs-overlap-val">0</span>
           </div>
 
           <div class="view-setting-row">
-            <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
+            <label>Layout</label>
+            <select id="vs-layout" style="font-size:0.72rem; padding:2px 4px; flex:1;">
+              <option value="fcose" selected>Force-directed (fcose)</option>
+              <option value="circle">Circle</option>
+              <option value="concentric">Concentric</option>
+              <option value="grid">Grid</option>
+              <option value="breadthfirst">Hierarchical</option>
+            </select>
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px;">
-            <button class="button secondary" onclick="recalculateLayout()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Re-run Layout</button>
+            <button class="button secondary" onclick="recalculateLayout()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Apply Layout</button>
             <button class="button secondary" onclick="fitGraph()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Fit to Screen</button>
           </div>
         </div>
