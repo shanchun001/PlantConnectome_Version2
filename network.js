@@ -331,8 +331,7 @@
           'font-size': '14px',
           'min-zoomed-font-size': 8,
           'text-halign': 'center',
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
+          'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': 120,
           'border-width': 1.5,
@@ -341,10 +340,6 @@
           shape: (ele) => resolveNodeStyle(ele.data('category'), nodeStyles.shapes, nodeStyles.defaultShape),
           'background-color': (ele) => resolveNodeStyle(ele.data('category'), nodeStyles.colors, nodeStyles.defaultColor),
           'background-opacity': 0.9,
-          'text-background-color': '#ffffff',
-          'text-background-opacity': 0.7,
-          'text-background-padding': '2px',
-          'text-background-shape': 'roundrectangle',
         },
       },
       // Edge style
@@ -404,11 +399,9 @@
           'font-size': '13px',
           'font-weight': 'bold',
           'text-halign': 'center',
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
+          'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': 100,
-          'text-background-opacity': 0.85,
           'z-index': 9999,
         });
       }
