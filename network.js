@@ -1858,6 +1858,7 @@
         cy.layout({ name: 'circle', fit: true, padding: 40 }).run();
       }
       if (window.VS) VS._onLayoutDone(document.getElementById('layout-loading'));
+      updateNodeSummaries();
     });
 
     try {
@@ -2017,6 +2018,7 @@
         const s = document.getElementById('vs-overlap');
         if (s) { s.value = 0; document.getElementById('vs-overlap-val').textContent = '0'; }
         cy.fit(cy.elements(':visible'), 40);
+        updateNodeSummaries();
       },
 
       fit() { cy.fit(cy.elements(':visible'), 40); cy.center(); },

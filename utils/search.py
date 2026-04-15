@@ -785,15 +785,20 @@ def generate_search_route2(search_type):
 
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        # Collect ALL distinct categories for this entity across all docs
+        # Collect ALL distinct categories and find original-cased entity name
         entity_categories = set()
+        original_name = query  # fallback
         for g in forSending:
-            if g.id.upper() == query.upper() and g.idcategory:
-                entity_categories.add(g.idcategory)
-            if g.target.upper() == query.upper() and g.targetcategory:
-                entity_categories.add(g.targetcategory)
+            if g.id.upper() == query.upper():
+                original_name = g.id  # use DB casing
+                if g.idcategory:
+                    entity_categories.add(g.idcategory)
+            if g.target.upper() == query.upper():
+                original_name = g.target  # use DB casing
+                if g.targetcategory:
+                    entity_categories.add(g.targetcategory)
         cats_str = ", ".join(sorted(c for c in entity_categories if c and c != 'Other')) or ""
-        patterns_title = f"{query.upper()} [{cats_str}]" if cats_str else query.upper()
+        patterns_title = f"{original_name} [{cats_str}]" if cats_str else original_name
 
         if forSending:
             return render_template(
@@ -880,7 +885,7 @@ def generate_multi_search_route(search_type):
             updatedElements = process_network(list(set(elements)))
             cytoscape_js_code = generate_cytoscape_js(updatedElements, {}, {})
             finalSummaryText = make_text(forSending)
-            all_pairs_label = ", ".join(label.upper() for label in display_labels)
+            all_pairs_label = ", ".join(display_labels)
             number_papers = len({g.publication for g in forSending})
 
             return render_template(
