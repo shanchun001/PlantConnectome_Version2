@@ -435,8 +435,6 @@
       if (evt.target === cy) {
         // Close all panels on background click
         closeAllPanels();
-        const vsp = document.getElementById('viewSettingsPanel');
-        if (vsp) vsp.style.display = 'none';
 
         const currentTime = new Date().getTime();
         const timeDiff = currentTime - lastClickTime;
@@ -565,10 +563,11 @@
       'side-tooltip': document.getElementById('side-tooltip'),
       'nodeFilterForm': document.getElementById('nodeFilterForm'),
       'edgeFilterForm': document.getElementById('edgeFilterForm'),
+      'viewSettingsPanel': document.getElementById('viewSettingsPanel'),
     };
     // Also close validation result container if it exists
-    const valContainer = document.getElementById('apiResultContainer');
-    if (valContainer) panels['apiResultContainer'] = valContainer;
+    const valContainer = document.getElementById('validationResult');
+    if (valContainer) panels['validationResult'] = valContainer;
 
     for (const [name, el] of Object.entries(panels)) {
       if (el && name !== except) {
@@ -2066,7 +2065,9 @@
     window.VS = VS;
     window.toggleViewSettings = function() {
       const p = document.getElementById('viewSettingsPanel');
-      p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      const isOpen = p.style.display === 'block';
+      closeAllPanels();
+      p.style.display = isOpen ? 'none' : 'block';
     };
     window.recalculateLayout = function() { VS.applyLayout(); };
     window.fitGraph = function() { VS.fit(); };
