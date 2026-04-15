@@ -334,7 +334,7 @@ def find_preview_fast(my_search, genes, search_type):
         raw_cats = r.get("categories", [])
         node_count = r["node_count"]
         # Join all distinct non-empty categories
-        cats = sorted(set(c.strip() for c in raw_cats if c and c.strip()))
+        cats = sorted(set(get_display_category(c.strip()) for c in raw_cats if c and c.strip()))
         vis_cat = ", ".join(cats) if cats else "Other"
         # +1 to include the entity itself (gene.html counts all nodes including self)
         results.append((entity, etype, node_count + 1, node_count + 1, vis_cat))
@@ -381,7 +381,10 @@ def find_terms(my_search, genes, search_type):
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                 doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -389,7 +392,10 @@ def find_terms(my_search, genes, search_type):
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                 doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
 
             for word in my_search:
@@ -444,7 +450,10 @@ def find_terms(my_search, genes, search_type):
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                 doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -452,7 +461,10 @@ def find_terms(my_search, genes, search_type):
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                 doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
 
             for word in my_search:
@@ -509,7 +521,10 @@ def find_terms(my_search, genes, search_type):
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
                 doc["target_extracted_definition"], doc["target_generated_definition"],
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -563,7 +578,10 @@ def find_terms(my_search, genes, search_type):
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
                 doc["target_extracted_definition"], doc["target_generated_definition"],
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -626,7 +644,10 @@ def find_terms(my_search, genes, search_type):
                 doc["edge"], doc["pubmedID"], doc["p_source"], doc["species"],
                 doc["basis"], doc["source_extracted_definition"], doc["source_generated_definition"],
                 doc["target_extracted_definition"], doc["target_generated_definition"],
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -731,7 +752,10 @@ def generate_search_route2(search_type):
                 doc.get("species"), doc.get("basis"),
                 doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                 doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
             ))
             elements.append((
                 e1, e1t, e2, e2t,
@@ -837,7 +861,10 @@ def generate_multi_search_route(search_type):
                         doc.get("species"), doc.get("basis"),
                         doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
                         doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                        doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                        doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                        doc.get("relevant_citations", "")
                     ))
 
             if not forSending:
