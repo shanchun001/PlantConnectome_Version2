@@ -156,7 +156,10 @@ class Gene:
         species=None, basis=None,
         source_extracted_definition=None, source_generated_definition=None,
         target_extracted_definition=None, target_generated_definition=None,
-        idcategory=None, targetcategory=None, relationship_label=None
+        idcategory=None, targetcategory=None, relationship_label=None,
+        source_identifier=None, target_identifier=None,
+        extracted_associated_process=None, generated_associated_process=None,
+        relevant_citations=None
     ):
         self.id = id
         self.idtype = idtype
@@ -174,6 +177,11 @@ class Gene:
         self.idcategory = get_display_category(idcategory) if idcategory else ''
         self.targetcategory = get_display_category(targetcategory) if targetcategory else ''
         self.relationship_label = relationship_label or inter_type or ''
+        self.source_identifier = source_identifier or ''
+        self.target_identifier = target_identifier or ''
+        self.extracted_associated_process = extracted_associated_process or ''
+        self.generated_associated_process = generated_associated_process or ''
+        self.relevant_citations = relevant_citations or ''
 
     def __repr__(self):
         return str(self.__dict__)
