@@ -356,10 +356,10 @@
           'target-arrow-shape': (ele) => edgeStyles.arrows[ele.data('category')] || edgeStyles.defaultArrow,
           'arrow-scale': 0.8,
           'curve-style': 'bezier',
-          'min-zoomed-font-size': 8,
+          'min-zoomed-font-size': 11,
           label: (ele) => ele.data('interaction') || '',
-          'font-size': '11px',
-          'color': '#444',
+          'font-size': '8px',
+          'color': '#666',
           'text-wrap': 'wrap',
           'text-max-width': 80,
           'text-rotation': 'autorotate',
@@ -393,19 +393,19 @@
     cy.nodes().forEach((node) => {
       if (queryTerm.some((term) => node.id() === term)) {
         node.style({
-          width: 65,
-          height: 65,
+          width: 55,
+          height: 55,
           'background-opacity': 1,
-          'border-width': 3,
-          'border-color': '#2c3e50',
+          'border-width': 2.5,
+          'border-color': '#c0392b',
           color: '#c0392b',
-          'font-size': '14px',
+          'font-size': '13px',
           'font-weight': 'bold',
           'text-halign': 'center',
           'text-valign': 'bottom',
-          'text-margin-y': 5,
+          'text-margin-y': 4,
           'text-wrap': 'wrap',
-          'text-max-width': 120,
+          'text-max-width': 100,
           'text-background-opacity': 0.85,
           'z-index': 9999,
         });
@@ -1816,6 +1816,12 @@
 
     // Let nodes be grabbed if desired
     cy.autoungrabify(false);
+
+    // Global function for filter buttons
+    window.recalculateLayout = function() {
+      applyAllFilters();
+      applyLayout();
+    };
   }
 
   /**
