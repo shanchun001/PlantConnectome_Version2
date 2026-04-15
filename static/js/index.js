@@ -119,30 +119,40 @@ window.addEventListener('load', () => {
 });
 
 const loadingText = document.getElementById('loading-text');
-loadingText.innerText = ''; // Clear the existing text
+loadingText.innerText = '';
 
-const words = "Loading in progress...".split(''); // Split into characters including spaces
+const words = "Loading in progress...".split('');
 let index = 0;
+let typingActive = false;
 
 function typeEffect() {
+    if (!typingActive) return;
     if (index < words.length) {
         if (words[index] === ' ') {
-            loadingText.innerHTML += '&nbsp;'; // Add a non-breaking space
+            loadingText.innerHTML += '&nbsp;';
         } else {
             loadingText.innerText += words[index];
         }
         index++;
-        setTimeout(typeEffect, 85); // Adjust speed of typing here
+        setTimeout(typeEffect, 85);
     } else {
         setTimeout(() => {
-            loadingText.innerText = ''; // Clear text and restart typing effect
+            loadingText.innerText = '';
             index = 0;
             typeEffect();
-        }, 1000); // Pause before restarting the typing effect
+        }, 1000);
     }
 }
 
-typeEffect();
+// Only start typing when showLoading is called (search button clicked)
+const _origShowLoading = showLoading;
+showLoading = function() {
+    _origShowLoading();
+    typingActive = true;
+    index = 0;
+    loadingText.innerText = '';
+    typeEffect();
+};
 
 
 /*
