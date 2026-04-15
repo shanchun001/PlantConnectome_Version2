@@ -1959,7 +1959,7 @@
     };
     window.recalculateLayout = function() { VS.applyLayout(); };
     window.fitGraph = function() { VS.fit(); };
-
+  }
 
   /**
    * On DOM ready, initialize the app
