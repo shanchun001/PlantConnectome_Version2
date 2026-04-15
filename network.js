@@ -357,7 +357,7 @@
           'target-arrow-shape': (ele) => edgeStyles.arrows[ele.data('category')] || edgeStyles.defaultArrow,
           'arrow-scale': 0.8,
           'curve-style': 'bezier',
-          'min-zoomed-font-size': 11,
+          'min-zoomed-font-size': 1,
           label: (ele) => ele.data('interaction') || '',
           'font-size': '8px',
           'color': '#666',
@@ -1824,12 +1824,12 @@
 
     /**
      * Push overlapping nodes apart iteratively.
-     * strength: 'none' | 'moderate' | 'aggressive'
+     * strength: 0-100 slider value (0 = no-op, 100 = max separation)
      */
     function removeOverlaps(strength) {
-      if (strength === 'none') return;
-      const padding = strength === 'aggressive' ? 60 : 30;
-      const iterations = strength === 'aggressive' ? 15 : 8;
+      if (strength <= 0) return;
+      const padding = 10 + strength * 0.8;       // 10-90px
+      const iterations = Math.ceil(3 + strength * 0.15);  // 3-18
       const nodes = cy.nodes(':visible');
 
       cy.startBatch();
@@ -1915,7 +1915,10 @@
           document.getElementById('cy_wrapper').style.backgroundColor = value ? '#ffffff' : '#fafafa';
           break;
         case 'overlap':
-          removeOverlaps(value);
+          document.getElementById('vs-overlap-val').textContent = value;
+          if (parseInt(value) > 0) {
+            removeOverlaps(parseInt(value));
+          }
           break;
           break;
       }

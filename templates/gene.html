@@ -560,7 +560,7 @@
     <div id="nodeSummary"></div>
 
     <!-- Cytoscape Graph / Network Viewer -->
-    <div class="cy-wrapper" id="cy_wrapper" style="position: relative; width: 100%; height: 75vh; min-height: 500px; max-height: 900px; background-color: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px;">
+    <div class="cy-wrapper" id="cy_wrapper" style="position: relative; width: 100%; height: 75vh; min-height: 500px; max-height: 900px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
       <!-- Resize Buttons -->
       <div class="resize-buttons">
         <button class="button secondary small-button" onclick="toggleFullScreen()" aria-label="Toggle full screen">
@@ -623,18 +623,12 @@
 
           <div class="view-setting-row">
             <label>Overlap Removal</label>
-            <select id="vs-overlap" onchange="updateViewSetting('overlap', this.value)" style="font-size:0.72rem; padding:2px 4px; flex:1;">
-              <option value="none">None</option>
-              <option value="moderate">Moderate</option>
-              <option value="aggressive">Aggressive</option>
-            </select>
+            <input type="range" id="vs-overlap" min="0" max="100" value="0" oninput="updateViewSetting('overlap', this.value)">
+            <span id="vs-overlap-val">0</span>
           </div>
 
           <div class="view-setting-row">
             <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
-          </div>
-          <div class="view-setting-row">
-            <label><input type="checkbox" id="vs-white-bg" onchange="updateViewSetting('whiteBg', this.checked)"> White Background</label>
           </div>
 
           <div style="display:flex; gap:6px; margin-top:8px;">
