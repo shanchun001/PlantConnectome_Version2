@@ -1726,51 +1726,29 @@
     // Apply user spacing setting as a multiplier (default 80 = 1x)
     const spacingMult = currentSpacing / 80;
 
-    if (numNodes <= 500) {
-      // Small: cose with params tuned to size
-      const repulsion = Math.max(200000, 1000000 - numNodes * 1200) * spacingMult;
-      const edgeLen = Math.max(40, 120 - numNodes * 0.15) * spacingMult;
-      const grav = Math.min(80, 30 + density * 5);
-      const iters = Math.max(100, 300 - numNodes * 0.3);
-      console.log(`cose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(0)}, iters=${iters.toFixed(0)}`);
-      layout = cy.layout({
-        ...layoutOptions,
-        name: 'cose',
-        animate: numNodes <= 200,
-        animationDuration: 1200,
-        randomize: true,
-        nodeRepulsion: repulsion,
-        idealEdgeLength: edgeLen,
-        edgeElasticity: 80 + density * 10,
-        gravity: grav,
-        numIter: iters,
-        initialTemp: 250,
-        coolingFactor: 0.95,
-        minTemp: 1.0,
-        nodeDimensionsIncludeLabels: numNodes <= 150,
-      });
-    } else {
-      // Medium/Large: fcose with params tuned to size
-      const repulsion = (numNodes <= 1000 ? 10000 - numNodes * 4 : 4000) * spacingMult;
-      const edgeLen = (numNodes <= 1000 ? Math.max(60, 150 - numNodes * 0.08) : 50) * spacingMult;
-      const grav = numNodes <= 1000 ? 0.25 + density * 0.03 : 0.5;
-      const animate = numNodes <= 1500;
-      console.log(`fcose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}`);
-      layout = cy.layout({
-        ...layoutOptions,
-        name: 'fcose',
-        animate: animate,
-        animationDuration: animate ? 800 : 0,
-        quality: numNodes <= 1500 ? 'default' : 'draft',
-        randomize: true,
-        nodeRepulsion: () => repulsion,
-        idealEdgeLength: () => edgeLen,
-        edgeElasticity: () => 0.4,
-        gravity: grav,
-        gravityRange: 3.8,
-        nodeDimensionsIncludeLabels: numNodes <= 800,
-      });
-    }
+    // Use fcose for all sizes — much faster than cose
+    const repulsion = Math.max(3000, 12000 - numNodes * 8) * spacingMult;
+    const edgeLen = Math.max(40, 150 - numNodes * 0.1) * spacingMult;
+    const grav = Math.min(1.0, 0.2 + density * 0.05);
+    const animate = numNodes <= 300;
+    const quality = numNodes <= 500 ? 'default' : 'draft';
+
+    console.log(`fcose: repulsion=${repulsion.toFixed(0)}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}, quality=${quality}`);
+
+    layout = cy.layout({
+      ...layoutOptions,
+      name: 'fcose',
+      animate: animate,
+      animationDuration: animate ? 800 : 0,
+      quality: quality,
+      randomize: true,
+      nodeRepulsion: () => repulsion,
+      idealEdgeLength: () => edgeLen,
+      edgeElasticity: () => 0.45,
+      gravity: grav,
+      gravityRange: 3.8,
+      nodeDimensionsIncludeLabels: numNodes <= 200,
+    });
 
     layout.on('layoutstart', () => console.log(`${layout.options.name} layout started...`));
     layout.on('layoutready', () => {
