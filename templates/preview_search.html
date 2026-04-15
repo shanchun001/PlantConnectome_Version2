@@ -328,41 +328,41 @@
     'other'
   ]);
 
-  // Short display aliases for visualization categories (covers both short and long DB values)
+  // Full display names for visualization categories (no shortening)
   const CAT_ALIAS = {
-    // Short simplified keys
-    'GENE/PROTEIN':                                                              'Gene/Protein',
-    'PHENOTYPE':                                                                 'Phenotype',
-    'CELL/ORGAN/ORGANISM':                                                       'Cell/Organism',
-    'CHEMICAL':                                                                  'Chemical',
-    'TREATMENT':                                                                 'Treatment',
-    'BIOLOGICAL PROCESS':                                                        'Biological Process',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE':                                            'Genomic/Transcriptomic',
-    'METHOD':                                                                    'Method',
+    // Short forms in data → full display
+    'GENE/PROTEIN':                                                              'Gene / Protein',
+    'PHENOTYPE':                                                                 'Phenotype / Trait / Disease',
+    'CELL/ORGAN/ORGANISM':                                                       'Complex / Structure / Compartment / Cell / Organ / Organism',
+    'CHEMICAL':                                                                  'Chemical / Metabolite / Cofactor / Ligand',
+    'TREATMENT':                                                                 'Treatment / Perturbation / Stress / Mutant',
+    'BIOLOGICAL PROCESS':                                                        'Biological Process / Pathway / Function',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE':                                            'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
+    'METHOD':                                                                    'Method / Assay / Experimental Setup / Parameter / Sample',
     'GENE IDENTIFIER':                                                           'Gene Identifier',
     'NA':                                                                        'Mixed',
     'OTHER':                                                                     'Other',
-    // Long DB category strings
-    'GENE / PROTEIN':                                                            'Gene/Protein',
-    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic/Transcriptomic',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic/Transcriptomic',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic/Transcriptomic',
-    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Cell/Organism',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Cell/Organism',
-    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical',
-    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment',
-    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process',
-    'REGULATORY / SIGNALING MECHANISM':                                          'Biological Process',
-    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process',
-    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Method',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Method',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Treatment',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Phenotype',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Method',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Method',
+    // Long DB category strings → full display (title-cased)
+    'GENE / PROTEIN':                                                            'Gene / Protein',
+    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
+    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype / Trait / Disease',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Complex / Structure / Compartment / Cell / Organ / Organism',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Taxonomic / Evolutionary / Phylogenetic Group',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical / Metabolite / Cofactor / Ligand',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment / Perturbation / Stress / Mutant',
+    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment / Exposure / Perturbation',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process / Pathway / Function',
+    'REGULATORY / SIGNALING MECHANISM':                                          'Regulatory / Signaling Mechanism',
+    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process / Function',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method / Assay / Experimental Setup / Parameter / Sample',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Computational / Model / Algorithm / Data / Metric',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Equipment / Device / Material / Instrument',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Environmental / Ecological / Soil / Climate Context',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Clinical / Epidemiological / Population',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Other',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Other',
     'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
   };
   function catAlias(cat) {
@@ -380,25 +380,12 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    // Build dropdown from unique CAT_ALIAS values with full display names
-    const dropdownLabels = {
-      'Gene/Protein': 'Gene / Protein',
-      'Cell/Organism': 'Cell / Organ / Organism',
-      'Chemical': 'Chemical / Metabolite',
-      'Biological Process': 'Biological Process / Pathway',
-      'Phenotype': 'Phenotype / Trait',
-      'Treatment': 'Treatment / Stress / Condition',
-      'Genomic/Transcriptomic': 'Genomic / Transcriptomic Feature',
-      'Method': 'Method / Tool / Database',
-      'Gene Identifier': 'Gene Identifier',
-      'Mixed': 'Mixed (multiple categories)',
-      'Other': 'Other',
-    };
+    // Build dropdown from unique CAT_ALIAS values (already full names)
     const uniqueLabels = [...new Set(Object.values(CAT_ALIAS))].sort();
-    uniqueLabels.forEach(shortLabel => {
+    uniqueLabels.forEach(label => {
       const option = document.createElement("option");
-      option.value = shortLabel.toLowerCase();
-      option.textContent = dropdownLabels[shortLabel] || shortLabel;
+      option.value = label.toLowerCase();
+      option.textContent = label;
       dropdown.appendChild(option);
     });
 
