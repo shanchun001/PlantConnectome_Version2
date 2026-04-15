@@ -1081,13 +1081,19 @@
     const visibleEdges = cy
       .edges()
       .filter((edge) => edge.visible() && parseFloat(edge.style('opacity')) === 1)
-      .map((edge) => ({
-        source: edge.data().originalsource + ' [' + edge.data().sourcetype + ']',
-        interaction: edge.data().interaction,
-        target: edge.data().originaltarget + ' [' + edge.data().targettype + ']',
-        pmid: edge.data().pmid,
-        section: edge.data().p_source || '',
-      }));
+      .map((edge) => {
+        const srcNode = cy.getElementById(edge.data().source);
+        const tgtNode = cy.getElementById(edge.data().target);
+        const srcCat = titleCaseCategory(srcNode?.data()?.category || '');
+        const tgtCat = titleCaseCategory(tgtNode?.data()?.category || '');
+        return {
+          source: edge.data().originalsource + ' (' + edge.data().sourcetype + ')' + (srcCat ? ' [' + srcCat + ']' : ''),
+          interaction: edge.data().interaction,
+          target: edge.data().originaltarget + ' (' + edge.data().targettype + ')' + (tgtCat ? ' [' + tgtCat + ']' : ''),
+          pmid: edge.data().pmid,
+          section: edge.data().p_source || '',
+        };
+      });
 
     visibleEdges.forEach((edge) => {
       const { source, interaction, target, pmid } = edge;
