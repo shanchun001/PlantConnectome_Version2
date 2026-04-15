@@ -4,6 +4,16 @@
   // ----------------------------
 
   /**
+   * Convert an ALL-CAPS category string to Title Case for display.
+   * e.g. "GENE / PROTEIN" → "Gene / Protein"
+   *      "GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE" → "Genomic / Transcriptomic / Proteomic / Epigenomic Feature"
+   */
+  function titleCaseCategory(str) {
+    if (!str) return str;
+    return str.toLowerCase().replace(/(?:^|\s|\/\s*)\S/g, c => c.toUpperCase());
+  }
+
+  /**
    * Global constants and data preparation
    */
   let NODES_TO_RENDER = prepareNodes();
@@ -161,7 +171,7 @@
 
   // ── Badge helper ──
   function categoryBadge(raw) {
-    const label = raw || 'N/A';
+    const label = titleCaseCategory(raw) || 'N/A';
     return `<span class="category-badge">${label}</span>`;
   }
 
@@ -334,7 +344,7 @@
           'curve-style': 'bezier',
           'min-zoomed-font-size': 9,
           opacity: 0.8,
-          label: (ele) => ele.data('category'),
+          label: (ele) => titleCaseCategory(ele.data('category')),
           'font-size': '12px',
           'text-wrap': 'wrap',
           'text-max-width': 50,
@@ -610,7 +620,7 @@
     const tgtName = edge.data().originaltarget;
     const tgtType = edge.data().targettype;
     const interactionText = edge.data().interaction;
-    const categoryText = edge.data().category || 'N/A';
+    const categoryText = titleCaseCategory(edge.data().category) || 'N/A';
     const pmid = edge.data().pmid;
     const section = edge.data().p_source || 'N/A';
     const speciesText = edge.data().species || 'N/A';
@@ -1467,7 +1477,7 @@
       for (let i = start; i < end; i++) {
         const category = sortedCategories[i];
         const label = document.createElement('label');
-        label.innerText = `${category} (${categoryCounts[category]})`;
+        label.innerText = `${titleCaseCategory(category)} (${categoryCounts[category]})`;
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -1517,7 +1527,7 @@
         const sorted = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
         sorted.forEach(cat => {
           const label = document.createElement('label');
-          label.innerText = `${cat} (${categoryCounts[cat]})`;
+          label.innerText = `${titleCaseCategory(cat)} (${categoryCounts[cat]})`;
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
           checkbox.value = cat;
