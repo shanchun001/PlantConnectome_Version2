@@ -829,17 +829,16 @@ def generate_multi_search_route(search_type):
             if not raw_pairs:
                 return render_template('not_found.html', search_term=multi_query)
 
-            # Extract entity names from selected pairs (format: "entity_name|category")
+            # Extract entity names from selected pairs (format: "entity_name|entity_type|display_category")
             selected_entity_names = set()
             display_labels = []
             for item in raw_pairs:
-                if '|' in item:
-                    entityName, entityCat = item.split('|', 1)
-                else:
-                    entityName = item
-                    entityCat = ""
+                parts = item.split('|')
+                entityName = parts[0] if len(parts) > 0 else item
+                entityType = parts[1] if len(parts) > 1 else ""
+                displayCat = parts[2] if len(parts) > 2 else entityType
                 selected_entity_names.add(entityName.upper())
-                display_labels.append(f"{entityName} [{entityCat}]" if entityCat else entityName)
+                display_labels.append(f"{entityName} [{displayCat}]" if displayCat else entityName)
 
             # Query MongoDB directly for the selected entities
             collection = db["all_dic"]

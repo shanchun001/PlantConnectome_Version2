@@ -2186,24 +2186,28 @@
           <thead>
             <tr>
               <th>Source</th>
-              <th>Interaction Type</th>
+              <th>Source Type</th>
+              <th>Source Category</th>
+              <th>Relationship</th>
+              <th>Relationship Category</th>
               <th>Target</th>
-              <th>PMID</th>
+              <th>Target Type</th>
+              <th>Target Category</th>
               <th>Section</th>
             </tr>
           </thead>
           <tbody id="body_results">
             {% for gene in genes %}
             <tr>
-              <td>{{ gene.id }} [{{ gene.idcategory or gene.idtype }}]</td>
-              <td>{{ gene.relationship_label or gene.inter_type }}</td>
-              <td>{{ gene.target }} [{{ gene.targetcategory or gene.targettype }}]</td>
-              <td>
-                <a href="https://pubmed.ncbi.nlm.nih.gov/{{ gene.publication }}" target="_blank" class="pubmed-link pubmed-hyperlink">
-                  {{ gene.publication }}
-                </a>
-              </td>
-              <td>{{ gene.p_source }}</td>
+              <td>{{ gene.id }}</td>
+              <td style="color:#6b7280;font-size:12px;">{{ gene.idtype }}</td>
+              <td><span style="font-size:11px;color:#3498db;background:#eaf2f8;border:1px solid #aed6f1;border-radius:3px;padding:1px 5px;">{{ gene.idcategory or 'Other' }}</span></td>
+              <td style="font-weight:500;">{{ gene.inter_type }}</td>
+              <td><span style="font-size:11px;color:#8e44ad;background:#f4ecf7;border:1px solid #d2b4de;border-radius:3px;padding:1px 5px;">{{ gene.relationship_label or gene.inter_type }}</span></td>
+              <td>{{ gene.target }}</td>
+              <td style="color:#6b7280;font-size:12px;">{{ gene.targettype }}</td>
+              <td><span style="font-size:11px;color:#3498db;background:#eaf2f8;border:1px solid #aed6f1;border-radius:3px;padding:1px 5px;">{{ gene.targetcategory or 'Other' }}</span></td>
+              <td style="color:#6b7280;font-size:12px;">{{ gene.p_source }}</td>
             </tr>
             {% endfor %}
           </tbody>

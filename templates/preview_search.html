@@ -435,12 +435,12 @@
       row.dataset.entityType = entity_type;
       row.dataset.networkCount = network_count;
 
-      // Checkbox — value uses entity|entity_type for routing
+      // Checkbox — value uses entity|entity_type|display_category
       const checkboxCell = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.classList.add('entity-checkbox');
-      checkbox.value = `${entity}|${entity_type}`;
+      checkbox.value = `${entity}|${entity_type}|${display_cat || ''}`;
       checkbox.addEventListener('change', updateTotalNodeCount);
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
