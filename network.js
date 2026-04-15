@@ -1881,17 +1881,17 @@
       if (loadingEl) loadingEl.style.display = 'none';
     }
 
-    // Safety fallback: hide overlay after 5s in case layoutstop doesn't fire
+    // Safety fallback: hide overlay after 15s in case layoutstop doesn't fire
     setTimeout(() => {
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl && loadingEl.style.display !== 'none') {
-        console.warn('Layout timeout — forcing display.');
         loadingEl.style.display = 'none';
         cy.fit(cy.elements(), 40);
         cy.center();
         styleCentralNodes(queryTerm);
+        updateNodeSummaries();
       }
-    }, 5000);
+    }, 15000);
 
     // Recenter on window resize
     window.addEventListener('resize', () => { cy.resize(); cy.fit(cy.elements(), 40); });
@@ -2017,7 +2017,7 @@
         const layout = cy.layout(opts);
         layout.on('layoutstop', () => this._onLayoutDone(loadingEl));
         layout.run();
-        setTimeout(() => { if (loadingEl) loadingEl.style.display = 'none'; }, 8000);
+        setTimeout(() => { if (loadingEl) loadingEl.style.display = 'none'; }, 15000);
       },
 
       _onLayoutDone(loadingEl) {
