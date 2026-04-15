@@ -1809,15 +1809,6 @@
     initializeCategoryFilters();
     // Build checkboxes for edge categories:
     initializeEdgeCategoryFilters();
-    applyLayout();
-    resetNetworkView();
-    showDefinitionsForSearchTerm(queryTerm);
-    styleCentralNodes(queryTerm);
-    updateNodeSummaries();
-
-    // Let nodes be grabbed if desired
-    cy.autoungrabify(false);
-
     // ══════════════════════════════════════════════════
     // View Settings (VS)
     // ══════════════════════════════════════════════════
@@ -1960,6 +1951,16 @@
     window.recalculateLayout = function() { VS.applyLayout(); };
     window.fitGraph = function() { VS.fit(); };
   }
+
+    applyLayout();
+    resetNetworkView();
+    showDefinitionsForSearchTerm(queryTerm);
+    styleCentralNodes(queryTerm);
+    updateNodeSummaries();
+
+    // Let nodes be grabbed if desired
+    cy.autoungrabify(false);
+
 
   /**
    * On DOM ready, initialize the app
