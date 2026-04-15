@@ -274,26 +274,40 @@ def find_preview_fast(my_search, genes, search_type):
 
     matched_set = set(matched_names)
 
-    # Only aggregate the MATCHED side — not the neighbor
-    # When entity1 matches, group by entity1 (not entity2)
-    # When entity2 matches, group by entity2 (not entity1)
+    # Only aggregate the MATCHED side — count unique neighbor nodes (not edges)
+    # When entity1 matches, count distinct entity2 values (neighbors)
+    # When entity2 matches, count distinct entity1 values (neighbors)
     pipeline_e1 = [
         {"$match": {"entity1_lower": {"$in": matched_names}}},
         {"$group": {
-            "_id": {"entity": "$entity1", "type": "$entity1type", "category": "$entity1category"},
-            "count": {"$sum": 1}
+            "_id": {"entity": "$entity1", "neighbor": "$entity2"},
+            "type": {"$first": "$entity1type"},
+            "category": {"$first": "$entity1category"},
         }},
-        {"$sort": {"count": -1}},
+        {"$group": {
+            "_id": "$_id.entity",
+            "type": {"$first": "$type"},
+            "category": {"$first": "$category"},
+            "node_count": {"$sum": 1}
+        }},
+        {"$sort": {"node_count": -1}},
         {"$limit": 500}
     ]
 
     pipeline_e2 = [
         {"$match": {"entity2_lower": {"$in": matched_names}}},
         {"$group": {
-            "_id": {"entity": "$entity2", "type": "$entity2type", "category": "$entity2category"},
-            "count": {"$sum": 1}
+            "_id": {"entity": "$entity2", "neighbor": "$entity1"},
+            "type": {"$first": "$entity2type"},
+            "category": {"$first": "$entity2category"},
         }},
-        {"$sort": {"count": -1}},
+        {"$group": {
+            "_id": "$_id.entity",
+            "type": {"$first": "$type"},
+            "category": {"$first": "$category"},
+            "node_count": {"$sum": 1}
+        }},
+        {"$sort": {"node_count": -1}},
         {"$limit": 500}
     ]
 
@@ -316,29 +330,24 @@ def find_preview_fast(my_search, genes, search_type):
         # Fallback to entity type lookup
         return ENTITY_CATEGORIES_DICT.get((etype or '').upper(), 'OTHER')
 
-    # Merge: group by entity, track best_etype (for URL), map to short vis category, sum counts
-    seen = {}  # entity -> [best_etype, best_count, total_count, vis_cat]
+    # Merge: group by entity, sum unique node counts from both sides
+    seen = {}  # entity -> [best_etype, node_count, vis_cat]
     for r in results_e1 + results_e2:
-        entity = r["_id"]["entity"]
-        etype = r["_id"].get("type", "") or ""
-        ecat = r["_id"].get("category", "") or ""
-        count = r["count"]
+        entity = r["_id"]
+        etype = r.get("type", "") or ""
+        ecat = r.get("category", "") or ""
+        node_count = r["node_count"]
         vis_cat = resolve_vis_category(ecat, etype)
         if entity not in seen:
-            seen[entity] = [etype, count, count, vis_cat]
+            seen[entity] = [etype, node_count, vis_cat]
         else:
-            entry = seen[entity]
-            entry[2] += count
-            if count > entry[1]:
-                entry[0] = etype
-                entry[1] = count
+            # Sum unique nodes from both sides (some overlap, but good approximation)
+            seen[entity][1] += node_count
 
-    # Return as tuples: (entity, entity_type, count, count, vis_category)
-    # - entity_type (index 1): most common type — used in URL for gene.html route
-    # - vis_category (index 4): short category name for display
+    # Return as tuples: (entity, entity_type, node_count, node_count, vis_category)
     results = []
     for entity, entry in seen.items():
-        results.append((entity, entry[0], entry[2], entry[2], entry[3]))
+        results.append((entity, entry[0], entry[1], entry[1], entry[2]))
     return sorted(results, key=lambda x: x[2], reverse=True)
 
 
