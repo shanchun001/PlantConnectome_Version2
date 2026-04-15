@@ -15,46 +15,29 @@ def preview_author_search(query):
     start_time = time.time()
     authors_collection = db["authors"]
 
-    # Simple approach: find matching authors, group by standardized name
-    # No $lookup needed — we'll verify against all_dic when user clicks through
-    pipeline = [
-        {"$match": {"authors": {"$regex": query, "$options": "i"}}},
-        {"$set": {
-            "authors": {
-                "$filter": {
-                    "input": "$authors",
-                    "as": "author",
-                    "cond": {
-                        "$regexMatch": {
-                            "input": "$$author",
-                            "regex": query,
-                            "options": "i"
-                        }
-                    }
-                }
-            }
-        }},
-        {"$match": {"authors.0": {"$exists": True}}},
-        {"$unwind": "$authors"},
-        {"$group": {
-            "_id": "$authors",
-            "publication_count": {"$sum": 1}
-        }},
-        {"$sort": {"publication_count": -1}}
-    ]
-
+    # Simple approach: find matching docs, count in Python (fast on 61K collection)
     authors_list = []
     try:
-        authors_cursor = authors_collection.aggregate(pipeline)
-        for doc in authors_cursor:
-            full_name = doc["_id"]
-            count = doc.get("publication_count", 0)
+        query_upper = query.strip().upper()
+        docs = list(authors_collection.find(
+            {"authors": {"$regex": query_upper}},
+            {"authors": 1}
+        ))
+        # Count matching author names
+        from collections import Counter
+        name_counts = Counter()
+        for doc in docs:
+            for author in doc.get("authors", []):
+                if query_upper in author.upper():
+                    name_counts[author] += 1
+
+        for name, count in name_counts.most_common():
             authors_list.append({
-                "full_name": full_name,
+                "full_name": name,
                 "publication_count": count
             })
     except Exception as e:
-        logging.error(f"Error during aggregation of authors: {e}")
+        logging.error(f"Error during author search: {e}")
         authors_list = []
 
     elapsed_time = time.time() - start_time
