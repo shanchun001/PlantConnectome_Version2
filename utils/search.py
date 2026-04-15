@@ -321,19 +321,10 @@ def find_preview_fast(my_search, genes, search_type):
     results_combined = list(genes.aggregate(pipeline, allowDiskUse=True))
 
     def resolve_vis_category(ecat, etype):
-        """Resolve raw DB category (possibly comma-separated) to short vis category."""
+        """Return raw DB category as-is (uppercased). No short-form conversion."""
         if ecat:
-            # Try full string first
-            vis = PROMPT_TO_VIS_CATEGORY.get(ecat.strip().upper())
-            if vis:
-                return vis
-            # Split on comma and try each part
-            for part in ecat.split(','):
-                vis = PROMPT_TO_VIS_CATEGORY.get(part.strip().upper())
-                if vis:
-                    return vis
-        # Fallback to entity type lookup
-        return ENTITY_CATEGORIES_DICT.get((etype or '').upper(), 'OTHER')
+            return ecat.strip().upper()
+        return 'OTHER'
 
     # Build result tuples — already deduplicated by the pipeline
     results = []
@@ -343,7 +334,8 @@ def find_preview_fast(my_search, genes, search_type):
         ecat = r.get("category", "") or ""
         node_count = r["node_count"]
         vis_cat = resolve_vis_category(ecat, etype)
-        results.append((entity, etype, node_count, node_count, vis_cat))
+        # +1 to include the entity itself (gene.html counts all nodes including self)
+        results.append((entity, etype, node_count + 1, node_count + 1, vis_cat))
 
     return sorted(results, key=lambda x: x[2], reverse=True)
 
