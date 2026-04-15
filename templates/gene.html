@@ -499,28 +499,58 @@
 {% block content %}
 <div class="grid-container align-center gene-page" style="padding-left: 2px; padding-right: 2px; width: 100%;">
   {% if genes %}
-    {% if '[' in search_term %}
-      {% set entity_name = search_term.split('[')[0].strip() %}
-      {% set entity_cats = search_term.split('[')[1].rstrip(']').strip() %}
-    {% else %}
-      {% set entity_name = search_term %}
-      {% set entity_cats = '' %}
-    {% endif %}
+    {# Parse search_term: could be "ENTITY [TYPE1, TYPE2]" or "ENTITY1 [TYPE1], ENTITY2 [TYPE2]" #}
+    {% set raw_term = search_term %}
     <div class="search-header" style="margin-top: 16px;">
       <div>
-        <h3 style="margin: 0 0 4px 0; font-weight: 700; font-size: 1.5em; color: #111827;">Search results for:</h3>
-        <span class="search-term-container">
-          <span class="term">{{ entity_name }}</span>
-          {% if entity_cats %}
-            <span style="font-size: 0.85em; color: #6b7280; margin-left: 8px;">{{ entity_cats }}</span>
-          {% endif %}
-        </span>
+        <h3 style="margin: 0 0 6px 0; font-weight: 700; font-size: 1.35em; color: #2c3e50;">
+          Search results for:
+        </h3>
+        <div id="search-term-display" style="margin-bottom: 8px;">
+          {# JS will parse and render entity names with category badges #}
+        </div>
       </div>
-      <small class="graph-info">
+      <div class="graph-info" style="font-size: 0.9em; color: #6b7280;">
         <span id="element-len"></span> &middot;
-        <span id="number-papers">{{ number_papers }}</span> paper(s)
-      </small>
+        Edges are based on: <span id="number-papers">{{ number_papers }}</span> paper(s)
+      </div>
     </div>
+    <script>
+    (function() {
+      // Parse "ENTITY1 [TYPE1, TYPE2], ENTITY2 [TYPE3]" into structured display
+      const raw = "{{ search_term | e }}";
+      const container = document.getElementById('search-term-display');
+      // Split on "], " to handle multiple entities
+      const parts = raw.split(/\],\s*/);
+      let html = '';
+      parts.forEach((part, i) => {
+        part = part.trim();
+        if (!part) return;
+        // Extract entity name and bracket content
+        const bracketIdx = part.lastIndexOf('[');
+        let name, cats;
+        if (bracketIdx > 0) {
+          name = part.substring(0, bracketIdx).trim();
+          cats = part.substring(bracketIdx + 1).replace(/\]$/, '').trim();
+        } else {
+          name = part.replace(/\]$/, '').trim();
+          cats = '';
+        }
+        if (i > 0) html += '<span style="color:#9ca3af; margin:0 6px;">&middot;</span>';
+        html += '<span style="font-size:1.15em; font-weight:600; color:#1a1a2e;">' + name + '</span>';
+        if (cats) {
+          // Split categories by comma and show as badges
+          cats.split(',').forEach(function(cat) {
+            cat = cat.trim();
+            if (cat) {
+              html += ' <span style="display:inline-block; font-size:0.75em; font-weight:500; color:#3498db; background:#eaf2f8; border:1px solid #aed6f1; border-radius:4px; padding:1px 7px; margin-left:4px;">' + cat + '</span>';
+            }
+          });
+        }
+      });
+      container.innerHTML = html;
+    })();
+    </script>
 
     <!-- Alert Box -->
     <div class="alert-box" role="alert" aria-live="assertive">
