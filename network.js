@@ -639,7 +639,7 @@
           <div class="edge-tp-connection" style="font-size:12px;">
             <strong>${nodeId}</strong>
             <span style="color:#DC143C;font-weight:600;">${direction} ${interaction} ${direction}</span>
-            <strong>${otherName}</strong> <small style="color:#6b7280;">[${otherType}]</small>
+            <strong>${otherName}</strong> <small style="color:#6b7280;">(type: ${otherType})</small>
           </div>
           ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na'
             ? `<div style="margin:2px 0 4px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${edgeCat}</span></div>`
@@ -708,9 +708,9 @@
     ab.innerHTML = `
       <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-connection">
-        <span class="edge-tp-source"><strong>${srcName}</strong> <small>[${srcType}]</small>${srcIdent ? ` <small style="color:#6b7280;">ID: ${srcIdent}</small>` : ''}</span>
+        <span class="edge-tp-source"><strong>${srcName}</strong> <small style="color:#6b7280;">(type: ${srcType})</small>${srcIdent ? ` <small style="color:#6b7280;">| ID: ${srcIdent}</small>` : ''}</span>
         <span class="edge-tp-arrow">&xrarr; <em style="color:#DC143C;font-weight:600;">${interactionText}</em> &xrarr;</span>
-        <span class="edge-tp-target"><strong>${tgtName}</strong> <small>[${tgtType}]</small>${tgtIdent ? ` <small style="color:#6b7280;">ID: ${tgtIdent}</small>` : ''}</span>
+        <span class="edge-tp-target"><strong>${tgtName}</strong> <small style="color:#6b7280;">(type: ${tgtType})</small>${tgtIdent ? ` <small style="color:#6b7280;">| ID: ${tgtIdent}</small>` : ''}</span>
       </div>
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
@@ -736,13 +736,13 @@
       <div class="edge-tp-section-title">Entity Definitions</div>
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title source">${srcName} [${srcType}]${srcIdent ? ` (${srcIdent})` : ''}</div>
+          <div class="edge-tp-def-title source">${srcName} <small style="color:#6b7280;">(type: ${srcType})</small>${srcIdent ? ` <small style="color:#6b7280;">| ID: ${srcIdent}</small>` : ''}</div>
           ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().source_extracted_definition}</div>` : ''}
           ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().source_generated_definition}</div>` : ''}
           ${!edge.data().source_extracted_definition && !edge.data().source_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title target">${tgtName} [${tgtType}]${tgtIdent ? ` (${tgtIdent})` : ''}</div>
+          <div class="edge-tp-def-title target">${tgtName} <small style="color:#6b7280;">(type: ${tgtType})</small>${tgtIdent ? ` <small style="color:#6b7280;">| ID: ${tgtIdent}</small>` : ''}</div>
           ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().target_extracted_definition}</div>` : ''}
           ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().target_generated_definition}</div>` : ''}
           ${!edge.data().target_extracted_definition && !edge.data().target_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
