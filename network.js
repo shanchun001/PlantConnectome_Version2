@@ -1,4 +1,12 @@
 
+  // Suppress non-critical Cytoscape warnings (wheel sensitivity, overlapping endpoints)
+  const _origWarn = console.warn;
+  console.warn = function(...args) {
+    const msg = args[0];
+    if (typeof msg === 'string' && (msg.includes('wheel sensitivity') || msg.includes('invalid endpoints'))) return;
+    _origWarn.apply(console, args);
+  };
+
   // ----------------------------
   // 1) PRE-EXISTING CODE
   // ----------------------------
