@@ -374,12 +374,12 @@
           'text-background-padding': '1px',
         },
       },
-      // Highlighted/selected node
+      // Clicked/selected node — subtle highlight (not red)
       {
         selector: 'node:selected',
         style: {
-          'border-width': 3,
-          'border-color': '#e74c3c',
+          'border-width': 2.5,
+          'border-color': '#3498db',
           'background-opacity': 1,
         },
       },
