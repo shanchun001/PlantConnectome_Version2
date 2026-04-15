@@ -785,20 +785,32 @@ def generate_search_route2(search_type):
 
         updatedElements = process_network(elements)
         cytoscape_js_code = generate_cytoscape_js(updatedElements, elementsAb, node_fa)
-        # Collect ALL distinct categories and find original-cased entity name
+        # Collect ALL distinct categories/types and find original-cased entity name
         entity_categories = set()
+        entity_types = set()
         original_name = query  # fallback
         for g in forSending:
             if g.id.upper() == query.upper():
                 original_name = g.id  # use DB casing
+                if g.idtype:
+                    entity_types.add(g.idtype)
                 if g.idcategory:
                     entity_categories.add(g.idcategory)
             if g.target.upper() == query.upper():
                 original_name = g.target  # use DB casing
+                if g.targettype:
+                    entity_types.add(g.targettype)
                 if g.targetcategory:
                     entity_categories.add(g.targetcategory)
+        types_str = ", ".join(sorted(t for t in entity_types if t)) or ""
         cats_str = ", ".join(sorted(c for c in entity_categories if c and c != 'Other')) or ""
-        patterns_title = f"{original_name} [{cats_str}]" if cats_str else original_name
+        # Format: "name (type) [category]"
+        parts = [original_name]
+        if types_str:
+            parts.append(f"({types_str})")
+        if cats_str:
+            parts.append(f"[{cats_str}]")
+        patterns_title = " ".join(parts)
 
         if forSending:
             return render_template(
@@ -843,7 +855,13 @@ def generate_multi_search_route(search_type):
                 entityType = parts[1] if len(parts) > 1 else ""
                 displayCat = parts[2] if len(parts) > 2 else entityType
                 selected_entity_names.add(entityName.upper())
-                display_labels.append(f"{entityName} [{displayCat}]" if displayCat else entityName)
+                # Format: "name (type) [category]"
+                label_parts = [entityName]
+                if entityType:
+                    label_parts.append(f"({entityType})")
+                if displayCat:
+                    label_parts.append(f"[{displayCat}]")
+                display_labels.append(" ".join(label_parts))
 
             # Query MongoDB directly for the selected entities
             collection = db["all_dic"]

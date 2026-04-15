@@ -609,6 +609,8 @@
     abTitle.innerHTML = `
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
+        <span style="font-size:0.75em;color:#6b7280;">(${typeDisplay})</span>
+        ${nodeCategory ? ` <span class="edge-tp-category-badge">${nodeCategory}</span>` : ''}
       </div>
     `;
 
@@ -618,7 +620,7 @@
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Entity Name</span><span><strong>${nodeId}</strong></span></div>
         <div class="edge-tp-row"><span class="edge-tp-label">Entity Type</span><span>${titleCaseCategory(typeDisplay)}</span></div>
-        ${nodeCategory ? `<div class="edge-tp-row"><span class="edge-tp-label">Entity Category</span><span>${nodeCategory}</span></div>` : ''}
+        ${nodeCategory ? `<div class="edge-tp-row"><span class="edge-tp-label">Entity Category</span><span><span class="edge-tp-category-badge">${nodeCategory}</span></span></div>` : ''}
         ${nodeIdentifier ? `<div class="edge-tp-row"><span class="edge-tp-label">Gene Identifier</span><span>${nodeIdentifier}</span></div>` : ''}
       </div>
 
@@ -654,7 +656,7 @@
           <div class="edge-tp-connection" style="font-size:12px;">
             <strong>${nodeId}</strong>
             <span style="color:#DC143C;font-weight:600;">${direction} ${interaction} ${direction}</span>
-            <strong>${otherName}</strong> <small style="color:#6b7280;">(type: ${otherType})</small>
+            <strong>${otherName}</strong> <small style="color:#6b7280;">(${otherType})</small>
           </div>
           ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na'
             ? `<div style="margin:2px 0 4px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${edgeCat}</span></div>`
@@ -712,6 +714,11 @@
     const assocProcess = edge.data().associated_process || '';
     const genProcess = edge.data().generated_process || '';
     const citations = edge.data().relevant_citations || '';
+    // Get categories from node data
+    const srcNode = cy.getElementById(edge.data().source);
+    const tgtNode = cy.getElementById(edge.data().target);
+    const srcCat = titleCaseCategory(srcNode?.data()?.category || srcNode?.data()?.originalcategory || '');
+    const tgtCat = titleCaseCategory(tgtNode?.data()?.category || tgtNode?.data()?.originalcategory || '');
 
     abTitle.innerHTML = `
       <div class="edge-tp-header">
@@ -725,9 +732,9 @@
     ab.innerHTML = `
       <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-connection">
-        <span class="edge-tp-source"><strong>${srcName}</strong> <small style="color:#6b7280;">(type: ${srcType})</small>${srcIdent ? ` <small style="color:#6b7280;">| ID: ${srcIdent}</small>` : ''}</span>
+        <span class="edge-tp-source"><strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge">${srcCat}</span>` : ''}${srcIdent ? ` <small style="color:#6b7280;">ID: ${srcIdent}</small>` : ''}</span>
         <span class="edge-tp-arrow">&xrarr; <em style="color:#DC143C;font-weight:600;">${interactionText}</em> &xrarr;</span>
-        <span class="edge-tp-target"><strong>${tgtName}</strong> <small style="color:#6b7280;">(type: ${tgtType})</small>${tgtIdent ? ` <small style="color:#6b7280;">| ID: ${tgtIdent}</small>` : ''}</span>
+        <span class="edge-tp-target"><strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge">${tgtCat}</span>` : ''}${tgtIdent ? ` <small style="color:#6b7280;">ID: ${tgtIdent}</small>` : ''}</span>
       </div>
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
@@ -753,13 +760,13 @@
       <div class="edge-tp-section-title">Entity Definitions</div>
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title source">${srcName} <small style="color:#6b7280;">(type: ${srcType})</small>${srcIdent ? ` <small style="color:#6b7280;">| ID: ${srcIdent}</small>` : ''}</div>
+          <div class="edge-tp-def-title source">${srcName} <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${srcCat}</span>` : ''}</div>
           ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().source_extracted_definition}</div>` : ''}
           ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().source_generated_definition}</div>` : ''}
           ${!edge.data().source_extracted_definition && !edge.data().source_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title target">${tgtName} <small style="color:#6b7280;">(type: ${tgtType})</small>${tgtIdent ? ` <small style="color:#6b7280;">| ID: ${tgtIdent}</small>` : ''}</div>
+          <div class="edge-tp-def-title target">${tgtName} <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${tgtCat}</span>` : ''}</div>
           ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().target_extracted_definition}</div>` : ''}
           ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().target_generated_definition}</div>` : ''}
           ${!edge.data().target_extracted_definition && !edge.data().target_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}

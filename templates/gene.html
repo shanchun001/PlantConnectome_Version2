@@ -517,7 +517,7 @@
     </div>
     <script>
     (function() {
-      // Parse "ENTITY1 [TYPE1, TYPE2], ENTITY2 [TYPE3]" into structured display
+      // Parse "name (type) [category], name2 (type2) [category2]" into structured display
       const raw = "{{ search_term | e }}";
       const container = document.getElementById('search-term-display');
       // Split on "], " to handle multiple entities
@@ -526,20 +526,28 @@
       parts.forEach((part, i) => {
         part = part.trim();
         if (!part) return;
-        // Extract entity name and bracket content
+        // Extract: name (type) [category]
+        let name = part, entityType = '', cats = '';
+        // Extract [category] from end
         const bracketIdx = part.lastIndexOf('[');
-        let name, cats;
         if (bracketIdx > 0) {
-          name = part.substring(0, bracketIdx).trim();
           cats = part.substring(bracketIdx + 1).replace(/\]$/, '').trim();
+          name = part.substring(0, bracketIdx).trim();
         } else {
           name = part.replace(/\]$/, '').trim();
-          cats = '';
+        }
+        // Extract (type) from name
+        const parenMatch = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+        if (parenMatch) {
+          name = parenMatch[1].trim();
+          entityType = parenMatch[2].trim();
         }
         if (i > 0) html += '<span style="color:#9ca3af; margin:0 6px;">&middot;</span>';
         html += '<span style="font-size:1.15em; font-weight:600; color:#1a1a2e;">' + name + '</span>';
+        if (entityType) {
+          html += ' <span style="font-size:0.8em; color:#6b7280;">(' + entityType + ')</span>';
+        }
         if (cats) {
-          // Split categories by comma and show as badges
           cats.split(',').forEach(function(cat) {
             cat = cat.trim();
             if (cat) {
