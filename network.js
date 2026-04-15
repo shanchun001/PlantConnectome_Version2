@@ -582,7 +582,7 @@
       : node.data().type;
 
     const nodeIdentifier = node.data().identifier || '';
-    const nodeCategory = node.data().category || node.data().originalcategory || '';
+    const nodeCategory = titleCaseCategory(node.data().category || node.data().originalcategory || '');
     abTitle.innerHTML = `
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
@@ -594,7 +594,7 @@
       <div class="edge-tp-section-title">Entity Information</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Entity Name</span><span><strong>${nodeId}</strong></span></div>
-        <div class="edge-tp-row"><span class="edge-tp-label">Entity Type</span><span>${typeDisplay}</span></div>
+        <div class="edge-tp-row"><span class="edge-tp-label">Entity Type</span><span>${titleCaseCategory(typeDisplay)}</span></div>
         ${nodeCategory ? `<div class="edge-tp-row"><span class="edge-tp-label">Entity Category</span><span>${nodeCategory}</span></div>` : ''}
         ${nodeIdentifier ? `<div class="edge-tp-row"><span class="edge-tp-label">Gene Identifier</span><span>${nodeIdentifier}</span></div>` : ''}
       </div>
@@ -642,7 +642,7 @@
             <strong>${otherName}</strong> <small style="color:#6b7280;">[${otherType}]</small>
           </div>
           ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na'
-            ? `<div style="margin:2px 0 4px 0;"><span class="edge-tp-category-badge">${edgeCat}</span></div>`
+            ? `<div style="margin:2px 0 4px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${edgeCat}</span></div>`
             : ''}
           ${extractedDef || generatedDef ? `
           <div class="edge-tp-def-group" style="margin-top:4px;">
@@ -699,7 +699,9 @@
     abTitle.innerHTML = `
       <div class="edge-tp-header">
         <span class="edge-tp-interaction">${interactionText}</span>
-        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<span class="edge-tp-category-badge">${categoryText}</span>` : ''}
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
+          ? `<div style="margin-top:2px;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${categoryText}</span></div>`
+          : ''}
       </div>
     `;
 
