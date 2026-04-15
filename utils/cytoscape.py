@@ -62,7 +62,12 @@ def edgeConverter(elements):
             "target_generated_definition": str(i[12]).replace("'", "").replace('"', '').replace('\n', ''),
             "sourcecategory": str(i[13]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 13 else '',
             "targetcategory": str(i[14]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 14 else '',
-            "relationship_label": str(i[15]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 15 else ''
+            "relationship_label": str(i[15]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 15 else '',
+            "source_identifier": str(i[16]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 16 else '',
+            "target_identifier": str(i[17]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 17 else '',
+            "associated_process": str(i[18]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 18 else '',
+            "generated_process": str(i[19]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 19 else '',
+            "relevant_citations": str(i[20]).replace("'", "").replace('"', '').replace('\n', '') if len(i) > 20 else ''
         })
     return updatedElements
 
@@ -190,15 +195,26 @@ def generate_cytoscape_js(elements, ab, fa):
                 node_data[name][cat] = node_data[name].get(cat, 0) + 1
                 node_type_counts[name][ntype] = node_type_counts[name].get(ntype, 0) + 1
 
+    # Also collect identifiers per node name
+    node_identifiers = {}  # name -> first identifier seen
+    for edge in elements:
+        for name, ident_key in [
+            (edge["source"], "source_identifier"),
+            (edge["target"], "target_identifier")
+        ]:
+            ident = edge.get(ident_key, "")
+            if ident and name not in node_identifiers:
+                node_identifiers[name] = ident
+
     nodes_js = []
     for name, cat_counts in node_data.items():
-        # Pick category with highest count (exclude OTHER if others exist)
         non_other = {c: v for c, v in cat_counts.items() if c != 'OTHER'}
         best_cat = max(non_other, key=non_other.get) if non_other else 'OTHER'
         best_type = max(node_type_counts[name], key=node_type_counts[name].get)
         safe_name = escape_js_string(name)
+        ident = escape_js_string(node_identifiers.get(name, ""))
         nodes_js.append(
-            f"{{ data: {{ id: '{safe_name}', originalId: '{safe_name}', type: '{escape_js_string(best_type)}', category: '{escape_js_string(best_cat)}' }} }}"
+            f"{{ data: {{ id: '{safe_name}', originalId: '{safe_name}', type: '{escape_js_string(best_type)}', category: '{escape_js_string(best_cat)}', identifier: '{ident}' }} }}"
         )
 
     # ── Edges: merge by (source, target, edge_category) ─────────────────
@@ -242,7 +258,12 @@ def generate_cytoscape_js(elements, ab, fa):
                 source_extracted_definition: '{escape_js_string(e["source_extracted_definition"])}',
                 source_generated_definition: '{escape_js_string(e["source_generated_definition"])}',
                 target_extracted_definition: '{escape_js_string(e["target_extracted_definition"])}',
-                target_generated_definition: '{escape_js_string(e["target_generated_definition"])}'
+                target_generated_definition: '{escape_js_string(e["target_generated_definition"])}',
+                source_identifier: '{escape_js_string(e.get("source_identifier", ""))}',
+                target_identifier: '{escape_js_string(e.get("target_identifier", ""))}',
+                associated_process: '{escape_js_string(e.get("associated_process", ""))}',
+                generated_process: '{escape_js_string(e.get("generated_process", ""))}',
+                relevant_citations: '{escape_js_string(e.get("relevant_citations", ""))}'
             }}
         }}""")
 

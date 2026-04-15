@@ -581,10 +581,12 @@
       ? mergedTypes.join(' / ')
       : node.data().type;
 
+    const nodeIdentifier = node.data().identifier || '';
     abTitle.innerHTML = `
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
         <span class="node-tp-type">Type: ${typeDisplay}</span>
+        ${nodeIdentifier ? `<span class="node-tp-type">Identifier: ${nodeIdentifier}</span>` : ''}
       </div>
     `;
 
@@ -663,11 +665,17 @@
       </div>
     `;
 
+    const srcIdent = edge.data().source_identifier || '';
+    const tgtIdent = edge.data().target_identifier || '';
+    const assocProcess = edge.data().associated_process || '';
+    const genProcess = edge.data().generated_process || '';
+    const citations = edge.data().relevant_citations || '';
+
     ab.innerHTML = `
       <div class="edge-tp-connection">
-        <span class="edge-tp-source">${srcName} <small>[${srcType}]</small></span>
+        <span class="edge-tp-source">${srcName} <small>[${srcType}]</small>${srcIdent ? ` <small style="color:#6b7280;">(${srcIdent})</small>` : ''}</span>
         <span class="edge-tp-arrow">&xrarr; <em>${interactionText}</em> &xrarr;</span>
-        <span class="edge-tp-target">${tgtName} <small>[${tgtType}]</small></span>
+        <span class="edge-tp-target">${tgtName} <small>[${tgtType}]</small>${tgtIdent ? ` <small style="color:#6b7280;">(${tgtIdent})</small>` : ''}</span>
       </div>
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
@@ -675,16 +683,19 @@
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>
         <div class="edge-tp-row"><span class="edge-tp-label">Basis</span><span>${basisText}</span></div>
+        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Associated Process</span><span>${assocProcess}</span></div>` : ''}
+        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated Process</span><span>${genProcess}</span></div>` : ''}
+        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
       </div>
 
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title source">${srcName} [${srcType}]</div>
+          <div class="edge-tp-def-title source">${srcName} [${srcType}]${srcIdent ? ` (${srcIdent})` : ''}</div>
           <div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted:</span> ${edge.data().source_extracted_definition || '<em>N/A</em>'}</div>
           <div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated:</span> ${edge.data().source_generated_definition || '<em>N/A</em>'}</div>
         </div>
         <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title target">${tgtName} [${tgtType}]</div>
+          <div class="edge-tp-def-title target">${tgtName} [${tgtType}]${tgtIdent ? ` (${tgtIdent})` : ''}</div>
           <div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted:</span> ${edge.data().target_extracted_definition || '<em>N/A</em>'}</div>
           <div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated:</span> ${edge.data().target_generated_definition || '<em>N/A</em>'}</div>
         </div>
