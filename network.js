@@ -1725,13 +1725,13 @@
     // Dynamic layout parameters scale with graph size and density
     console.log(`Graph: ${numNodes} nodes, ${numEdges} edges, density=${density.toFixed(1)}`);
 
-    // Apply user spacing setting as a multiplier (default 80 = 1x)
-    const spacingMult = currentSpacing / 80;
+    // Edge length from slider (default 80), used directly as idealEdgeLength
+    const userEdgeLen = parseInt(document.getElementById('vs-edge-len')?.value || 80);
+    const edgeLenMult = userEdgeLen / 80;  // 1x at default
 
-    // fcose params scaled by graph size
-    // Larger graphs need MORE repulsion to spread out, not less
-    const repulsion = (numNodes <= 200 ? 8000 : numNodes <= 500 ? 6000 : 4500) * spacingMult;
-    const edgeLen = (numNodes <= 200 ? 120 : numNodes <= 500 ? 80 : 50) * spacingMult;
+    // fcose params scaled by graph size and user edge length
+    const repulsion = (numNodes <= 200 ? 8000 : numNodes <= 500 ? 6000 : 4500) * edgeLenMult;
+    const edgeLen = userEdgeLen;
     const grav = numNodes <= 200 ? 0.25 : numNodes <= 500 ? 0.4 : 0.8;
     const animate = numNodes <= 200;
     // Always use 'default' quality — 'draft' produces broken layouts
@@ -1852,6 +1852,11 @@
           case 'overlap':
             this._deoverlap(v);
             break;
+          case 'edgeLength':
+            // Debounce: re-run layout 500ms after user stops dragging
+            clearTimeout(window._edgeLenTimer);
+            window._edgeLenTimer = setTimeout(() => this.applyLayout(), 500);
+            break;
         }
       },
 
@@ -1904,8 +1909,9 @@
         if (name === 'fcose') { applyLayout(); return; }
 
         const n = cy.nodes(':visible').length;
+        const uel = parseInt(document.getElementById('vs-edge-len')?.value || 80);
         const opts = { name, fit: true, padding: 40, randomize: true, animate: n <= 200, animationDuration: 600 };
-        if (name === 'cose') Object.assign(opts, { nodeRepulsion: 400000, idealEdgeLength: 60, gravity: 80, numIter: 100, animate: n <= 120 });
+        if (name === 'cose') Object.assign(opts, { nodeRepulsion: 400000 * (uel/80), idealEdgeLength: uel, gravity: 80, numIter: 100, animate: n <= 120 });
         if (name === 'concentric') { opts.concentric = nd => nd.degree(); opts.levelWidth = () => 2; }
         if (name === 'breadthfirst') { opts.directed = true; opts.spacingFactor = 1.2; }
 
@@ -1928,7 +1934,7 @@
 
       reset() {
         this.restoreBaseline();
-        const defs = { 'vs-node-size': 40, 'vs-font-size': 14, 'vs-edge-font': 8, 'vs-overlap': 0 };
+        const defs = { 'vs-node-size': 40, 'vs-font-size': 14, 'vs-edge-font': 8, 'vs-overlap': 0, 'vs-edge-len': 80 };
         for (const [id, v] of Object.entries(defs)) {
           const el = document.getElementById(id); if (el) el.value = v;
           const lbl = document.getElementById(id + '-val'); if (lbl) lbl.textContent = v;

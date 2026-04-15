@@ -602,18 +602,23 @@
           </div>
           <div class="view-setting-row">
             <label>Label Size</label>
-            <input type="range" id="vs-font-size" min="4" max="24" value="14" oninput="VS.set('fontSize', this.value)">
+            <input type="range" id="vs-font-size" min="4" max="40" value="14" oninput="VS.set('fontSize', this.value)">
             <span id="vs-font-size-val">14</span>
           </div>
           <div class="view-setting-row">
             <label>Edge Labels</label>
-            <input type="range" id="vs-edge-font" min="0" max="16" value="8" oninput="VS.set('edgeFontSize', this.value)">
+            <input type="range" id="vs-edge-font" min="0" max="30" value="8" oninput="VS.set('edgeFontSize', this.value)">
             <span id="vs-edge-font-val">8</span>
           </div>
           <div class="view-setting-row">
             <label>De-overlap</label>
             <input type="range" id="vs-overlap" min="0" max="100" value="0" oninput="VS.set('overlap', this.value)">
             <span id="vs-overlap-val">0</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Edge Length</label>
+            <input type="range" id="vs-edge-len" min="20" max="300" value="80" oninput="VS.set('edgeLength', this.value)">
+            <span id="vs-edge-len-val">80</span>
           </div>
           <div class="view-setting-row">
             <label>Layout</label>
