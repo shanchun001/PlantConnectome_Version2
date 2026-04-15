@@ -1855,8 +1855,13 @@
           clearTimeout(window._spacingTimer);
           window._spacingTimer = setTimeout(() => { applyLayout(); }, 500);
           break;
-        case 'edgeLabels':
-          cy.edges().style('min-zoomed-font-size', value ? 1 : 9999);
+        case 'edgeFontSize':
+          document.getElementById('vs-edge-font-val').textContent = value;
+          if (parseInt(value) === 0) {
+            cy.edges().style('min-zoomed-font-size', 9999);
+          } else {
+            cy.edges().style({'font-size': value + 'px', 'min-zoomed-font-size': 1});
+          }
           break;
         case 'nodeLabels':
           cy.nodes().style('min-zoomed-font-size', value ? 8 : 9999);

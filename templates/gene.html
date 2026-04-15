@@ -611,14 +611,16 @@
             <span id="vs-edge-width-val">1.5</span>
           </div>
           <div class="view-setting-row">
+            <label>Edge Label Size</label>
+            <input type="range" id="vs-edge-font" min="0" max="16" value="8" oninput="updateViewSetting('edgeFontSize', this.value)">
+            <span id="vs-edge-font-val">8</span>
+          </div>
+          <div class="view-setting-row">
             <label>Node Spacing</label>
             <input type="range" id="vs-spacing" min="20" max="200" value="80" oninput="updateViewSetting('spacing', this.value)">
             <span id="vs-spacing-val">80</span>
           </div>
 
-          <div class="view-setting-row">
-            <label><input type="checkbox" id="vs-edge-labels" checked onchange="updateViewSetting('edgeLabels', this.checked)"> Show Edge Labels</label>
-          </div>
           <div class="view-setting-row">
             <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
           </div>
