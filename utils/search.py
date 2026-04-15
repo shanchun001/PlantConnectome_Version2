@@ -367,9 +367,22 @@ def find_terms(my_search, genes, search_type):
 
     if search_type == "normal":
         search_term = my_search[0]
-        # Use text index on all_dic directly — fast (~1-2s) and handles word boundaries
-        # Limit to 10000 results to prevent loading 250K+ docs for common terms
-        query = {"$text": {"$search": search_term}}
+        special_characters = r"[!@#$%^&*()_+={}[\]:;\"'<>,.?/~`\\|-]"
+        contains_special = bool(re.search(special_characters, search_term))
+        multiple_words = len(my_search) > 1
+
+        if contains_special or multiple_words:
+            # Regex search on lowercase fields for special chars / multi-word
+            escaped_term = re.escape(search_term.lower())
+            query = {"$or": [
+                {"entity1_lower": {"$regex": escaped_term}},
+                {"entity2_lower": {"$regex": escaped_term}}
+            ]}
+        else:
+            # Quoted phrase search — matches the exact word as a phrase (like GitHub)
+            quoted = f'"{search_term}"'
+            query = {"$text": {"$search": quoted}}
+
         result_list = list(genes.find(query).limit(10000))
 
         for doc in result_list:
@@ -408,16 +421,17 @@ def find_terms(my_search, genes, search_type):
             ))
 
             for word in my_search:
-                word_norm = normalize_text(word)
-                e1_norm, e2_norm = normalize_text(e1), normalize_text(e2)
-                if word_norm in e1_norm:
+                # Word boundary matching (like GitHub) — matches "CESA" as a whole word
+                wl = word.lower()
+                pat = re.compile(rf"\b{re.escape(wl)}\b", re.IGNORECASE)
+                if pat.search(e1):
                     unique_node_count = len(entity_connections[(e1, e1t)]) + 1
                     if ((e1, e1t) not in preview_dict or
                         entity_counts[(e1, e1t)] > preview_dict[(e1, e1t)][2]):
                         e1_cat = entity_cats.get((e1, e1t), '')
                         e1_vis = PROMPT_TO_VIS_CATEGORY.get(e1_cat.upper(), ENTITY_CATEGORIES_DICT.get((e1t or '').upper(), 'OTHER')) if e1_cat else ENTITY_CATEGORIES_DICT.get((e1t or '').upper(), 'OTHER')
                         preview_dict[(e1, e1t)] = (e1, e1t, entity_counts[(e1, e1t)], unique_node_count, e1_vis)
-                if word_norm in e2_norm:
+                if pat.search(e2):
                     unique_node_count = len(entity_connections[(e2, e2t)]) + 1
                     if ((e2, e2t) not in preview_dict or
                         entity_counts[(e2, e2t)] > preview_dict[(e2, e2t)][2]):
