@@ -1718,54 +1718,55 @@
 
     let layout = null;
 
+    const numEdges = cy.edges().length;
+    const density = numEdges / Math.max(numNodes, 1);  // edges per node
+
+    // Dynamic layout parameters scale with graph size and density
+    console.log(`Graph: ${numNodes} nodes, ${numEdges} edges, density=${density.toFixed(1)}`);
+
     if (numNodes <= 500) {
-      console.log('Small graph. Applying cose layout...');
+      // Small: cose with params tuned to size
+      const repulsion = Math.max(200000, 1000000 - numNodes * 1200);
+      const edgeLen = Math.max(40, 120 - numNodes * 0.15);
+      const grav = Math.min(80, 30 + density * 5);
+      const iters = Math.max(100, 300 - numNodes * 0.3);
+      console.log(`cose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(0)}, iters=${iters.toFixed(0)}`);
       layout = cy.layout({
         ...layoutOptions,
         name: 'cose',
-        animate: true,
-        animationDuration: 1500,
+        animate: numNodes <= 200,
+        animationDuration: 1200,
         randomize: true,
-        nodeRepulsion: 800000,
-        idealEdgeLength: 80,
-        edgeElasticity: 100,
-        gravity: 50,
-        numIter: 200,
-        initialTemp: 300,
+        nodeRepulsion: repulsion,
+        idealEdgeLength: edgeLen,
+        edgeElasticity: 80 + density * 10,
+        gravity: grav,
+        numIter: iters,
+        initialTemp: 250,
         coolingFactor: 0.95,
         minTemp: 1.0,
-        nestingFactor: 1.2,
-        nodeDimensionsIncludeLabels: true,
-      });
-    } else if (numNodes <= 2000) {
-      console.log('Medium graph. Applying fcose layout...');
-      layout = cy.layout({
-        ...layoutOptions,
-        name: 'fcose',
-        animate: true,
-        animationDuration: 1000,
-        quality: 'default',
-        randomize: true,
-        nodeRepulsion: () => 8000,
-        idealEdgeLength: () => 120,
-        edgeElasticity: () => 0.45,
-        gravity: 0.3,
-        gravityRange: 3.8,
-        nodeDimensionsIncludeLabels: true,
+        nodeDimensionsIncludeLabels: numNodes <= 150,
       });
     } else {
-      console.log('Large graph. Applying fcose layout (no animation)...');
+      // Medium/Large: fcose with params tuned to size
+      const repulsion = numNodes <= 1000 ? 10000 - numNodes * 4 : 4000;
+      const edgeLen = numNodes <= 1000 ? Math.max(60, 150 - numNodes * 0.08) : 50;
+      const grav = numNodes <= 1000 ? 0.25 + density * 0.03 : 0.5;
+      const animate = numNodes <= 1500;
+      console.log(`fcose: repulsion=${repulsion}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}`);
       layout = cy.layout({
         ...layoutOptions,
         name: 'fcose',
-        animate: false,
-        quality: 'default',
+        animate: animate,
+        animationDuration: animate ? 800 : 0,
+        quality: numNodes <= 1500 ? 'default' : 'draft',
         randomize: true,
-        nodeRepulsion: () => 6000,
-        idealEdgeLength: () => 80,
-        edgeElasticity: () => 0.3,
-        gravity: 0.4,
-        nodeDimensionsIncludeLabels: false,
+        nodeRepulsion: () => repulsion,
+        idealEdgeLength: () => edgeLen,
+        edgeElasticity: () => 0.4,
+        gravity: grav,
+        gravityRange: 3.8,
+        nodeDimensionsIncludeLabels: numNodes <= 800,
       });
     }
 
