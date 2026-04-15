@@ -433,6 +433,11 @@
 
     cy.on('click', (evt) => {
       if (evt.target === cy) {
+        // Close all panels on background click
+        closeAllPanels();
+        const vsp = document.getElementById('viewSettingsPanel');
+        if (vsp) vsp.style.display = 'none';
+
         const currentTime = new Date().getTime();
         const timeDiff = currentTime - lastClickTime;
         if (timeDiff < doubleClickDelay) {

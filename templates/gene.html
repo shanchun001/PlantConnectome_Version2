@@ -626,41 +626,41 @@
       </button>
 
       <!-- View Settings Panel -->
-      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:360px; z-index:999;">
-        <div class="form-container">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h5 style="margin:0;">View Settings</h5>
-            <button class="button alert" onclick="toggleViewSettings()" style="font-size:0.7rem; padding:3px 8px; margin:0;">Close</button>
+      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:380px; z-index:999;">
+        <div class="form-container" style="padding:14px 18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">
+            <h5 style="margin:0; font-size:14px; font-weight:600; color:#2c3e50;">View Settings</h5>
+            <button onclick="toggleViewSettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;">&times;</button>
           </div>
 
+          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Nodes</div>
           <div class="view-setting-row">
             <label>Node Size</label>
             <input type="range" id="vs-node-size" min="15" max="100" value="55" oninput="VS.set('nodeSize', this.value)">
             <span id="vs-node-size-val">55</span>
           </div>
           <div class="view-setting-row">
-            <label>Label Size</label>
+            <label>Node Label Font</label>
             <input type="range" id="vs-font-size" min="4" max="40" value="11" oninput="VS.set('fontSize', this.value)">
             <span id="vs-font-size-val">11</span>
           </div>
+
+          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px 0;">Edges</div>
           <div class="view-setting-row">
-            <label>Edge Labels</label>
+            <label>Edge Label Font</label>
             <input type="range" id="vs-edge-font" min="0" max="30" value="8" oninput="VS.set('edgeFontSize', this.value)">
             <span id="vs-edge-font-val">8</span>
-          </div>
-          <div class="view-setting-row">
-            <label>De-overlap</label>
-            <input type="range" id="vs-overlap" min="0" max="100" value="0" oninput="VS.set('overlap', this.value)">
-            <span id="vs-overlap-val">0</span>
           </div>
           <div class="view-setting-row">
             <label>Edge Length</label>
             <input type="range" id="vs-edge-len" min="20" max="300" value="120" oninput="VS.set('edgeLength', this.value)">
             <span id="vs-edge-len-val">120</span>
           </div>
+
+          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px 0;">Layout</div>
           <div class="view-setting-row">
-            <label>Layout</label>
-            <select id="vs-layout" style="font-size:0.72rem; padding:2px 4px; flex:1;">
+            <label>Algorithm</label>
+            <select id="vs-layout" style="font-size:12px; padding:4px 8px; flex:1; border:1px solid #d1d5db; border-radius:4px;">
               <option value="fcose" selected>Force-directed (fcose)</option>
               <option value="cose">Force-directed (cose)</option>
               <option value="circle">Circle</option>
@@ -670,9 +670,9 @@
             </select>
           </div>
 
-          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-            <button class="button secondary" onclick="VS.applyLayout()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Apply Layout</button>
-            <button class="button secondary" onclick="VS.fit()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Fit to Screen</button>
+          <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+            <button class="button primary" onclick="VS.applyLayout()" style="font-size:12px; padding:6px 14px; flex:1;">Apply Layout</button>
+            <button class="button secondary" onclick="VS.fit()" style="font-size:12px; padding:6px 14px; flex:1; background:#f3f4f6; color:#374151; border:1px solid #d1d5db;">Fit to Screen</button>
             <button class="button secondary" onclick="VS.reset()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Reset All</button>
           </div>
         </div>
