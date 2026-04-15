@@ -127,10 +127,43 @@ def generate_cytoscape_js(elements, ab, fa):
             return ''
         return str(value).replace("'", "").replace('"', '').replace('\n', '').replace('\\', '').replace('`', '').replace('${', '')
 
+    # The exact keys network.js nodeStyles recognizes
+    _KNOWN_CATS = {
+        'GENE / PROTEIN',
+        'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',
+        'PHENOTYPE / TRAIT / DISEASE',
+        'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM',
+        'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP',
+        'CHEMICAL / METABOLITE / COFACTOR / LIGAND',
+        'TREATMENT / PERTURBATION / STRESS / MUTANT',
+        'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE',
+        'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
+        'REGULATORY / SIGNALING MECHANISM',
+        'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC',
+        'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT',
+        'CLINICAL / EPIDEMIOLOGICAL / POPULATION',
+        'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT',
+        'SOCIAL / ECONOMIC / POLICY / MANAGEMENT',
+        'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT',
+        'PROPERTY / MEASUREMENT / CHARACTERIZATION',
+    }
+
     def get_node_category(node_category, node_type):
-        """Return the raw DB category (uppercased)."""
-        if node_category:
-            return node_category.strip().upper()
+        """Normalize DB category to a known nodeStyles key."""
+        if not node_category:
+            return 'OTHER'
+        raw = node_category.strip().upper()
+        # Exact match
+        if raw in _KNOWN_CATS:
+            return raw
+        # Split on | or ; (multi-category) and try first part
+        first = raw.split('|')[0].split(';')[0].strip()
+        if first in _KNOWN_CATS:
+            return first
+        # Try matching: known is prefix of raw, or raw is prefix of known
+        for known in _KNOWN_CATS:
+            if raw.startswith(known) or known.startswith(first[:25]):
+                return known
         return 'OTHER'
 
     def get_edge_category(relationship_label, interaction):
