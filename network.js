@@ -668,8 +668,8 @@
           ${extractedDef || generatedDef ? `
           <div class="edge-tp-def-group" style="margin-top:4px;">
             <div class="edge-tp-def-title source">Definition of ${nodeId}</div>
-            ${extractedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${extractedDef}</div>` : ''}
-            ${generatedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${generatedDef}</div>` : ''}
+            ${extractedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted definition:</span> ${extractedDef}</div>` : ''}
+            ${generatedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated definition:</span> ${generatedDef}</div>` : ''}
           </div>` : ''}
         </div>
       `;
@@ -761,14 +761,14 @@
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
           <div class="edge-tp-def-title source">${srcName} <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${srcCat}</span>` : ''}</div>
-          ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().source_extracted_definition}</div>` : ''}
-          ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().source_generated_definition}</div>` : ''}
+          ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted definition:</span> ${edge.data().source_extracted_definition}</div>` : ''}
+          ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated definition:</span> ${edge.data().source_generated_definition}</div>` : ''}
           ${!edge.data().source_extracted_definition && !edge.data().source_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
         <div class="edge-tp-def-group">
           <div class="edge-tp-def-title target">${tgtName} <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${tgtCat}</span>` : ''}</div>
-          ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().target_extracted_definition}</div>` : ''}
-          ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().target_generated_definition}</div>` : ''}
+          ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted definition:</span> ${edge.data().target_extracted_definition}</div>` : ''}
+          ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated definition:</span> ${edge.data().target_generated_definition}</div>` : ''}
           ${!edge.data().target_extracted_definition && !edge.data().target_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
       </div>
