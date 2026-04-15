@@ -582,10 +582,12 @@
       : node.data().type;
 
     const nodeIdentifier = node.data().identifier || '';
+    const nodeCategory = node.data().category || node.data().originalcategory || '';
     abTitle.innerHTML = `
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
         <span class="node-tp-type">Type: ${typeDisplay}</span>
+        ${nodeCategory ? `<span class="node-tp-type">Category: ${nodeCategory}</span>` : ''}
         ${nodeIdentifier ? `<span class="node-tp-type">Identifier: ${nodeIdentifier}</span>` : ''}
       </div>
     `;
@@ -604,6 +606,7 @@
         : (edge.data().target_generated_definition || 'N/A');
       const defColor = isSource ? 'source' : 'target';
 
+      const edgeCat = titleCaseCategory(edge.data().category) || '';
       edgeInfo += `
         <div class="node-tp-edge">
           <div class="edge-tp-connection">
@@ -612,7 +615,8 @@
             <span class="edge-tp-target">${edge.data().originaltarget} <small>[${edge.data().targettype}]</small></span>
           </div>
           <div class="node-tp-edge-meta">
-            <span class="edge-tp-interaction" style="font-size:11px;">${edge.data().interaction}</span>
+            <span class="edge-tp-interaction" style="font-size:11px;">Relationship: <strong>${edge.data().interaction}</strong></span>
+            ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na' ? `<span class="edge-tp-category" style="font-size:10px;color:#6b7280;margin-left:6px;">(${edgeCat})</span>` : ''}
           </div>
           <div class="edge-tp-def-group">
             <div class="edge-tp-def-title ${defColor}">${nodeId} definitions</div>
@@ -662,6 +666,7 @@
     abTitle.innerHTML = `
       <div class="edge-tp-header">
         <span class="edge-tp-interaction">${interactionText}</span>
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<span class="edge-tp-category-badge">${categoryText}</span>` : ''}
       </div>
     `;
 
@@ -680,14 +685,18 @@
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
 
+      <div class="edge-tp-section-title">Metadata</div>
       <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Relationship</span><span><strong>${interactionText}</strong></span></div>
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Relationship Type</span><span>${categoryText}</span></div>` : ''}
         <div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>
         <div class="edge-tp-row"><span class="edge-tp-label">Basis</span><span>${basisText}</span></div>
-        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Associated Process</span><span>${assocProcess}</span></div>` : ''}
-        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated Process</span><span>${genProcess}</span></div>` : ''}
-        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
+        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted Process/Pathway</span><span>${assocProcess}</span></div>` : ''}
+        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated Process/Pathway</span><span>${genProcess}</span></div>` : ''}
+        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Relevant Citations</span><span>${citations}</span></div>` : ''}
       </div>
 
+      <div class="edge-tp-section-title">Definitions</div>
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
           <div class="edge-tp-def-title source">${srcName} [${srcType}]${srcIdent ? ` (${srcIdent})` : ''}</div>
