@@ -1866,6 +1866,9 @@
         case 'nodeLabels':
           cy.nodes().style('min-zoomed-font-size', value ? 8 : 9999);
           break;
+        case 'whiteBg':
+          document.getElementById('cy_wrapper').style.backgroundColor = value ? '#ffffff' : '#fafafa';
+          break;
           break;
       }
       cy.endBatch();

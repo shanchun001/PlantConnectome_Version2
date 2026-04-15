@@ -624,6 +624,9 @@
           <div class="view-setting-row">
             <label><input type="checkbox" id="vs-node-labels" checked onchange="updateViewSetting('nodeLabels', this.checked)"> Show Node Labels</label>
           </div>
+          <div class="view-setting-row">
+            <label><input type="checkbox" id="vs-white-bg" onchange="updateViewSetting('whiteBg', this.checked)"> White Background</label>
+          </div>
 
           <div style="display:flex; gap:6px; margin-top:8px;">
             <button class="button secondary" onclick="recalculateLayout()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Re-run Layout</button>
