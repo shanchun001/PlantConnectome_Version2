@@ -185,7 +185,7 @@
     autoungrabify: false,      // allow drag-to-move nodes
     zoomingEnabled: true,
     userPanningEnabled: true,
-    wheelSensitivity: 0.3,
+    wheelSensitivity: 1,
     minZoom: 0.05,
     maxZoom: 3,
     textureOnViewport: false,
@@ -1057,7 +1057,8 @@
   function updateNodeSummaries() {
     const networkSummaryDiv = document.getElementById('networkSummary');
     if (!networkSummaryDiv) {
-      console.error("Element with id 'networkSummary' not found!");
+      // Retry after DOM is ready
+      setTimeout(updateNodeSummaries, 500);
       return;
     }
 
