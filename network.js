@@ -1110,7 +1110,7 @@
               <span style='color: #800000;'>${target}</span>
               (PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                 data-pmid="${pmid}" data-source="${node.source}" data-interaction="${interaction}"
-                data-target="${target}" data-section="${section || ''}">${pmid}${section ? '_' + section : ''}</a>)
+                data-target="${target}" data-section="${section || ''}">${pmid && section && pmid.endsWith('_' + section) ? pmid : (pmid + (section ? '_' + section : ''))}</a>)
             `
           )
           .join(', ');
@@ -1181,7 +1181,7 @@
                 <span class="definition-text">${edge.data().source_extracted_definition}</span>
                 <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${entitynametype}" data-interaction="${edge.data().interaction}"
-                  data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue}${sectionValue ? '_' + sectionValue : ''}</a></span>
+                  data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
             `);
           }
@@ -1203,7 +1203,7 @@
                 <span class="definition-text">${edge.data().target_extracted_definition}</span>
                 <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${edge.data().originalsource} [${edge.data().sourcetype}]"
-                  data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue}${sectionValue ? '_' + sectionValue : ''}</a></span>
+                  data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
             `);
           }
@@ -1225,7 +1225,7 @@
                 <span class="definition-text">${edge.data().source_generated_definition}</span>
                 <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${entitynametype}" data-interaction="${edge.data().interaction}"
-                  data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue}${sectionValue ? '_' + sectionValue : ''}</a></span>
+                  data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
             `);
           }
@@ -1247,7 +1247,7 @@
                 <span class="definition-text">${edge.data().target_generated_definition}</span>
                 <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${edge.data().originalsource} [${edge.data().sourcetype}]"
-                  data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue}${sectionValue ? '_' + sectionValue : ''}</a></span>
+                  data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
             `);
           }
