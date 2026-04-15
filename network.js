@@ -551,6 +551,27 @@
   }
 
   /**
+   * Closes all open panels (tooltip, filters, validation results, definitions)
+   * Call this before opening any new panel to ensure only one is visible at a time.
+   */
+  function closeAllPanels(except) {
+    const panels = {
+      'side-tooltip': document.getElementById('side-tooltip'),
+      'nodeFilterForm': document.getElementById('nodeFilterForm'),
+      'edgeFilterForm': document.getElementById('edgeFilterForm'),
+    };
+    // Also close validation result container if it exists
+    const valContainer = document.getElementById('apiResultContainer');
+    if (valContainer) panels['apiResultContainer'] = valContainer;
+
+    for (const [name, el] of Object.entries(panels)) {
+      if (el && name !== except) {
+        el.style.display = 'none';
+      }
+    }
+  }
+
+  /**
    * Hides the tooltip
    */
   function hideTooltip() {
@@ -561,6 +582,7 @@
    * Displays a tooltip for a clicked node
    */
   function showTooltipForNode(node) {
+    closeAllPanels('side-tooltip');
     const ab = document.getElementById('ab');
     const tooltip = document.getElementById('side-tooltip');
     const abTitle = document.getElementById('ab-title');
@@ -676,6 +698,7 @@
    * Displays a tooltip for a clicked edge
    */
   function showTooltipForEdge(edge) {
+    closeAllPanels('side-tooltip');
     const tooltip = document.getElementById('side-tooltip');
     const ab = document.getElementById('ab');
     const abTitle = document.getElementById('ab-title');
@@ -950,12 +973,10 @@
    * Node filter form handling
    */
   function openNodeFilterForm() {
-    edgecloseForm();
     const nodeFilterForm = document.getElementById('nodeFilterForm');
-    nodeFilterForm.style.display =
-      nodeFilterForm.style.display === 'none' || nodeFilterForm.style.display === ''
-        ? 'block'
-        : 'none';
+    const isOpen = nodeFilterForm.style.display === 'block';
+    closeAllPanels();
+    nodeFilterForm.style.display = isOpen ? 'none' : 'block';
   }
   function nodecloseForm() {
     document.getElementById('nodeFilterForm').style.display = 'none';
@@ -965,12 +986,10 @@
    * Edge filter form handling
    */
   function openEdgeFilterForm() {
-    nodecloseForm();
     const edgeFilterForm = document.getElementById('edgeFilterForm');
-    edgeFilterForm.style.display =
-      edgeFilterForm.style.display === 'none' || edgeFilterForm.style.display === ''
-        ? 'block'
-        : 'none';
+    const isOpen = edgeFilterForm.style.display === 'block';
+    closeAllPanels();
+    edgeFilterForm.style.display = isOpen ? 'none' : 'block';
   }
   function edgecloseForm() {
     document.getElementById('edgeFilterForm').style.display = 'none';
