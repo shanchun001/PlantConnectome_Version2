@@ -220,7 +220,11 @@ def form(form_type, search_type):
 
 
 def get_scientific_chunk(pmid, section=''):
-    """Look up paper text by PMID and section from MongoDB scientific_chunks collection."""
+    """Look up paper text by custom_id/title and section from MongoDB scientific_chunks collection.
+
+    The custom_id (used as pmid in the edge data) contains the paper title.
+    We look up the title from all_dic, then fetch section text from scientific_chunks.
+    """
     pmid = str(pmid).strip()
     if not pmid:
         return None
@@ -228,10 +232,11 @@ def get_scientific_chunk(pmid, section=''):
     # Normalize section name to match DB keys
     section_map = {
         'ABSTRACT': 'ABSTRACT',
-        'INTRO': 'INTRO',
-        'INTRODUCTION': 'INTRO',
+        'INTRO': 'INTRODUCTION',
+        'INTRODUCTION': 'INTRODUCTION',
         'METHODS': 'METHODS',
         'RESULTS': 'RESULTS',
+        'RESULTS_AND_DISCUSSION': 'RESULTS_AND_DISCUSSION',
         'DISCUSSION': 'DISCUSSION',
         'DISCUSS': 'DISCUSSION',
         'CONCLUSION': 'CONCLUSION',
@@ -239,15 +244,32 @@ def get_scientific_chunk(pmid, section=''):
         'TITLE': 'TITLE',
     }
 
-    # If a specific section is requested, try to return just that section
-    if section:
-        db_section = section_map.get(section.upper(), section.upper())
-        chunk = scientific_chunks.find_one({"pmid": pmid, "section": db_section}, {"_id": 0})
+    # Extract the paper title from all_dic using the custom_id
+    all_dic = db["all_dic"]
+    doc = all_dic.find_one({"custom_id": pmid}, {"title": 1})
+    if not doc or not doc.get("title"):
+        return None
+    title = doc["title"]
+
+    # Extract section from the custom_id suffix (e.g. "..._abstract", "..._results")
+    # The section in the custom_id is after the last underscore of the hash
+    pmid_section = ''
+    parts = pmid.rsplit('_', 1)
+    if len(parts) > 1:
+        pmid_section = parts[-1].upper()
+
+    # Determine which section to fetch
+    requested_section = section.upper() if section else pmid_section
+    db_section = section_map.get(requested_section, requested_section)
+
+    # Try specific section first
+    if db_section:
+        chunk = scientific_chunks.find_one({"title": title, "section": {"$regex": db_section, "$options": "i"}}, {"_id": 0})
         if chunk and chunk.get("text"):
             return chunk["text"]
 
-    # Otherwise return all available text for this PMID
-    chunks = list(scientific_chunks.find({"pmid": pmid}, {"_id": 0}).sort("section", 1))
+    # Otherwise return all available text for this title
+    chunks = list(scientific_chunks.find({"title": title}, {"_id": 0}).sort("section", 1))
     if not chunks:
         return None
     parts = []

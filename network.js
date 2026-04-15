@@ -711,10 +711,14 @@
       </div>
     `;
 
-    // Show Source Text row and add PMID link
+    // Show Source Text row and add link
     const pmidRow = document.getElementById('pmid-row');
     if (pmidRow) pmidRow.style.display = 'block';
-    pmidElem.innerHTML = `PMID: ${pmid}${section !== 'N/A' ? ' | Section: ' + section : ''}`;
+    const isRealPmid = /^\d+$/.test(pmid);
+    const sectionLabel = section !== 'N/A' ? ` | Section: ${section}` : '';
+    pmidElem.innerHTML = isRealPmid
+      ? `PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" style="color:#3498db;">${pmid}</a>${sectionLabel}`
+      : `Source Text${sectionLabel}`;
     pmidElem.onclick = () =>
       openPMIDModal(
         pmid,

@@ -17,16 +17,16 @@ def preview_author_search(query):
 
     pipeline = [
         {"$match": {"authors": {"$regex": query, "$options": "i"}}},
-        # Only keep authors whose papers exist in all_dic
+        # Only keep authors whose papers exist in all_dic (join on title)
         {"$lookup": {
             "from": "all_dic",
-            "localField": "pubmedID",
-            "foreignField": "pubmedID",
+            "localField": "title",
+            "foreignField": "title",
             "pipeline": [{"$limit": 1}],
             "as": "kg_match"
         }},
         {"$match": {"kg_match.0": {"$exists": True}}},
-        {"$project": {"authors": 1, "pubmedID": 1}},
+        {"$project": {"authors": 1, "pubmedID": 1, "title": 1}},
         {"$set": {
             "authors": {
                 "$filter": {
