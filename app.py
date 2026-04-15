@@ -7,6 +7,7 @@ import openai
 import logging
 from pymongo import MongoClient
 import json
+import numpy as np
 
 # Connect to MongoDB
 client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
@@ -399,6 +400,105 @@ def openai_edge_synonyms():
         return jsonify(synonyms_json)
     except json.JSONDecodeError as e:
         return jsonify({"error": "GPT response was not valid JSON"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/compute-similarity', methods=['POST'])
+def compute_similarity():
+    """Compute pairwise cosine similarity between entity names using OpenAI embeddings.
+
+    Expects JSON: { "entities": ["entity1", "entity2", ...], "threshold": 0.85 }
+    Returns: { "groups": [["entity1", "entity3"], ["entity2", "entity5"]], "matrix": {...} }
+    """
+    data = request.get_json()
+    entities = data.get('entities', [])
+    threshold = float(data.get('threshold', 0.85))
+
+    if not entities:
+        return jsonify({"error": "No entities provided"}), 400
+    if len(entities) > 500:
+        return jsonify({"error": "Too many entities (max 500)"}), 400
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        return jsonify({"error": "OpenAI API key not configured."}), 500
+
+    try:
+        client = openai.OpenAI(api_key=openai_api_key)
+
+        # Get embeddings in one API call
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=entities
+        )
+        embeddings = np.array([item.embedding for item in response.data])
+
+        # Normalize for cosine similarity
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1
+        normalized = embeddings / norms
+
+        # Compute pairwise cosine similarity
+        sim_matrix = np.dot(normalized, normalized.T)
+
+        # Find groups of similar entities using union-find
+        n = len(entities)
+        parent = list(range(n))
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def union(a, b):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[ra] = rb
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if sim_matrix[i][j] >= threshold:
+                    union(i, j)
+
+        # Build groups
+        groups_dict = {}
+        for i in range(n):
+            root = find(i)
+            if root not in groups_dict:
+                groups_dict[root] = []
+            groups_dict[root].append(i)
+
+        # Only return groups with 2+ members, sorted by size desc
+        groups = []
+        for indices in groups_dict.values():
+            if len(indices) >= 2:
+                group = [{"name": entities[i], "index": i} for i in indices]
+                # Sort by name length (shortest = most canonical)
+                group.sort(key=lambda x: len(x["name"]))
+                groups.append(group)
+        groups.sort(key=lambda g: -len(g))
+
+        # Build top similar pairs for debugging
+        top_pairs = []
+        for i in range(n):
+            for j in range(i + 1, n):
+                if sim_matrix[i][j] >= threshold:
+                    top_pairs.append({
+                        "a": entities[i], "b": entities[j],
+                        "similarity": round(float(sim_matrix[i][j]), 4)
+                    })
+        top_pairs.sort(key=lambda x: -x["similarity"])
+
+        return jsonify({
+            "groups": groups,
+            "pairs": top_pairs[:100],
+            "total_entities": n,
+            "total_groups": len(groups),
+            "threshold": threshold
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

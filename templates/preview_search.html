@@ -62,11 +62,32 @@
     </div>
   </div>
 
-  <!-- Action Button -->
-  <div class="preview-actions">
+  <!-- Action Buttons -->
+  <div class="preview-actions" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
     <button id="showSelectedButton" class="preview-submit-btn" onclick="getSelectedEntities()">
       Show Selected Entities
     </button>
+    <button id="findSimilarBtn" class="preview-submit-btn" style="background-color:#8e44ad;" onclick="findSimilarEntities()">
+      Find Similar Entities
+    </button>
+  </div>
+
+  <!-- Similarity Results Panel -->
+  <div id="similarityPanel" style="display:none; margin-top:16px;">
+    <div style="background:#f8f4fc;border:1px solid #d2b4de;border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;color:#6c3483;">Similar Entity Groups</h4>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:#6b7280;">Threshold:</label>
+          <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.70"
+                 style="width:100px;" oninput="document.getElementById('simThresholdVal').textContent=this.value">
+          <span id="simThresholdVal" style="font-size:12px;font-weight:600;width:30px;">0.70</span>
+          <button onclick="findSimilarEntities()" style="font-size:11px;padding:4px 10px;background:#8e44ad;color:white;border:none;border-radius:4px;cursor:pointer;">Recalculate</button>
+          <button onclick="document.getElementById('similarityPanel').style.display='none'" style="font-size:11px;padding:4px 10px;background:#e74c3c;color:white;border:none;border-radius:4px;cursor:pointer;">Close</button>
+        </div>
+      </div>
+      <div id="similarityResults"></div>
+    </div>
   </div>
 </div>
 
@@ -330,12 +351,25 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    // Build dropdown from unique CAT_ALIAS values only (no duplicates)
+    // Build dropdown from unique CAT_ALIAS values with full display names
+    const dropdownLabels = {
+      'Gene/Protein': 'Gene / Protein',
+      'Cell/Organism': 'Cell / Organ / Organism',
+      'Chemical': 'Chemical / Metabolite',
+      'Biological Process': 'Biological Process / Pathway',
+      'Phenotype': 'Phenotype / Trait',
+      'Treatment': 'Treatment / Stress / Condition',
+      'Genomic/Transcriptomic': 'Genomic / Transcriptomic Feature',
+      'Method': 'Method / Tool / Database',
+      'Gene Identifier': 'Gene Identifier',
+      'Mixed': 'Mixed (multiple categories)',
+      'Other': 'Other',
+    };
     const uniqueLabels = [...new Set(Object.values(CAT_ALIAS))].sort();
-    uniqueLabels.forEach(label => {
+    uniqueLabels.forEach(shortLabel => {
       const option = document.createElement("option");
-      option.value = label.toLowerCase();
-      option.textContent = label;
+      option.value = shortLabel.toLowerCase();
+      option.textContent = dropdownLabels[shortLabel] || shortLabel;
       dropdown.appendChild(option);
     });
 
@@ -600,6 +634,102 @@
 
   function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // =========================
+  // SEMANTIC SIMILARITY
+  // =========================
+  function findSimilarEntities() {
+    const btn = document.getElementById('findSimilarBtn');
+    const panel = document.getElementById('similarityPanel');
+    const resultsDiv = document.getElementById('similarityResults');
+    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.85);
+
+    // Get all entity names from current data
+    const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
+
+    if (entities.length === 0) {
+      alert('No entities to compare.');
+      return;
+    }
+
+    // Show panel with loading state
+    panel.style.display = 'block';
+    resultsDiv.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="display:inline-block;width:20px;height:20px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <p style="margin-top:8px;color:#6b7280;font-size:13px;">Computing embeddings for ${entities.length} entities...</p>
+      </div>
+    `;
+    btn.disabled = true;
+    btn.textContent = 'Computing...';
+
+    fetch('/compute-similarity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entities, threshold })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'Find Similar Entities';
+
+      if (data.error) {
+        resultsDiv.innerHTML = `<p style="color:#e74c3c;">${data.error}</p>`;
+        return;
+      }
+
+      if (data.groups.length === 0) {
+        resultsDiv.innerHTML = `<p style="color:#6b7280;">No similar entities found at threshold ${threshold}. Try lowering the threshold.</p>`;
+        return;
+      }
+
+      let html = `<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Found <strong>${data.total_groups}</strong> groups of similar entities (threshold: ${data.threshold})</p>`;
+
+      data.groups.forEach((group, gi) => {
+        html += `<div style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:10px;margin-bottom:8px;">`;
+        html += `<div style="font-size:12px;font-weight:600;color:#6c3483;margin-bottom:6px;">Group ${gi+1} (${group.length} entities)</div>`;
+        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+        group.forEach((entity, ei) => {
+          const bgColor = ei === 0 ? '#d5f5e3' : '#fdebd0';
+          html += `<span style="display:inline-block;font-size:12px;padding:3px 8px;background:${bgColor};border-radius:4px;border:1px solid #e5e7eb;">${entity.name}</span>`;
+        });
+        html += `</div>`;
+        // Merge button: select only the first (canonical) entity, deselect others
+        html += `<button onclick="mergeGroup(${gi})" style="margin-top:6px;font-size:11px;padding:3px 10px;background:#27ae60;color:white;border:none;border-radius:4px;cursor:pointer;">Select canonical (${group[0].name})</button>`;
+        html += `</div>`;
+      });
+
+      resultsDiv.innerHTML = html;
+
+      // Store groups globally for merge
+      window._similarityGroups = data.groups;
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = 'Find Similar Entities';
+      resultsDiv.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
+    });
+  }
+
+  function mergeGroup(groupIndex) {
+    const group = window._similarityGroups?.[groupIndex];
+    if (!group || group.length < 2) return;
+
+    // Check the canonical entity (first/shortest), uncheck others
+    const canonicalName = group[0].name;
+    const otherNames = new Set(group.slice(1).map(e => e.name));
+
+    document.querySelectorAll('.entity-checkbox').forEach(cb => {
+      const row = cb.closest('tr');
+      const entityName = row?.querySelector('.entity-name a')?.dataset?.originalText;
+      if (entityName === canonicalName) {
+        cb.checked = true;
+      } else if (otherNames.has(entityName)) {
+        cb.checked = false;
+      }
+    });
+    updateTotalNodeCount();
   }
 </script>
 {% endblock %}
