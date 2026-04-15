@@ -1856,7 +1856,7 @@
           window._spacingTimer = setTimeout(() => { applyLayout(); }, 500);
           break;
         case 'edgeLabels':
-          cy.edges().style('min-zoomed-font-size', value ? 11 : 9999);
+          cy.edges().style('min-zoomed-font-size', value ? 1 : 9999);
           break;
         case 'nodeLabels':
           cy.nodes().style('min-zoomed-font-size', value ? 8 : 9999);
