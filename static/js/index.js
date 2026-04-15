@@ -170,19 +170,19 @@ const change_help_text = (button, text) => {
         case 'gene / word':
             help_text = `
               <p>
-                Find all entities where your query appears as a <b>word</b> (case-insensitive).
-                MongoDB's full-text search tokenizes entity names on spaces, hyphens, and special characters.
+                Find all entities where your query appears as a <b>word or word stem</b> (case-insensitive).
+                This includes plurals and variants that share the same root.
               </p>
               <p>For instance, if <b>"CESA"</b> is searched:</p>
               <ul style="color: green;">
                 <li>CESA</li>
+                <li>CESAs (plural / stemmed match)</li>
                 <li>CesA genes</li>
-                <li>CESA-associated proteins (hyphenated &mdash; "CESA" is a token)</li>
                 <li>cellulose synthase (CESA) complexes</li>
               </ul>
               <p>However, it will not find:</p>
               <ul style="color: red;">
-                <li>ATCESA (embedded in a larger token)</li>
+                <li>ATCESA (embedded in a larger word)</li>
               </ul>`;
             break;
         case 'substring':
