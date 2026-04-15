@@ -274,16 +274,40 @@ def find_preview_fast(my_search, genes, search_type):
 
     matched_set = set(matched_names)
 
-    # Only aggregate the MATCHED side — count unique neighbor nodes (not edges)
-    # When entity1 matches, count distinct entity2 values (neighbors)
-    # When entity2 matches, count distinct entity1 values (neighbors)
-    pipeline_e1 = [
+    # Count unique neighbor nodes per matched entity.
+    # Use $unionWith to combine both sides before deduplicating,
+    # so a neighbor that appears as both entity1 and entity2 is counted once.
+
+    # First: project both sides into a uniform (entity, neighbor) shape, then union + dedupe
+    pipeline = [
+        # Side 1: entity1 matched, neighbor is entity2
         {"$match": {"entity1_lower": {"$in": matched_names}}},
-        {"$group": {
-            "_id": {"entity": "$entity1", "neighbor": "$entity2"},
-            "type": {"$first": "$entity1type"},
-            "category": {"$first": "$entity1category"},
+        {"$project": {
+            "entity": "$entity1",
+            "neighbor": "$entity2",
+            "type": "$entity1type",
+            "category": "$entity1category",
         }},
+        # Union with Side 2: entity2 matched, neighbor is entity1
+        {"$unionWith": {
+            "coll": "all_dic",
+            "pipeline": [
+                {"$match": {"entity2_lower": {"$in": matched_names}}},
+                {"$project": {
+                    "entity": "$entity2",
+                    "neighbor": "$entity1",
+                    "type": "$entity2type",
+                    "category": "$entity2category",
+                }},
+            ]
+        }},
+        # Deduplicate: group by (entity, neighbor) so each neighbor counts once
+        {"$group": {
+            "_id": {"entity": "$entity", "neighbor": "$neighbor"},
+            "type": {"$first": "$type"},
+            "category": {"$first": "$category"},
+        }},
+        # Count unique neighbors per entity
         {"$group": {
             "_id": "$_id.entity",
             "type": {"$first": "$type"},
@@ -294,26 +318,7 @@ def find_preview_fast(my_search, genes, search_type):
         {"$limit": 500}
     ]
 
-    pipeline_e2 = [
-        {"$match": {"entity2_lower": {"$in": matched_names}}},
-        {"$group": {
-            "_id": {"entity": "$entity2", "neighbor": "$entity1"},
-            "type": {"$first": "$entity2type"},
-            "category": {"$first": "$entity2category"},
-        }},
-        {"$group": {
-            "_id": "$_id.entity",
-            "type": {"$first": "$type"},
-            "category": {"$first": "$category"},
-            "node_count": {"$sum": 1}
-        }},
-        {"$sort": {"node_count": -1}},
-        {"$limit": 500}
-    ]
-
-    # Run both aggregations
-    results_e1 = list(genes.aggregate(pipeline_e1, allowDiskUse=True))
-    results_e2 = list(genes.aggregate(pipeline_e2, allowDiskUse=True))
+    results_combined = list(genes.aggregate(pipeline, allowDiskUse=True))
 
     def resolve_vis_category(ecat, etype):
         """Resolve raw DB category (possibly comma-separated) to short vis category."""
@@ -330,24 +335,16 @@ def find_preview_fast(my_search, genes, search_type):
         # Fallback to entity type lookup
         return ENTITY_CATEGORIES_DICT.get((etype or '').upper(), 'OTHER')
 
-    # Merge: group by entity, sum unique node counts from both sides
-    seen = {}  # entity -> [best_etype, node_count, vis_cat]
-    for r in results_e1 + results_e2:
+    # Build result tuples — already deduplicated by the pipeline
+    results = []
+    for r in results_combined:
         entity = r["_id"]
         etype = r.get("type", "") or ""
         ecat = r.get("category", "") or ""
         node_count = r["node_count"]
         vis_cat = resolve_vis_category(ecat, etype)
-        if entity not in seen:
-            seen[entity] = [etype, node_count, vis_cat]
-        else:
-            # Sum unique nodes from both sides (some overlap, but good approximation)
-            seen[entity][1] += node_count
+        results.append((entity, etype, node_count, node_count, vis_cat))
 
-    # Return as tuples: (entity, entity_type, node_count, node_count, vis_category)
-    results = []
-    for entity, entry in seen.items():
-        results.append((entity, entry[0], entry[1], entry[1], entry[2]))
     return sorted(results, key=lambda x: x[2], reverse=True)
 
 
