@@ -1655,10 +1655,9 @@
   function applyLayout() {
     const loadingEl = document.getElementById('layout-loading');
     if (loadingEl) loadingEl.style.display = 'flex';
-    console.log('Starting layout application...');
-    cy.startBatch();
-    applyRandomLayoutInBatches();
-    cy.endBatch();
+    console.log('Starting layout...');
+    // Skip random pre-positioning — cose/fcose handle it with randomize: true
+    finalizeRandomLayout();
   }
 
   function applyRandomLayoutInBatches(batchSize = 100, graphWidth = 10000, graphHeight = 10000, minSpacing = 50) {
