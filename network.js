@@ -357,7 +357,7 @@
           'arrow-scale': 0.8,
           'curve-style': 'bezier',
           'min-zoomed-font-size': 8,
-          label: (ele) => titleCaseCategory(ele.data('category')),
+          label: (ele) => ele.data('interaction') || '',
           'font-size': '11px',
           'color': '#444',
           'text-wrap': 'wrap',
