@@ -744,19 +744,35 @@
     if (!group || group.length < 2) return;
 
     // Check the canonical entity (first/shortest), uncheck others
-    const canonicalName = group[0].name;
-    const otherNames = new Set(group.slice(1).map(e => e.name));
+    const canonicalName = group[0].name.toLowerCase();
+    const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
 
+    let matched = 0;
     document.querySelectorAll('.entity-checkbox').forEach(cb => {
       const row = cb.closest('tr');
-      const entityName = row?.querySelector('.entity-name a')?.dataset?.originalText;
+      if (!row) return;
+      // Try multiple ways to get entity name
+      const link = row.querySelector('.entity-name a');
+      const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+      if (!entityName) return;
+
       if (entityName === canonicalName) {
         cb.checked = true;
+        matched++;
       } else if (otherNames.has(entityName)) {
         cb.checked = false;
+        matched++;
       }
     });
     updateTotalNodeCount();
+
+    // Visual feedback
+    const btn = event?.target;
+    if (btn) {
+      btn.textContent = `Done (${matched} updated)`;
+      btn.style.background = '#6b7280';
+      btn.disabled = true;
+    }
   }
 </script>
 {% endblock %}
