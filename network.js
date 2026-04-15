@@ -1885,7 +1885,12 @@
       } else {
         const loadingEl = document.getElementById('layout-loading');
         if (loadingEl) loadingEl.style.display = 'flex';
-        const opts = { name: layoutName, fit: true, padding: 40, animate: cy.nodes(':visible').length <= 300, animationDuration: 600 };
+        const numVis = cy.nodes(':visible').length;
+        const opts = { name: layoutName, fit: true, padding: 40, animate: numVis <= 300, animationDuration: 600 };
+        if (layoutName === 'cose') {
+          opts.nodeRepulsion = 400000; opts.idealEdgeLength = 60; opts.gravity = 80;
+          opts.numIter = 100; opts.randomize = true; opts.animate = numVis <= 150;
+        }
         if (layoutName === 'concentric') { opts.concentric = (n) => n.degree(); opts.levelWidth = () => 2; }
         if (layoutName === 'breadthfirst') { opts.directed = true; opts.spacingFactor = 1.2; }
         const layout = cy.layout(opts);
