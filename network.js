@@ -621,11 +621,6 @@
         ${nodeIdentifier ? `<div class="edge-tp-row"><span class="edge-tp-label">Gene Identifier</span><span>${nodeIdentifier}</span></div>` : ''}
       </div>
 
-      <div class="edge-tp-section-title" style="margin-top:6px;">Actions</div>
-      <div style="margin-bottom:8px;">
-        <a href="#" id="action-remove-node" style="color:#DC143C;font-size:12px;margin-right:12px;">Remove node</a>
-        <a href="#" id="action-isolate-neighborhood" style="color:#3498db;font-size:12px;">Isolate neighborhood</a>
-      </div>
     `;
 
     // Connected edges
@@ -676,22 +671,6 @@
     ab.innerHTML = nodeInfoHtml + edgeInfo;
     tooltip.style.display = 'block';
 
-    // Attach action event listeners (can't use inline onclick — cy is scoped)
-    const removeBtn = document.getElementById('action-remove-node');
-    if (removeBtn) {
-      removeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        node.remove();
-      });
-    }
-    const isolateBtn = document.getElementById('action-isolate-neighborhood');
-    if (isolateBtn) {
-      isolateBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        cy.elements().style('opacity', 0.15);
-        node.neighborhood().add(node).style('opacity', 1);
-      });
-    }
   }
 
   /**
