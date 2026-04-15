@@ -714,11 +714,34 @@ def generate_search_route2(search_type):
         uid = request.args.get('uid')
         collection = db["all_dic"]
 
-        # Run find_terms for this entity — works whether cache hit or miss
-        entity_search = [query.upper()]
-        elements, forSending, elementsAb, node_fa, preview_entity = find_terms(
-            entity_search, collection, "exact"
-        )
+        # Query by exact entity name on indexed _lower fields — no text search stemming
+        query_lower = query.lower()
+        exact_query = {"$or": [
+            {"entity1_lower": query_lower},
+            {"entity2_lower": query_lower}
+        ]}
+        forSending = []
+        elements = []
+        for doc in collection.find(exact_query):
+            e1, e1t = doc["entity1"], doc.get("entity1type", "")
+            e2, e2t = doc["entity2"], doc.get("entity2type", "")
+            forSending.append(Gene(
+                e1, e1t, e2, e2t,
+                doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                doc.get("species"), doc.get("basis"),
+                doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+            ))
+            elements.append((
+                e1, e1t, e2, e2t,
+                doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                doc.get("species"), doc.get("basis"),
+                doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", "")
+            ))
+        elements = list(set(elements))
         summaryText = make_text(forSending)
         preview = cache[uid]["preview"] if uid and uid in cache else preview_entity
 
