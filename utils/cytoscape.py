@@ -128,9 +128,10 @@ def generate_cytoscape_js(elements, ab, fa):
         return str(value).replace("'", "").replace('"', '').replace('\n', '').replace('\\', '').replace('`', '').replace('${', '')
 
     def get_node_category(node_category, node_type):
+        """Return the raw DB category (uppercased) — network.js has these as keys directly."""
         if node_category:
-            return PROMPT_TO_VIS_CATEGORY.get(node_category.upper(), 'OTHER')
-        return ENTITY_CATEGORIES_DICT.get(node_type.upper(), 'OTHER')
+            return node_category.strip().upper()
+        return 'OTHER'
 
     def get_edge_category(relationship_label, interaction):
         """Return the relationship_label as-is (it is the category from the prompt)."""
