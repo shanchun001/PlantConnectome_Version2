@@ -29,10 +29,10 @@
   <!-- Status Bar -->
   <div class="preview-status-bar">
     <div class="preview-node-count">
-      Total Relationships Selected: <strong id="totalNodeCount">0</strong>
+      Total Nodes Selected: <strong id="totalNodeCount">0</strong>
     </div>
     <div class="preview-info-hint">
-      Relationship counts are per-entity. Shared relationships across entities reduce the final count.
+      Node counts are per-cluster. Shared nodes across clusters reduce the final count.
     </div>
   </div>
 
@@ -330,8 +330,9 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    // Build dropdown from CAT_ALIAS keys (the vis_cat values we actually use)
-    Object.entries(CAT_ALIAS).sort((a, b) => a[1].localeCompare(b[1])).forEach(([visCat, label]) => {
+    // Build dropdown from unique CAT_ALIAS values only (no duplicates)
+    const uniqueLabels = [...new Set(Object.values(CAT_ALIAS))].sort();
+    uniqueLabels.forEach(label => {
       const option = document.createElement("option");
       option.value = label.toLowerCase();
       option.textContent = label;
@@ -398,9 +399,12 @@
 
     filteredRowsData = allRowsData.filter(item => {
       const entity = Array.isArray(item) ? item[0] : item.entity;
-      const dominant_cat = Array.isArray(item) ? (item[1] || 'OTHER') : (item.entity_type || 'OTHER');
+      const rawCat = Array.isArray(item) ? (item[4] || item[1] || 'OTHER') : (item.display_cat || item.entity_type || 'OTHER');
       const nameMatch = entity.toLowerCase().includes(searchValue);
-      const categoryMatch = typeFilter === '' || catAlias(dominant_cat).toLowerCase() === typeFilter || dominant_cat.toLowerCase() === typeFilter;
+      if (typeFilter === '') return nameMatch;
+      // Split comma-separated categories and check if any matches the filter
+      const shortCats = rawCat.split(',').map(c => catAlias(c.trim()).toLowerCase());
+      const categoryMatch = shortCats.some(c => c === typeFilter);
       return nameMatch && categoryMatch;
     });
 
@@ -462,10 +466,14 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Entity Category — show vis_cat (display_cat), not the raw entity_type
+      // Entity Category — convert long DB categories to short labels via catAlias
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      typeCell.textContent = display_cat || entity_type;
+      // display_cat may be comma-separated list of raw categories — shorten each
+      const rawCat = display_cat || entity_type || '';
+      const shortCats = rawCat.split(',').map(c => catAlias(c.trim())).filter(c => c && c !== '—');
+      const uniqueShortCats = [...new Set(shortCats)];
+      typeCell.textContent = uniqueShortCats.join(', ') || 'Other';
       row.appendChild(typeCell);
 
       // Unique Nodes
