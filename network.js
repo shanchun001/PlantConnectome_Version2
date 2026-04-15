@@ -16,6 +16,7 @@
   /**
    * Global constants and data preparation
    */
+  let currentSpacing = 80;
   let NODES_TO_RENDER = prepareNodes();
   let EDGES_TO_RENDER = prepareEdges();
   var queryTerm = queryTerms.split(',').map(term => {
@@ -1752,7 +1753,7 @@
 
     layout.on('layoutstart', () => console.log(`${layout.options.name} layout started...`));
     layout.on('layoutready', () => {
-      console.log('Layout ready. Adjusting viewport...');
+      console.log('Layout ready.');
       cy.fit();
     });
     layout.on('layoutstop', () => {
@@ -1763,15 +1764,29 @@
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
     });
-    layout.run();
-    // Safety fallback
-    setTimeout(() => {
+
+    try {
+      layout.run();
+    } catch (e) {
+      console.error('Layout error:', e);
+      // If fcose fails, fall back to simple grid layout
+      cy.layout({ name: 'grid', fit: true, padding: 40 }).run();
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
-      cy.resize();
-      cy.fit(cy.elements(), 40);
-      cy.center();
-    }, 30000);
+      styleCentralNodes(queryTerm);
+    }
+
+    // Safety fallback: hide overlay after 5s in case layoutstop doesn't fire
+    setTimeout(() => {
+      const loadingEl = document.getElementById('layout-loading');
+      if (loadingEl && loadingEl.style.display !== 'none') {
+        console.warn('Layout timeout — forcing display.');
+        loadingEl.style.display = 'none';
+        cy.fit(cy.elements(), 40);
+        cy.center();
+        styleCentralNodes(queryTerm);
+      }
+    }, 5000);
 
     // Recenter on window resize
     window.addEventListener('resize', () => { cy.resize(); cy.fit(cy.elements(), 40); });
@@ -1812,9 +1827,6 @@
       const panel = document.getElementById('viewSettingsPanel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     };
-
-    // Current spacing value for layout re-runs
-    let currentSpacing = 80;
 
     window.updateViewSetting = function(setting, value) {
       cy.startBatch();
