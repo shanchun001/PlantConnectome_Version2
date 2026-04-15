@@ -861,14 +861,14 @@
     header.style.alignItems = 'center';
     header.style.borderTopLeftRadius = '8px';
     header.style.borderTopRightRadius = '8px';
-    header.innerHTML = "<span>API Validation Results</span><span style='cursor:pointer;' onclick='toggleMinimize()'>➖</span>";
+    header.innerHTML = "<span>AI Validation</span><span style='cursor:pointer;' onclick='toggleMinimize()'>➖</span>";
     resultContainer.appendChild(header);
 
     // Create a content container
     const resultBox = document.createElement('div');
     resultBox.classList.add('summary-container');
     resultBox.style.border = '1px solid #ddd';
-    resultBox.style.padding = '8px'; 
+    resultBox.style.padding = '8px';
     resultBox.style.margin = '0';
     resultBox.style.backgroundColor = '#f8f9fa';
     resultBox.style.fontFamily = 'Arial, sans-serif';
@@ -879,11 +879,20 @@
     resultBox.style.overflowY = 'auto';
     resultContainer.appendChild(resultBox);
 
+    // Show loading indicator
+    resultBox.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="display:inline-block;width:24px;height:24px;border:3px solid #e5e7eb;border-top-color:#3498db;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <p style="margin-top:10px;color:#6b7280;font-size:13px;">Validating relationship with AI...</p>
+        <p style="color:#9ca3af;font-size:11px;">Fetching source text and analyzing with GPT-4o-mini</p>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    `;
+
     // Create a single paragraph inside the container
     const paragraph = document.createElement("p");
     paragraph.style.margin = '0';
     paragraph.style.color = '#333';
-    resultBox.appendChild(paragraph);
 
     let accumulatedText = ""; // Store incoming text chunks
 
@@ -901,11 +910,18 @@
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
 
+      let firstChunk = true;
       function readStream() {
         return reader.read().then(({ done, value }) => {
           if (done) {
             console.log("✅ Stream completed");
             return;
+          }
+          // On first chunk, replace loading indicator with paragraph
+          if (firstChunk) {
+            resultBox.innerHTML = '';
+            resultBox.appendChild(paragraph);
+            firstChunk = false;
           }
           // Decode and accumulate the chunk
           const chunk = decoder.decode(value, { stream: true });
@@ -921,9 +937,14 @@
       return readStream();
     })
     .catch(error => {
-      console.error("❌ Error validating edge:", error);
-      paragraph.style.color = '#D32F2F';
-      paragraph.innerHTML = `<strong>Error:</strong> ${error.message}`;
+      console.error("Error validating edge:", error);
+      resultBox.innerHTML = `
+        <div style="text-align:center;padding:20px;">
+          <div style="font-size:24px;">&#9888;</div>
+          <p style="color:#D32F2F;font-weight:600;margin-top:8px;">Validation Failed</p>
+          <p style="color:#6b7280;font-size:12px;">${error.message}</p>
+        </div>
+      `;
     });
   }
 

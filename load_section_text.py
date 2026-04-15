@@ -38,33 +38,39 @@ chunk_docs = []
 total = 0
 errors = 0
 
-with open(SECTION_TEXT_PATH, "r", encoding="utf-8") as f:
+with open(SECTION_TEXT_PATH, "r", encoding="utf-8", errors="replace") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        title = row.get("title", "").strip()
-        section = row.get("section", "").strip().upper()
-        text = row.get("section_text", "").strip()
+        try:
+            title = (row.get("title") or "").strip()
+            section = (row.get("section") or "").strip().upper()
+            text = (row.get("section_text") or "").strip()
 
-        if not title or not text:
+            if not title or not text:
+                errors += 1
+                continue
+
+            # Clean reference keys from text: $Author, Year$ #reference_key_N#
+            text = re.sub(r'\s*\$[^$]+\$\s*#reference_key_\d+#\s*', ' ', text)
+            text = text.strip()
+
+            chunk_docs.append({
+                "title": title,
+                "section": section,
+                "text": text,
+            })
+            total += 1
+
+            if len(chunk_docs) >= BATCH:
+                db["scientific_chunks"].insert_many(chunk_docs)
+                chunk_docs = []
+                if total % 100000 == 0:
+                    print(f"    inserted {total} chunks...")
+        except Exception as e:
             errors += 1
+            if errors <= 5:
+                print(f"    row error: {e}")
             continue
-
-        # Clean reference keys from text: $Author, Year$ #reference_key_N#
-        text = re.sub(r'\s*\$[^$]+\$\s*#reference_key_\d+#\s*', ' ', text)
-        text = text.strip()
-
-        chunk_docs.append({
-            "title": title,
-            "section": section,
-            "text": text,
-        })
-        total += 1
-
-        if len(chunk_docs) >= BATCH:
-            db["scientific_chunks"].insert_many(chunk_docs)
-            chunk_docs = []
-            if total % 500000 == 0:
-                print(f"    inserted {total} chunks...")
 
 if chunk_docs:
     db["scientific_chunks"].insert_many(chunk_docs)
@@ -142,13 +148,18 @@ print("  Indexes created")
 # Update all_dic docs with pubmed_id from paper_metadata where title matches
 print("\nStep 3: Linking pubmed_id from paper_metadata to all_dic...")
 t = time.time()
+# Load all authors into memory (only 61K rows, ~10MB)
+author_list = list(db["authors"].find({"pubmedID": {"$ne": ""}}, {"title": 1, "pubmedID": 1}))
+print(f"  {len(author_list)} papers with pubmed_id")
 updated = 0
-for doc in db["authors"].find({"pubmedID": {"$ne": ""}}, {"title": 1, "pubmedID": 1}):
+for i, doc in enumerate(author_list):
     result = db["all_dic"].update_many(
-        {"title": doc["title"], "pubmedID": {"$regex": "^Volume"}},
+        {"title": doc["title"]},
         {"$set": {"pubmed_id": doc["pubmedID"]}}
     )
     updated += result.modified_count
+    if (i + 1) % 10000 == 0:
+        print(f"    processed {i+1}/{len(author_list)}, updated {updated} docs...")
 
 print(f"  Linked pubmed_id to {updated} all_dic documents ({time.time()-t:.0f}s)")
 
