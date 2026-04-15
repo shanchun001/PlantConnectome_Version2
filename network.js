@@ -586,48 +586,75 @@
     abTitle.innerHTML = `
       <div class="node-tp-header">
         <span class="node-tp-name">${nodeId}</span>
-        <span class="node-tp-type">Type: ${typeDisplay}</span>
-        ${nodeCategory ? `<span class="node-tp-type">Category: ${nodeCategory}</span>` : ''}
-        ${nodeIdentifier ? `<span class="node-tp-type">Identifier: ${nodeIdentifier}</span>` : ''}
       </div>
     `;
 
+    // Node info card
+    let nodeInfoHtml = `
+      <div class="edge-tp-section-title">Entity Information</div>
+      <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Entity Name</span><span><strong>${nodeId}</strong></span></div>
+        <div class="edge-tp-row"><span class="edge-tp-label">Entity Type</span><span>${typeDisplay}</span></div>
+        ${nodeCategory ? `<div class="edge-tp-row"><span class="edge-tp-label">Entity Category</span><span>${nodeCategory}</span></div>` : ''}
+        ${nodeIdentifier ? `<div class="edge-tp-row"><span class="edge-tp-label">Gene Identifier</span><span>${nodeIdentifier}</span></div>` : ''}
+      </div>
+
+      <div class="edge-tp-section-title" style="margin-top:6px;">Actions</div>
+      <div style="margin-bottom:8px;">
+        <a href="#" onclick="event.preventDefault(); cy.getElementById('${node.id()}').remove();" style="color:#DC143C;font-size:12px;margin-right:12px;">Remove node</a>
+        <a href="#" onclick="event.preventDefault();
+          cy.elements().style('opacity', 0.15);
+          var n = cy.getElementById('${node.id()}');
+          n.neighborhood().add(n).style('opacity', 1);" style="color:#3498db;font-size:12px;">Isolate neighborhood</a>
+      </div>
+    `;
+
+    // Connected edges
     let edgeInfo = '';
-    node.connectedEdges().forEach((edge) => {
+    const connectedEdges = node.connectedEdges();
+    if (connectedEdges.length > 0) {
+      edgeInfo += `<div class="edge-tp-section-title" style="margin-top:6px;">Connected Relationships (${connectedEdges.length})</div>`;
+    }
+
+    connectedEdges.forEach((edge) => {
       const isSource = edge.data().source === node.data().id;
       const isTarget = edge.data().target === node.data().id;
       if (!isSource && !isTarget) return;
 
-      const extractedDef = isSource
-        ? (edge.data().source_extracted_definition || 'N/A')
-        : (edge.data().target_extracted_definition || 'N/A');
-      const generatedDef = isSource
-        ? (edge.data().source_generated_definition || 'N/A')
-        : (edge.data().target_generated_definition || 'N/A');
-      const defColor = isSource ? 'source' : 'target';
-
+      const otherName = isSource ? edge.data().originaltarget : edge.data().originalsource;
+      const otherType = isSource ? edge.data().targettype : edge.data().sourcetype;
+      const direction = isSource ? '&rarr;' : '&larr;';
+      const interaction = edge.data().interaction;
       const edgeCat = titleCaseCategory(edge.data().category) || '';
+
+      const extractedDef = isSource
+        ? (edge.data().source_extracted_definition || '')
+        : (edge.data().target_extracted_definition || '');
+      const generatedDef = isSource
+        ? (edge.data().source_generated_definition || '')
+        : (edge.data().target_generated_definition || '');
+
       edgeInfo += `
         <div class="node-tp-edge">
-          <div class="edge-tp-connection">
-            <span class="edge-tp-source">${edge.data().originalsource} <small>[${edge.data().sourcetype}]</small></span>
-            <span class="edge-tp-arrow">&rarr;</span>
-            <span class="edge-tp-target">${edge.data().originaltarget} <small>[${edge.data().targettype}]</small></span>
+          <div class="edge-tp-connection" style="font-size:12px;">
+            <strong>${nodeId}</strong>
+            <span style="color:#DC143C;font-weight:600;">${direction} ${interaction} ${direction}</span>
+            <strong>${otherName}</strong> <small style="color:#6b7280;">[${otherType}]</small>
           </div>
-          <div class="node-tp-edge-meta">
-            <span class="edge-tp-interaction" style="font-size:11px;">Relationship: <strong>${edge.data().interaction}</strong></span>
-            ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na' ? `<span class="edge-tp-category" style="font-size:10px;color:#6b7280;margin-left:6px;">(${edgeCat})</span>` : ''}
-          </div>
-          <div class="edge-tp-def-group">
-            <div class="edge-tp-def-title ${defColor}">${nodeId} definitions</div>
-            <div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted:</span> ${extractedDef}</div>
-            <div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated:</span> ${generatedDef}</div>
-          </div>
+          ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na'
+            ? `<div style="margin:2px 0 4px 0;"><span class="edge-tp-category-badge">${edgeCat}</span></div>`
+            : ''}
+          ${extractedDef || generatedDef ? `
+          <div class="edge-tp-def-group" style="margin-top:4px;">
+            <div class="edge-tp-def-title source">Definition of ${nodeId}</div>
+            ${extractedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${extractedDef}</div>` : ''}
+            ${generatedDef ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${generatedDef}</div>` : ''}
+          </div>` : ''}
         </div>
       `;
     });
 
-    ab.innerHTML = edgeInfo;
+    ab.innerHTML = nodeInfoHtml + edgeInfo;
     tooltip.style.display = 'block';
   }
 
@@ -663,6 +690,12 @@
     const speciesText = edge.data().species || 'N/A';
     const basisText = edge.data().basis || 'N/A';
 
+    const srcIdent = edge.data().source_identifier || '';
+    const tgtIdent = edge.data().target_identifier || '';
+    const assocProcess = edge.data().associated_process || '';
+    const genProcess = edge.data().generated_process || '';
+    const citations = edge.data().relevant_citations || '';
+
     abTitle.innerHTML = `
       <div class="edge-tp-header">
         <span class="edge-tp-interaction">${interactionText}</span>
@@ -670,43 +703,47 @@
       </div>
     `;
 
-    const srcIdent = edge.data().source_identifier || '';
-    const tgtIdent = edge.data().target_identifier || '';
-    const assocProcess = edge.data().associated_process || '';
-    const genProcess = edge.data().generated_process || '';
-    const citations = edge.data().relevant_citations || '';
-
     ab.innerHTML = `
+      <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-connection">
-        <span class="edge-tp-source">${srcName} <small>[${srcType}]</small>${srcIdent ? ` <small style="color:#6b7280;">(${srcIdent})</small>` : ''}</span>
-        <span class="edge-tp-arrow">&xrarr; <em>${interactionText}</em> &xrarr;</span>
-        <span class="edge-tp-target">${tgtName} <small>[${tgtType}]</small>${tgtIdent ? ` <small style="color:#6b7280;">(${tgtIdent})</small>` : ''}</span>
+        <span class="edge-tp-source"><strong>${srcName}</strong> <small>[${srcType}]</small>${srcIdent ? ` <small style="color:#6b7280;">ID: ${srcIdent}</small>` : ''}</span>
+        <span class="edge-tp-arrow">&xrarr; <em style="color:#DC143C;font-weight:600;">${interactionText}</em> &xrarr;</span>
+        <span class="edge-tp-target"><strong>${tgtName}</strong> <small>[${tgtType}]</small>${tgtIdent ? ` <small style="color:#6b7280;">ID: ${tgtIdent}</small>` : ''}</span>
       </div>
 
-      <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
+      <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
 
-      <div class="edge-tp-section-title">Metadata</div>
+      <div class="edge-tp-section-title">Relationship Details</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Relationship</span><span><strong>${interactionText}</strong></span></div>
-        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Relationship Type</span><span>${categoryText}</span></div>` : ''}
-        <div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>
-        <div class="edge-tp-row"><span class="edge-tp-label">Basis</span><span>${basisText}</span></div>
-        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted Process/Pathway</span><span>${assocProcess}</span></div>` : ''}
-        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated Process/Pathway</span><span>${genProcess}</span></div>` : ''}
-        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Relevant Citations</span><span>${citations}</span></div>` : ''}
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
+          ? `<div class="edge-tp-row"><span class="edge-tp-label">Relationship Category</span><span>${categoryText}</span></div>`
+          : ''}
+        ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species / Organism</span><span>${speciesText}</span></div>` : ''}
+        ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence Basis</span><span>${basisText}</span></div>` : ''}
       </div>
 
-      <div class="edge-tp-section-title">Definitions</div>
+      ${assocProcess || genProcess || citations ? `
+      <div class="edge-tp-section-title">Associated Process / Pathway</div>
+      <div class="edge-tp-meta">
+        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">From Paper (Extracted)</span><span>${assocProcess}</span></div>` : ''}
+        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">AI-Generated</span><span>${genProcess}</span></div>` : ''}
+        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Relevant Citations</span><span>${citations}</span></div>` : ''}
+      </div>` : ''}
+
+      <div class="edge-tp-section-title">Entity Definitions</div>
       <div class="edge-tp-defs">
         <div class="edge-tp-def-group">
           <div class="edge-tp-def-title source">${srcName} [${srcType}]${srcIdent ? ` (${srcIdent})` : ''}</div>
-          <div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted:</span> ${edge.data().source_extracted_definition || '<em>N/A</em>'}</div>
-          <div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated:</span> ${edge.data().source_generated_definition || '<em>N/A</em>'}</div>
+          ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().source_extracted_definition}</div>` : ''}
+          ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().source_generated_definition}</div>` : ''}
+          ${!edge.data().source_extracted_definition && !edge.data().source_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
         <div class="edge-tp-def-group">
           <div class="edge-tp-def-title target">${tgtName} [${tgtType}]${tgtIdent ? ` (${tgtIdent})` : ''}</div>
-          <div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted:</span> ${edge.data().target_extracted_definition || '<em>N/A</em>'}</div>
-          <div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated:</span> ${edge.data().target_generated_definition || '<em>N/A</em>'}</div>
+          ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">From paper:</span> ${edge.data().target_extracted_definition}</div>` : ''}
+          ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">AI-generated:</span> ${edge.data().target_generated_definition}</div>` : ''}
+          ${!edge.data().target_extracted_definition && !edge.data().target_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
         </div>
       </div>
     `;
