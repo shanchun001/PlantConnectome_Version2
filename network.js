@@ -1856,18 +1856,11 @@
           window._spacingTimer = setTimeout(() => { applyLayout(); }, 500);
           break;
         case 'edgeLabels':
-          if (value) {
-            cy.edges().forEach(e => e.style('label', e.data('interaction') || ''));
-          } else {
-            cy.edges().style('label', '');
-          }
+          cy.edges().style('min-zoomed-font-size', value ? 11 : 9999);
           break;
         case 'nodeLabels':
-          if (value) {
-            cy.nodes().forEach(n => n.style('label', n.data('originalId') || ''));
-          } else {
-            cy.nodes().style('label', '');
-          }
+          cy.nodes().style('min-zoomed-font-size', value ? 8 : 9999);
+          break;
           break;
       }
       cy.endBatch();
