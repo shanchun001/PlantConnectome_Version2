@@ -1851,6 +1851,9 @@
         case 'spacing':
           document.getElementById('vs-spacing-val').textContent = value;
           currentSpacing = parseInt(value);
+          // Debounce: re-run layout 500ms after user stops dragging
+          clearTimeout(window._spacingTimer);
+          window._spacingTimer = setTimeout(() => { applyLayout(); }, 500);
           break;
         case 'edgeLabels':
           cy.edges().style('label', value ? (ele) => ele.data('interaction') || '' : '');
