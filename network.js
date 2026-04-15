@@ -325,11 +325,11 @@
         selector: 'node',
         style: {
           label: (ele) => ele.data('originalId'),
-          width: 40,
-          height: 40,
+          width: 55,
+          height: 55,
           color: '#1a1a2e',
-          'font-size': '14px',
-          'min-zoomed-font-size': 8,
+          'font-size': '11px',
+          'min-zoomed-font-size': 6,
           'text-halign': 'center',
           'text-valign': 'center',
           'text-wrap': 'wrap',
@@ -390,13 +390,13 @@
     cy.nodes().forEach((node) => {
       if (queryTerm.some((term) => node.id() === term)) {
         node.style({
-          width: 55,
-          height: 55,
+          width: 70,
+          height: 70,
           'background-opacity': 1,
           'border-width': 2.5,
           'border-color': '#c0392b',
           color: '#c0392b',
-          'font-size': '13px',
+          'font-size': '12px',
           'font-weight': 'bold',
           'text-halign': 'center',
           'text-valign': 'center',
@@ -1814,14 +1814,14 @@
     // Dynamic layout parameters scale with graph size and density
     console.log(`Graph: ${numNodes} nodes, ${numEdges} edges, density=${density.toFixed(1)}`);
 
-    // Edge length from slider (default 80), used directly as idealEdgeLength
-    const userEdgeLen = parseInt(document.getElementById('vs-edge-len')?.value || 80);
-    const edgeLenMult = userEdgeLen / 80;  // 1x at default
+    // Edge length from slider (default 120), used directly as idealEdgeLength
+    const userEdgeLen = parseInt(document.getElementById('vs-edge-len')?.value || 120);
+    const edgeLenMult = userEdgeLen / 120;  // 1x at default
 
     // fcose params scaled by graph size and user edge length
-    const repulsion = (numNodes <= 200 ? 8000 : numNodes <= 500 ? 6000 : 4500) * edgeLenMult;
+    const repulsion = (numNodes <= 200 ? 12000 : numNodes <= 500 ? 8000 : 6000) * edgeLenMult;
     const edgeLen = userEdgeLen;
-    const grav = numNodes <= 200 ? 0.25 : numNodes <= 500 ? 0.4 : 0.8;
+    const grav = numNodes <= 200 ? 0.15 : numNodes <= 500 ? 0.3 : 0.6;
     const animate = numNodes <= 200;
     // Always use 'default' quality — 'draft' produces broken layouts
     const quality = 'default';
@@ -1840,7 +1840,7 @@
       edgeElasticity: () => 0.45,
       gravity: grav,
       gravityRange: 3.8,
-      nodeDimensionsIncludeLabels: false,
+      nodeDimensionsIncludeLabels: true,
       sampleSize: numNodes > 500 ? 100 : 25,
     });
 
@@ -2023,15 +2023,15 @@
 
       reset() {
         this.restoreBaseline();
-        const defs = { 'vs-node-size': 40, 'vs-font-size': 14, 'vs-edge-font': 8, 'vs-overlap': 0, 'vs-edge-len': 80 };
+        const defs = { 'vs-node-size': 55, 'vs-font-size': 11, 'vs-edge-font': 8, 'vs-overlap': 0, 'vs-edge-len': 120 };
         for (const [id, v] of Object.entries(defs)) {
           const el = document.getElementById(id); if (el) el.value = v;
           const lbl = document.getElementById(id + '-val'); if (lbl) lbl.textContent = v;
         }
         const sel = document.getElementById('vs-layout'); if (sel) sel.value = 'fcose';
         cy.nodes().forEach(n => {
-          const s = queryTerm.some(t => n.id() === t) ? 52 : 40;
-          n.style({ width: s, height: s, 'font-size': '14px' });
+          const s = queryTerm.some(t => n.id() === t) ? 70 : 55;
+          n.style({ width: s, height: s, 'font-size': '11px' });
         });
         cy.edges().style({ 'font-size': '8px', 'min-zoomed-font-size': 1 });
         styleCentralNodes(queryTerm);
