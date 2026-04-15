@@ -127,52 +127,11 @@ def generate_cytoscape_js(elements, ab, fa):
             return ''
         return str(value).replace("'", "").replace('"', '').replace('\n', '').replace('\\', '').replace('`', '').replace('${', '')
 
-    # Canonical node category names (must match network.js nodeStyles keys)
-    _CANONICAL_NODE_CATS = [
-        'GENE / PROTEIN',
-        'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',
-        'PHENOTYPE / TRAIT / DISEASE',
-        'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM',
-        'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP',
-        'CHEMICAL / METABOLITE / COFACTOR / LIGAND',
-        'TREATMENT / PERTURBATION / STRESS / MUTANT',
-        'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE',
-        'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
-        'REGULATORY / SIGNALING MECHANISM',
-        'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC',
-        'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT',
-        'CLINICAL / EPIDEMIOLOGICAL / POPULATION',
-        'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT',
-        'SOCIAL / ECONOMIC / POLICY / MANAGEMENT',
-        'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT',
-        'PROPERTY / MEASUREMENT / CHARACTERIZATION',
-    ]
-
     def get_node_category(node_category, node_type):
-        """Normalize DB category to closest canonical name for network.js styling."""
-        if not node_category:
-            return 'OTHER'
-        raw = node_category.strip().upper()
-        # Split on | or ; to handle multi-category values
-        parts = [p.strip() for p in raw.replace('|', ';').split(';') if p.strip()]
-        raw = parts[0] if parts else raw
-        # Exact match
-        if raw in _CANONICAL_NODE_CATS:
-            return raw
-        # Prefix match: find the canonical key that best matches
-        for canon in _CANONICAL_NODE_CATS:
-            if raw.startswith(canon[:20]) or canon.startswith(raw[:20]):
-                return canon
-        # Keyword match: check if key distinguishing words appear
-        raw_words = set(raw.split())
-        best_score, best_canon = 0, 'OTHER'
-        for canon in _CANONICAL_NODE_CATS:
-            canon_words = set(canon.split())
-            overlap = len(raw_words & canon_words)
-            if overlap > best_score:
-                best_score = overlap
-                best_canon = canon
-        return best_canon if best_score >= 2 else 'OTHER'
+        """Return the raw DB category (uppercased)."""
+        if node_category:
+            return node_category.strip().upper()
+        return 'OTHER'
 
     def get_edge_category(relationship_label, interaction):
         """Return the relationship_label as-is (it is the category from the prompt)."""
