@@ -184,6 +184,8 @@
     zoomingEnabled: true,
     userPanningEnabled: true,
     wheelSensitivity: 0.3,
+    minZoom: 0.05,
+    maxZoom: 3,
     textureOnViewport: false,
     hideEdgesOnViewport: false,
     hideLabelsOnViewport: false,
