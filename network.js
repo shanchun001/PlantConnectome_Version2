@@ -17,6 +17,7 @@
    * Global constants and data preparation
    */
   let currentSpacing = 80;
+  let baselinePositions = {};  // nodeId -> {x, y} — saved after each layout run
   let NODES_TO_RENDER = prepareNodes();
   let EDGES_TO_RENDER = prepareEdges();
   var queryTerm = queryTerms.split(',').map(term => {
@@ -1761,16 +1762,19 @@
     });
     layout.on('layoutstop', () => {
       console.log('Layout completed.');
-      // Check if layout produced a valid result (not all nodes at same position)
       const positions = cy.nodes().map(n => n.position());
       const allSame = positions.length > 1 && positions.every(p => Math.abs(p.x - positions[0].x) < 1 && Math.abs(p.y - positions[0].y) < 1);
       if (allSame) {
-        console.warn('Layout collapsed all nodes to one point — falling back to circle.');
+        console.warn('Layout collapsed — falling back to circle.');
         cy.layout({ name: 'circle', fit: true, padding: 40 }).run();
       }
+      saveBaseline();
       cy.fit(cy.elements(), 40);
       cy.center();
       styleCentralNodes(queryTerm);
+      // Reset de-overlap slider to 0 since we have a fresh layout
+      const overlapSlider = document.getElementById('vs-overlap');
+      if (overlapSlider) { overlapSlider.value = 0; document.getElementById('vs-overlap-val').textContent = '0'; }
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
     });
@@ -1822,14 +1826,38 @@
     // Let nodes be grabbed if desired
     cy.autoungrabify(false);
 
+    /** Save current node positions as baseline (called after each layout run). */
+    function saveBaseline() {
+      baselinePositions = {};
+      cy.nodes().forEach(n => {
+        const p = n.position();
+        baselinePositions[n.id()] = { x: p.x, y: p.y };
+      });
+      console.log(`Baseline saved (${Object.keys(baselinePositions).length} nodes)`);
+    }
+
+    /** Restore nodes to baseline positions. */
+    function restoreBaseline() {
+      cy.startBatch();
+      cy.nodes().forEach(n => {
+        const bp = baselinePositions[n.id()];
+        if (bp) n.position(bp);
+      });
+      cy.endBatch();
+    }
+
     /**
-     * De-overlap: push overlapping nodes apart using label+node bounding boxes.
-     * strength: 0-100 (0 = no-op, 100 = max separation)
+     * De-overlap: restore baseline first, then push apart.
+     * This makes the slider bidirectional — decreasing it reverts toward baseline.
+     * strength: 0 = baseline positions, 100 = max separation.
      */
     function removeOverlaps(strength) {
-      if (strength <= 0) return;
-      const extra = strength * 0.8;  // 0-80px extra padding
-      const iterations = Math.ceil(3 + strength * 0.12);  // 3-15
+      // Always restore baseline first so the effect is relative, not cumulative
+      restoreBaseline();
+      if (strength <= 0) { cy.fit(cy.elements(':visible'), 40); return; }
+
+      const extra = strength * 0.8;
+      const iterations = Math.ceil(3 + strength * 0.12);
       const nodes = cy.nodes(':visible').toArray();
 
       cy.startBatch();
@@ -1839,7 +1867,7 @@
           const pa = a.position();
           const labelLenA = (a.data('originalId') || '').length * 4;
           const wA = Math.max(a.width(), labelLenA) + extra;
-          const hA = a.height() + 18 + extra;  // 18px for label below node
+          const hA = a.height() + 18 + extra;
 
           for (let j = i + 1; j < nodes.length; j++) {
             const b = nodes[j];
@@ -1857,13 +1885,11 @@
               const ox = minDx - Math.abs(dx);
               const oy = minDy - Math.abs(dy);
               if (ox < oy) {
-                const p = ox / 2 + 1;
-                const s = dx >= 0 ? 1 : -1;
+                const p = ox / 2 + 1, s = dx >= 0 ? 1 : -1;
                 a.position({ x: pa.x - s * p, y: pa.y });
                 b.position({ x: pb.x + s * p, y: pb.y });
               } else {
-                const p = oy / 2 + 1;
-                const s = dy >= 0 ? 1 : -1;
+                const p = oy / 2 + 1, s = dy >= 0 ? 1 : -1;
                 a.position({ x: pa.x, y: pa.y - s * p });
                 b.position({ x: pb.x, y: pb.y + s * p });
               }
@@ -1894,13 +1920,44 @@
         if (layoutName === 'concentric') { opts.concentric = (n) => n.degree(); opts.levelWidth = () => 2; }
         if (layoutName === 'breadthfirst') { opts.directed = true; opts.spacingFactor = 1.2; }
         const layout = cy.layout(opts);
-        layout.on('layoutstop', () => { styleCentralNodes(queryTerm); if (loadingEl) loadingEl.style.display = 'none'; });
+        layout.on('layoutstop', () => {
+          saveBaseline();
+          styleCentralNodes(queryTerm);
+          if (loadingEl) loadingEl.style.display = 'none';
+          const os = document.getElementById('vs-overlap');
+          if (os) { os.value = 0; document.getElementById('vs-overlap-val').textContent = '0'; }
+        });
         layout.run();
         setTimeout(() => { if (loadingEl) loadingEl.style.display = 'none'; }, 5000);
       }
     };
 
     window.fitGraph = function() { cy.fit(cy.elements(':visible'), 40); cy.center(); };
+
+    window.resetViewSettings = function() {
+      // Restore baseline positions
+      restoreBaseline();
+      // Reset all sliders to defaults
+      const defaults = { 'vs-node-size': 40, 'vs-font-size': 14, 'vs-edge-font': 8, 'vs-spacing': 80, 'vs-overlap': 0 };
+      for (const [id, val] of Object.entries(defaults)) {
+        const el = document.getElementById(id);
+        if (el) { el.value = val; }
+        const valEl = document.getElementById(id + '-val');
+        if (valEl) valEl.textContent = val;
+      }
+      // Reset layout dropdown
+      const layoutSel = document.getElementById('vs-layout');
+      if (layoutSel) layoutSel.value = 'fcose';
+      // Apply default styles
+      currentSpacing = 80;
+      cy.nodes().forEach(n => {
+        const isCentral = queryTerm.some(t => n.id() === t);
+        n.style({ width: isCentral ? 52 : 40, height: isCentral ? 52 : 40, 'font-size': '14px' });
+      });
+      cy.edges().style({ 'font-size': '8px', 'min-zoomed-font-size': 1 });
+      styleCentralNodes(queryTerm);
+      cy.fit(cy.elements(':visible'), 40);
+    };
 
     window.toggleViewSettings = function() {
       const p = document.getElementById('viewSettingsPanel');
