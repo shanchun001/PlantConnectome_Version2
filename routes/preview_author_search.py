@@ -15,18 +15,10 @@ def preview_author_search(query):
     start_time = time.time()
     authors_collection = db["authors"]
 
+    # Simple approach: find matching authors, group by standardized name
+    # No $lookup needed — we'll verify against all_dic when user clicks through
     pipeline = [
         {"$match": {"authors": {"$regex": query, "$options": "i"}}},
-        # Only keep authors whose papers exist in all_dic (join on title)
-        {"$lookup": {
-            "from": "all_dic",
-            "localField": "title",
-            "foreignField": "title",
-            "pipeline": [{"$limit": 1}],
-            "as": "kg_match"
-        }},
-        {"$match": {"kg_match.0": {"$exists": True}}},
-        {"$project": {"authors": 1, "pubmedID": 1, "title": 1}},
         {"$set": {
             "authors": {
                 "$filter": {
@@ -48,7 +40,7 @@ def preview_author_search(query):
             "_id": "$authors",
             "publication_count": {"$sum": 1}
         }},
-        {"$sort": {"_id": 1}}
+        {"$sort": {"publication_count": -1}}
     ]
 
     authors_list = []
@@ -65,10 +57,14 @@ def preview_author_search(query):
         logging.error(f"Error during aggregation of authors: {e}")
         authors_list = []
 
-    if not authors_list:
+    elapsed_time = time.time() - start_time
+    logging.info(f"Author search for '{query}': {len(authors_list)} authors found in {elapsed_time:.2f}s")
+
+    if authors_list:
+        return render_template(
+            'preview_authorsearch.html',
+            authors_list=authors_list,
+            search_term=query
+        )
+    else:
         return render_template('not_found.html', search_term=query)
-    return render_template(
-        'preview_authorsearch.html',
-        authors=authors_list,
-        search_term=query
-    )

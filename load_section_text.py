@@ -34,48 +34,68 @@ t = time.time()
 
 db.drop_collection("scientific_chunks")
 
-chunk_docs = []
 total = 0
 errors = 0
 
+# Read the entire file and handle malformed rows by requiring exactly 3 fields per record
+# Use csv.reader with error handling for embedded newlines/tables
+chunk_docs = []
+current_title = ""
+current_section = ""
+current_text = ""
+
 with open(SECTION_TEXT_PATH, "r", encoding="utf-8", errors="replace") as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        try:
-            title = (row.get("title") or "").strip()
-            section = (row.get("section") or "").strip().upper()
-            text = (row.get("section_text") or "").strip()
-
-            if not title or not text:
-                errors += 1
-                continue
-
-            # Clean reference keys from text: $Author, Year$ #reference_key_N#
-            text = re.sub(r'\s*\$[^$]+\$\s*#reference_key_\d+#\s*', ' ', text)
-            text = text.strip()
-
-            chunk_docs.append({
-                "title": title,
-                "section": section,
-                "text": text,
-            })
-            total += 1
-
-            if len(chunk_docs) >= BATCH:
-                db["scientific_chunks"].insert_many(chunk_docs)
-                chunk_docs = []
-                if total % 100000 == 0:
-                    print(f"    inserted {total} chunks...")
-        except Exception as e:
-            errors += 1
-            if errors <= 5:
-                print(f"    row error: {e}")
+    header = f.readline()  # skip header
+    for line in f:
+        # Try to parse as a proper CSV row (title, section, section_text)
+        # A valid row starts with a quote: "title","section","text..."
+        line = line.rstrip('\n').rstrip('\r')
+        if not line:
             continue
+
+        # Check if this is a new record (starts with a quoted field that looks like a title)
+        # New records start with "Title text","section","
+        parts = None
+        try:
+            parts = list(csv.reader([line]))[0]
+        except:
+            pass
+
+        if parts and len(parts) >= 3 and parts[1].strip().lower() in (
+            'abstract', 'introduction', 'methods', 'results', 'discussion',
+            'conclusion', 'results_and_discussion', 'title',
+            'materials_and_methods', 'supplementary_data', 'acknowledgements',
+            'references', 'appendix', 'background', 'figures_and_tables',
+        ):
+            # Save previous record
+            if current_title and current_text.strip():
+                text_clean = re.sub(r'\s*\$[^$]+\$\s*#reference_key_\d+#\s*', ' ', current_text).strip()
+                chunk_docs.append({"title": current_title, "section": current_section, "text": text_clean})
+                total += 1
+                if len(chunk_docs) >= BATCH:
+                    db["scientific_chunks"].insert_many(chunk_docs)
+                    chunk_docs = []
+                    if total % 100000 == 0:
+                        print(f"    inserted {total} chunks...")
+
+            current_title = parts[0].strip()
+            current_section = parts[1].strip().upper()
+            current_text = parts[2] if len(parts) > 2 else ""
+        else:
+            # Continuation of previous record's text (embedded newline or table)
+            if current_title:
+                current_text += " " + line
+
+    # Save last record
+    if current_title and current_text.strip():
+        text_clean = re.sub(r'\s*\$[^$]+\$\s*#reference_key_\d+#\s*', ' ', current_text).strip()
+        chunk_docs.append({"title": current_title, "section": current_section, "text": text_clean})
+        total += 1
 
 if chunk_docs:
     db["scientific_chunks"].insert_many(chunk_docs)
 
-print(f"  Inserted {total} chunks ({errors} skipped, {time.time()-t:.0f}s)")
+print(f"  Inserted {total} chunks ({time.time()-t:.0f}s)")
 
 print("  Creating indexes...")
 db["scientific_chunks"].create_index("title")

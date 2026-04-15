@@ -58,39 +58,37 @@ def author(query):
     all_dic_collection = db["all_dic"]
 
     try:
+        # Find paper titles by this author
         pipeline = [
             {"$match": {"authors": my_search}},
-            {"$project": {"pubmedID": 1, "_id": 0}},
+            {"$project": {"title": 1, "_id": 0}},
         ]
-        pubmed_ids = list(authors_collection.aggregate(pipeline))
-        pm_list = [doc["pubmedID"] for doc in pubmed_ids]
-        num_hits = len(pm_list)
+        title_docs = list(authors_collection.aggregate(pipeline))
+        title_list = [doc["title"] for doc in title_docs if doc.get("title")]
+        num_hits = len(title_list)
 
         if not num_hits:
             return render_template('author.html', genes=[], cytoscape_js_code="",
                                    author=query, connectome_count=0,
                                    warning='No publications found.', summary='', search_term=query)
 
-        projection = {
-            "entity1": 1, "entity1type": 1, "entity2": 1, "entity2type": 1,
-            "edge": 1, "pubmedID": 1, "p_source": 1, "species": 1, "basis": 1,
-            "source_extracted_definition": 1, "source_generated_definition": 1,
-            "target_extracted_definition": 1, "target_generated_definition": 1,
-            "_id": 0
-        }
-        result_cursor = all_dic_collection.find({"pubmedID": {"$in": pm_list}}, projection)
-        result = list(result_cursor)
+        # Find relationships by title (indexed)
+        result = list(all_dic_collection.find({"title": {"$in": title_list}}))
 
-        elements = [
-            (
-                doc["entity1"], doc["entity1type"], doc["entity2"],
-                doc["entity2type"], doc["edge"], doc["pubmedID"],
-                doc["p_source"], doc["species"], doc["basis"],
-                doc["source_extracted_definition"], doc["source_generated_definition"],
-                doc["target_extracted_definition"], doc["target_generated_definition"]
-            )
-            for doc in result
-        ]
+        elements = []
+        for doc in result:
+            elements.append((
+                doc.get("entity1", ""), doc.get("entity1type", ""),
+                doc.get("entity2", ""), doc.get("entity2type", ""),
+                doc.get("edge", ""), doc.get("pubmedID", ""),
+                doc.get("p_source", ""), doc.get("species", ""), doc.get("basis", ""),
+                doc.get("source_extracted_definition", ""), doc.get("source_generated_definition", ""),
+                doc.get("target_extracted_definition", ""), doc.get("target_generated_definition", ""),
+                doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                doc.get("relevant_citations", "")
+            ))
         forSending = [Gene(*element) for element in elements]
 
         updatedElements = process_network(elements)
