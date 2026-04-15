@@ -8,7 +8,13 @@
    */
   let NODES_TO_RENDER = prepareNodes();
   let EDGES_TO_RENDER = prepareEdges();
-  var queryTerm = queryTerms.split(',').map(term => term.trim().toUpperCase()); // Split, trim, and uppercase the query terms
+  var queryTerm = queryTerms.split(',').map(term => {
+    // Strip bracket suffix (e.g., "CESA GENES [Gene / Protein]" -> "CESA GENES")
+    let t = term.trim().toUpperCase();
+    const bi = t.lastIndexOf(' [');
+    if (bi > 0) t = t.substring(0, bi).trim();
+    return t;
+  });
 
   /**
    * Utility functions to prepare nodes and edges
@@ -19,7 +25,7 @@
       data: {
         ...node.data,
         originalId: node.data.id, // Store original case
-        id: (node.data.id + ' [' + node.data.type + ']').toUpperCase(), // Normalize ID to uppercase
+        id: node.data.id.toUpperCase(), // Normalize ID to uppercase (name only, no type bracket)
         type: node.data.type,
       },
     }));
@@ -30,10 +36,10 @@
       ...e,
       data: {
         ...e.data,
-        source: (e.data.source + ' [' + e.data.sourcetype + ']').toUpperCase(),
+        source: e.data.source.toUpperCase(),
         originalsource: e.data.source,
         sourcetype: e.data.sourcetype,
-        target: (e.data.target + ' [' + e.data.targettype + ']').toUpperCase(),
+        target: e.data.target.toUpperCase(),
         originaltarget: e.data.target,
         targettype: e.data.targettype,
         interaction: e.data.interaction,
