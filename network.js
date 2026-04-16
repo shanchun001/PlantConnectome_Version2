@@ -193,7 +193,7 @@
     autoungrabify: false,      // allow drag-to-move nodes
     zoomingEnabled: true,
     userPanningEnabled: true,
-    wheelSensitivity: 1,
+    wheelSensitivity: 0.3,
     minZoom: 0.05,
     maxZoom: 3,
     textureOnViewport: false,
