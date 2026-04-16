@@ -538,12 +538,7 @@
         if (i > 0) html += '<span style="color:#9ca3af; margin:0 8px;">&middot;</span>';
         html += '<span style="font-size:1.15em; font-weight:600; color:#1a1a2e;">' + name + '</span>';
         if (cats) {
-          cats.split(',').forEach(function(cat) {
-            cat = cat.trim();
-            if (cat) {
-              html += ' <span style="display:inline-block; font-size:0.7em; font-weight:500; color:#3498db; background:#eaf2f8; border:1px solid #aed6f1; border-radius:4px; padding:1px 7px; margin-left:3px;">' + cat + '</span>';
-            }
-          });
+          html += ' <span style="font-size:0.75em; color:#3498db;">' + cats + '</span>';
         }
       });
       container.innerHTML = html;

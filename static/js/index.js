@@ -43,12 +43,41 @@ const gene_form_listeners = () => {
         });
     }
 }
-// Methods for submitting the gene form via buttons:
-// Function to show the loading icon and background overlay
+// Loading animation variables (must be before showLoading)
+let typingActive = false;
+let index = 0;
+const words = "Loading in progress...".split('');
+function typeEffect() {
+    if (!typingActive) return;
+    const lt = document.getElementById('loading-text');
+    if (!lt) return;
+    if (index < words.length) {
+        if (words[index] === ' ') {
+            lt.innerHTML += '&nbsp;';
+        } else {
+            lt.innerText += words[index];
+        }
+        index++;
+        setTimeout(typeEffect, 85);
+    } else {
+        setTimeout(() => {
+            lt.innerText = '';
+            index = 0;
+            typeEffect();
+        }, 1000);
+    }
+}
+
+// Function to show the loading icon and typing animation
 function showLoading() {
-    //document.getElementById('loading-icon').style.display = 'inline-block'; // Show the main loading icon
     document.getElementById('loading-text').style.display = 'inline-block';
-    document.getElementById('loading-icon-small').style.display = 'inline-block'; // Show the small loading icon
+    document.getElementById('loading-icon-small').style.display = 'inline-block';
+    // Start typing animation
+    typingActive = true;
+    index = 0;
+    const lt = document.getElementById('loading-text');
+    if (lt) lt.innerText = '';
+    typeEffect();
 }
 
 // Function to hide the loading icon and background overlay
@@ -122,41 +151,7 @@ window.addEventListener('load', () => {
     forms[2].setAttribute('onsubmit', `submitTitleForm(event, forms[2])`);
 });
 
-const loadingText = document.getElementById('loading-text');
-loadingText.innerText = '';
 
-const words = "Loading in progress...".split('');
-let index = 0;
-let typingActive = false;
-
-function typeEffect() {
-    if (!typingActive) return;
-    if (index < words.length) {
-        if (words[index] === ' ') {
-            loadingText.innerHTML += '&nbsp;';
-        } else {
-            loadingText.innerText += words[index];
-        }
-        index++;
-        setTimeout(typeEffect, 85);
-    } else {
-        setTimeout(() => {
-            loadingText.innerText = '';
-            index = 0;
-            typeEffect();
-        }, 1000);
-    }
-}
-
-// Only start typing when showLoading is called (search button clicked)
-const _origShowLoading = showLoading;
-showLoading = function() {
-    _origShowLoading();
-    typingActive = true;
-    index = 0;
-    loadingText.innerText = '';
-    typeEffect();
-};
 
 
 /*
