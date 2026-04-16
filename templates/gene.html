@@ -508,11 +508,10 @@
         <h3 style="margin: 0 0 6px 0; font-weight: 700; font-size: 1.35em; color: #2c3e50;">
           Search results for:
         </h3>
-        <div id="search-term-display" style="margin-bottom: 8px; max-height: 1.8em; overflow: hidden; cursor: pointer; transition: max-height 0.3s ease; position: relative;"
-             onclick="this.style.maxHeight = this.style.maxHeight === 'none' ? '1.8em' : 'none'; this.querySelector('.expand-hint').style.display = this.style.maxHeight === 'none' ? 'none' : 'inline';"
-             title="Click to expand/collapse">
-          {# JS will parse and render entity names with category badges #}
-          <span class="expand-hint" style="position:absolute;right:0;top:0;font-size:11px;color:#3498db;background:linear-gradient(90deg, transparent, white 30%);padding-left:20px;">...click to expand</span>
+        <div id="search-term-wrapper" style="margin-bottom: 8px; position: relative;">
+          <div id="search-term-display" style="max-height: 1.6em; overflow: hidden; transition: max-height 0.3s ease;"></div>
+          <span id="search-term-toggle" style="display:none; font-size:11px; color:#3498db; cursor:pointer; margin-top:2px;"
+                onclick="var d=document.getElementById('search-term-display'); if(d.style.maxHeight==='none'){d.style.maxHeight='1.6em';this.textContent='Show more...';}else{d.style.maxHeight='none';this.textContent='Show less';}">Show more...</span>
         </div>
       </div>
       <div class="graph-info" style="font-size: 0.9em; color: #6b7280;">
@@ -547,6 +546,13 @@
         }
       });
       container.innerHTML = html;
+      // Show toggle if content overflows 1 line
+      requestAnimationFrame(() => {
+        const toggle = document.getElementById('search-term-toggle');
+        if (toggle && container.scrollHeight > container.clientHeight + 2) {
+          toggle.style.display = 'inline-block';
+        }
+      });
     })();
     </script>
 
