@@ -250,20 +250,21 @@ footer {
 }
 
 .side-tooltip {
-    padding: 10px 14px; /* Increase padding for more spacious feel */
+    padding: 10px 14px;
     display: none;
     position: absolute;
-    color: #222; /* Darker text for better readability */
-    background-color: #ffffff; /* Pure white background for better contrast */
-    border: 1px solid #ccc; /* Softer border color */
-    border-radius: 10px; /* Slightly more rounded corners */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Slightly more prominent shadow for depth */
+    color: #222;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     bottom: 0;
     right: 0;
-    width: 250px; /* Slightly wider for better content spacing */
-    height: 100%; /* Limit height to prevent overflowing off the screen */
+    width: 340px;
+    height: 100%;
     z-index: 999;
-    overflow-y: auto; /* Allow scrolling if content exceeds height */
+    overflow-y: auto;
+    overflow-x: hidden;
     word-wrap: break-word;
     font-size: 14px; /* Slightly larger font for better readability */
     line-height: 1.6; /* Increase line height for more comfortable reading */
@@ -654,16 +655,17 @@ footer {
 
 .edge-tp-connection {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     padding: 8px 10px;
     margin-bottom: 10px;
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.5;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .edge-tp-source {

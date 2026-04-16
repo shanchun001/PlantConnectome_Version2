@@ -728,47 +728,38 @@
     `;
 
     ab.innerHTML = `
-      <div class="edge-tp-section-title">Relationship</div>
-      <div class="edge-tp-connection">
-        <span class="edge-tp-source"><strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge">${srcCat}</span>` : ''}${srcIdent ? ` <small style="color:#6b7280;">ID: ${srcIdent}</small>` : ''}</span>
-        <span class="edge-tp-arrow">&xrarr; <span style="color:#DC143C;font-weight:600;">${interactionText}</span> &xrarr;</span>
-        <span class="edge-tp-target"><strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge">${tgtCat}</span>` : ''}${tgtIdent ? ` <small style="color:#6b7280;">ID: ${tgtIdent}</small>` : ''}</span>
+      <div class="edge-tp-section-title">Source Entity</div>
+      <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Name</span><span><strong>${srcName}</strong></span></div>
+        <div class="edge-tp-row"><span class="edge-tp-label">Type</span><span>${srcType}</span></div>
+        ${srcCat ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${srcCat}</span></div>` : ''}
+        ${srcIdent ? `<div class="edge-tp-row"><span class="edge-tp-label">Identifier</span><span>${srcIdent}</span></div>` : ''}
+        ${edge.data().source_extracted_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted def.</span><span style="font-size:11px;">${edge.data().source_extracted_definition}</span></div>` : ''}
+        ${edge.data().source_generated_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated def.</span><span style="font-size:11px;">${edge.data().source_generated_definition}</span></div>` : ''}
       </div>
-      ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na'
-        ? `<div style="margin:4px 0 8px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${categoryText}</span></div>`
-        : ''}
+
+      <div class="edge-tp-section-title">Relationship</div>
+      <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span style="color:#DC143C;font-weight:600;">${interactionText}</span></div>
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${categoryText}</span></div>` : ''}
+        ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>` : ''}
+        ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence</span><span>${basisText}</span></div>` : ''}
+        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted process</span><span>${assocProcess}</span></div>` : ''}
+        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated process</span><span>${genProcess}</span></div>` : ''}
+        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
+      </div>
+
+      <div class="edge-tp-section-title">Target Entity</div>
+      <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Name</span><span><strong>${tgtName}</strong></span></div>
+        <div class="edge-tp-row"><span class="edge-tp-label">Type</span><span>${tgtType}</span></div>
+        ${tgtCat ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${tgtCat}</span></div>` : ''}
+        ${tgtIdent ? `<div class="edge-tp-row"><span class="edge-tp-label">Identifier</span><span>${tgtIdent}</span></div>` : ''}
+        ${edge.data().target_extracted_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted def.</span><span style="font-size:11px;">${edge.data().target_extracted_definition}</span></div>` : ''}
+        ${edge.data().target_generated_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated def.</span><span style="font-size:11px;">${edge.data().target_generated_definition}</span></div>` : ''}
+      </div>
 
       <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
-
-      <div class="edge-tp-section-title">Details</div>
-      <div class="edge-tp-meta">
-        ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species / Organism</span><span>${speciesText}</span></div>` : ''}
-        ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence Basis</span><span>${basisText}</span></div>` : ''}
-      </div>
-
-      ${assocProcess || genProcess || citations ? `
-      <div class="edge-tp-section-title">Associated Process / Pathway</div>
-      <div class="edge-tp-meta">
-        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">From Paper (Extracted)</span><span>${assocProcess}</span></div>` : ''}
-        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">AI-Generated</span><span>${genProcess}</span></div>` : ''}
-        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Relevant Citations</span><span>${citations}</span></div>` : ''}
-      </div>` : ''}
-
-      <div class="edge-tp-section-title">Entity Definitions</div>
-      <div class="edge-tp-defs">
-        <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title source">${srcName} <small style="color:#6b7280;">(${srcType})</small>${srcCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${srcCat}</span>` : ''}</div>
-          ${edge.data().source_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted definition:</span> ${edge.data().source_extracted_definition}</div>` : ''}
-          ${edge.data().source_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated definition:</span> ${edge.data().source_generated_definition}</div>` : ''}
-          ${!edge.data().source_extracted_definition && !edge.data().source_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
-        </div>
-        <div class="edge-tp-def-group">
-          <div class="edge-tp-def-title target">${tgtName} <small style="color:#6b7280;">(${tgtType})</small>${tgtCat ? ` <span class="edge-tp-category-badge" style="font-size:9px;">${tgtCat}</span>` : ''}</div>
-          ${edge.data().target_extracted_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Extracted definition:</span> ${edge.data().target_extracted_definition}</div>` : ''}
-          ${edge.data().target_generated_definition ? `<div class="edge-tp-def-item"><span class="edge-tp-def-label">Generated definition:</span> ${edge.data().target_generated_definition}</div>` : ''}
-          ${!edge.data().target_extracted_definition && !edge.data().target_generated_definition ? `<div class="edge-tp-def-item" style="color:#9ca3af;"><em>No definition available</em></div>` : ''}
-        </div>
-      </div>
     `;
 
     // Show Source Text row and add link

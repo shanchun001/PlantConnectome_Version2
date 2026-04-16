@@ -817,15 +817,9 @@ def generate_search_route2(search_type):
                     entity_types.add(g.targettype)
                 if g.targetcategory:
                     entity_categories.add(g.targetcategory)
-        types_str = ", ".join(sorted(t for t in entity_types if t)) or ""
         cats_str = ", ".join(sorted(c for c in entity_categories if c and c != 'Other')) or ""
-        # Format: "name (type) [category]"
-        parts = [original_name]
-        if types_str:
-            parts.append(f"({types_str})")
-        if cats_str:
-            parts.append(f"[{cats_str}]")
-        patterns_title = " ".join(parts)
+        # Format: "name [category1, category2]"
+        patterns_title = f"{original_name} [{cats_str}]" if cats_str else original_name
 
         if forSending:
             return render_template(
@@ -870,13 +864,8 @@ def generate_multi_search_route(search_type):
                 entityType = parts[1] if len(parts) > 1 else ""
                 displayCat = parts[2] if len(parts) > 2 else entityType
                 selected_entity_names.add(entityName.upper())
-                # Format: "name (type) [category]"
-                label_parts = [entityName]
-                if entityType:
-                    label_parts.append(f"({entityType})")
-                if displayCat:
-                    label_parts.append(f"[{displayCat}]")
-                display_labels.append(" ".join(label_parts))
+                # Format: "name [category1, category2]" — no types
+                display_labels.append(f"{entityName} [{displayCat}]" if displayCat else entityName)
 
             # Query MongoDB directly for the selected entities
             collection = db["all_dic"]

@@ -526,9 +526,8 @@
       parts.forEach((part, i) => {
         part = part.trim();
         if (!part) return;
-        // Extract: name (type) [category]
-        let name = part, entityType = '', cats = '';
-        // Extract [category] from end
+        // Extract: name [category1, category2]
+        let name = part, cats = '';
         const bracketIdx = part.lastIndexOf('[');
         if (bracketIdx > 0) {
           cats = part.substring(bracketIdx + 1).replace(/\]$/, '').trim();
@@ -536,22 +535,13 @@
         } else {
           name = part.replace(/\]$/, '').trim();
         }
-        // Extract (type) from name
-        const parenMatch = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-        if (parenMatch) {
-          name = parenMatch[1].trim();
-          entityType = parenMatch[2].trim();
-        }
-        if (i > 0) html += '<span style="color:#9ca3af; margin:0 6px;">&middot;</span>';
+        if (i > 0) html += '<span style="color:#9ca3af; margin:0 8px;">&middot;</span>';
         html += '<span style="font-size:1.15em; font-weight:600; color:#1a1a2e;">' + name + '</span>';
-        if (entityType) {
-          html += ' <span style="font-size:0.8em; color:#6b7280;">(' + entityType + ')</span>';
-        }
         if (cats) {
           cats.split(',').forEach(function(cat) {
             cat = cat.trim();
             if (cat) {
-              html += ' <span style="display:inline-block; font-size:0.75em; font-weight:500; color:#3498db; background:#eaf2f8; border:1px solid #aed6f1; border-radius:4px; padding:1px 7px; margin-left:4px;">' + cat + '</span>';
+              html += ' <span style="display:inline-block; font-size:0.7em; font-weight:500; color:#3498db; background:#eaf2f8; border:1px solid #aed6f1; border-radius:4px; padding:1px 7px; margin-left:3px;">' + cat + '</span>';
             }
           });
         }
@@ -2208,13 +2198,13 @@
             {% for gene in genes %}
             <tr>
               <td>{{ gene.id }}</td>
-              <td style="color:#6b7280;font-size:12px;">{{ gene.idtype }}</td>
-              <td><span style="font-size:11px;color:#3498db;background:#eaf2f8;border:1px solid #aed6f1;border-radius:3px;padding:1px 5px;">{{ gene.idcategory or 'Other' }}</span></td>
+              <td style="color:#6b7280;font-size:11px;">{{ gene.idtype }}</td>
+              <td style="color:#3498db;font-size:11px;">{{ gene.idcategory or 'Other' }}</td>
               <td style="font-weight:500;">{{ gene.inter_type }}</td>
-              <td><span style="font-size:11px;color:#8e44ad;background:#f4ecf7;border:1px solid #d2b4de;border-radius:3px;padding:1px 5px;">{{ gene.relationship_label or gene.inter_type }}</span></td>
+              <td style="color:#8e44ad;font-size:11px;">{{ gene.relationship_label or gene.inter_type }}</td>
               <td>{{ gene.target }}</td>
-              <td style="color:#6b7280;font-size:12px;">{{ gene.targettype }}</td>
-              <td><span style="font-size:11px;color:#3498db;background:#eaf2f8;border:1px solid #aed6f1;border-radius:3px;padding:1px 5px;">{{ gene.targetcategory or 'Other' }}</span></td>
+              <td style="color:#6b7280;font-size:11px;">{{ gene.targettype }}</td>
+              <td style="color:#3498db;font-size:11px;">{{ gene.targetcategory or 'Other' }}</td>
               <td style="color:#6b7280;font-size:12px;" title="Publication: {{ gene.publication }}">{{ gene.p_source }}</td>
             </tr>
             {% endfor %}
