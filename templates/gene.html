@@ -508,8 +508,11 @@
         <h3 style="margin: 0 0 6px 0; font-weight: 700; font-size: 1.35em; color: #2c3e50;">
           Search results for:
         </h3>
-        <div id="search-term-display" style="margin-bottom: 8px;">
+        <div id="search-term-display" style="margin-bottom: 8px; max-height: 1.8em; overflow: hidden; cursor: pointer; transition: max-height 0.3s ease; position: relative;"
+             onclick="this.style.maxHeight = this.style.maxHeight === 'none' ? '1.8em' : 'none'; this.querySelector('.expand-hint').style.display = this.style.maxHeight === 'none' ? 'none' : 'inline';"
+             title="Click to expand/collapse">
           {# JS will parse and render entity names with category badges #}
+          <span class="expand-hint" style="position:absolute;right:0;top:0;font-size:11px;color:#3498db;background:linear-gradient(90deg, transparent, white 30%);padding-left:20px;">...click to expand</span>
         </div>
       </div>
       <div class="graph-info" style="font-size: 0.9em; color: #6b7280;">
