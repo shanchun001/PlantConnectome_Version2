@@ -1173,11 +1173,11 @@
       const edge = edgesArray[i];
       const pmidValue = edge.data().pmid;
       const sectionValue = edge.data().p_source || '';
-      const sourceUpper = edge.data().source;
-      const targetUpper = edge.data().target;
+      const sourceUpper = (edge.data().source || '').toUpperCase();
+      const targetUpper = (edge.data().target || '').toUpperCase();
 
-      const isSourceMatch = queryTerms.some((term) => sourceUpper.includes(term.toUpperCase()));
-      const isTargetMatch = queryTerms.some((term) => targetUpper.includes(term.toUpperCase()));
+      const isSourceMatch = queryTerms.some((term) => sourceUpper.includes(term));
+      const isTargetMatch = queryTerms.some((term) => targetUpper.includes(term));
 
       if (isSourceMatch || isTargetMatch) {
         found = true;
