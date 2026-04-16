@@ -1877,11 +1877,16 @@
     } catch (e) {
       console.error('fcose layout error, falling back to circle:', e);
       cy.layout({ name: 'circle', fit: true, padding: 40 }).run();
-      cy.fit(cy.elements(), 40);
-      styleCentralNodes(queryTerm);
+    }
+
+    // With animate:false, layout completes synchronously — hide overlay immediately
+    setTimeout(() => {
       const loadingEl = document.getElementById('layout-loading');
       if (loadingEl) loadingEl.style.display = 'none';
-    }
+      cy.fit(cy.elements(), 40);
+      styleCentralNodes(queryTerm);
+      updateNodeSummaries();
+    }, 100);
 
     // Safety fallback: hide overlay after 15s in case layoutstop doesn't fire
     setTimeout(() => {
