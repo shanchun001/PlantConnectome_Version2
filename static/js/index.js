@@ -53,9 +53,13 @@ function showLoading() {
 
 // Function to hide the loading icon and background overlay
 function hideLoading() {
-    document.getElementById('loading-icon').style.display = 'none';
-    document.getElementById('loading-text').style.display = 'none';
-    document.getElementById('loading-icon-small').style.display = 'none';
+    const icon = document.getElementById('loading-icon');
+    const text = document.getElementById('loading-text');
+    const smallIcon = document.getElementById('loading-icon-small');
+    if (icon) icon.style.display = 'none';
+    if (text) { text.style.display = 'none'; text.innerText = ''; }
+    if (smallIcon) smallIcon.style.display = 'none';
+    typingActive = false;
 }
 
 

@@ -369,9 +369,6 @@
           'text-max-width': 80,
           'text-rotation': 'autorotate',
           'text-margin-y': -8,
-          'text-background-color': '#ffffff',
-          'text-background-opacity': 0.6,
-          'text-background-padding': '1px',
         },
       },
       // Clicked/selected node — subtle highlight (not red)
