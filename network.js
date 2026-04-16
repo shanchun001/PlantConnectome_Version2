@@ -723,7 +723,7 @@
 
     abTitle.innerHTML = `
       <div class="edge-tp-header">
-        <span class="edge-tp-interaction">Edge Details</span>
+        <span class="edge-tp-interaction">Relationship: ${interactionText}</span>
       </div>
     `;
 
@@ -740,7 +740,7 @@
 
       <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-meta">
-        <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span style="color:#DC143C;font-weight:600;">${interactionText}</span></div>
+        <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span><strong>${interactionText}</strong></span></div>
         ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${categoryText}</span></div>` : ''}
         ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>` : ''}
         ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence</span><span>${basisText}</span></div>` : ''}
