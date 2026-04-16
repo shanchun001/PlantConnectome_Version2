@@ -613,8 +613,8 @@
       </button>
 
       <!-- View Settings Panel -->
-      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:380px; z-index:999;">
-        <div class="form-container" style="padding:14px 18px;">
+      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:340px; z-index:999;">
+        <div class="form-container" style="padding:10px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">
             <h5 style="margin:0; font-size:14px; font-weight:600; color:#2c3e50;">View Settings</h5>
             <button onclick="toggleViewSettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;">&times;</button>
@@ -632,7 +632,7 @@
             <span id="vs-font-size-val">11</span>
           </div>
 
-          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px 0;">Edges</div>
+          <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:6px 0 4px 0;">Edges</div>
           <div class="view-setting-row">
             <label>Edge Label Font</label>
             <input type="range" id="vs-edge-font" min="0" max="30" value="8" oninput="VS.set('edgeFontSize', this.value)">
@@ -644,7 +644,7 @@
             <span id="vs-edge-len-val">120</span>
           </div>
 
-          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px 0;">Layout</div>
+          <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:6px 0 4px 0;">Layout</div>
           <div class="view-setting-row">
             <label>Graph Layout</label>
             <select id="vs-layout" style="font-size:12px; padding:4px 8px; flex:1; border:1px solid #d1d5db; border-radius:4px;">
@@ -815,7 +815,7 @@
         <button class="tooltip-close-btn" onclick="hideTooltip()" aria-label="Close tooltip">&times;</button>
         <label class="title" id="ab-title"></label><br/>
         <div id="pmid-row" style="display:none;">
-          <label class="title">Source Text:</label>
+          <label class="title">Reference Source:</label>
           <a id="pmid" class="pubmed-link pubmed-hyperlink" href="javascript:void(0)"></a>
         </div>
         <div class="content nodeinfo">

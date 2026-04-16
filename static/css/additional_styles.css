@@ -695,7 +695,7 @@ footer {
     width: 100%;
     padding: 6px 0;
     margin-bottom: 10px;
-    background: #1f2937;
+    background: #3498db;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -706,7 +706,7 @@ footer {
 }
 
 .edge-tp-validate-btn:hover {
-    background: #374151;
+    background: #2980b9;
 }
 
 .edge-tp-section-title {

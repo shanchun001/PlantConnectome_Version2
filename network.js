@@ -725,11 +725,17 @@
 
     abTitle.innerHTML = `
       <div class="edge-tp-header">
-        <span class="edge-tp-interaction">Relationship: ${interactionText}</span>
+        <span class="edge-tp-interaction">Edge Details</span>
       </div>
     `;
 
     ab.innerHTML = `
+      <div class="edge-tp-connection" style="font-size:12px;">
+        <strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>
+        <span style="font-weight:600;">&rarr; ${interactionText} &rarr;</span>
+        <strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>
+      </div>
+
       <div class="edge-tp-section-title">Source Entity</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Name</span><span><strong>${srcName}</strong></span></div>
@@ -761,7 +767,7 @@
         ${edge.data().target_generated_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated def.</span><span style="font-size:11px;">${edge.data().target_generated_definition}</span></div>` : ''}
       </div>
 
-      <button id="validateEdge" class="edge-tp-validate-btn">Validate with AI</button>
+      <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
     `;
 
     // Show Source Text row and add link
@@ -770,8 +776,8 @@
     const isRealPmid = /^\d+$/.test(pmid);
     const sectionLabel = section !== 'N/A' ? ` | Section: ${section}` : '';
     pmidElem.innerHTML = isRealPmid
-      ? `PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" style="color:#3498db;">${pmid}</a>${sectionLabel}`
-      : `Source Text${sectionLabel}`;
+      ? `Reference: <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" style="color:#3498db;">${pmid}</a>${sectionLabel}`
+      : `Reference Source${sectionLabel}`;
     pmidElem.onclick = () =>
       openPMIDModal(
         pmid,
@@ -1120,7 +1126,7 @@
           .map(
             ({ target, pmid, section }) => `
               <span style='color: #800000;'>${target}</span>
-              (PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
+              (Ref: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                 data-pmid="${pmid}" data-source="${node.source}" data-interaction="${interaction}"
                 data-target="${target}" data-section="${section || ''}">${pmid && section && pmid.endsWith('_' + section) ? pmid : (pmid + (section ? '_' + section : ''))}</a>)
             `
@@ -1191,7 +1197,7 @@
               <li class="definition-item">
                 <span class="definition-entity">${entitynametype}</span>
                 <span class="definition-text">${edge.data().source_extracted_definition}</span>
-                <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
+                <span class="definition-pmid">Ref: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${entitynametype}" data-interaction="${edge.data().interaction}"
                   data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
@@ -1213,7 +1219,7 @@
               <li class="definition-item">
                 <span class="definition-entity">${entitynametype}</span>
                 <span class="definition-text">${edge.data().target_extracted_definition}</span>
-                <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
+                <span class="definition-pmid">Ref: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${edge.data().originalsource} [${edge.data().sourcetype}]"
                   data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
@@ -1235,7 +1241,7 @@
               <li class="definition-item">
                 <span class="definition-entity">${entitynametype}</span>
                 <span class="definition-text">${edge.data().source_generated_definition}</span>
-                <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
+                <span class="definition-pmid">Ref: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${entitynametype}" data-interaction="${edge.data().interaction}"
                   data-target="${edge.data().originaltarget} [${edge.data().targettype}]" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
@@ -1257,7 +1263,7 @@
               <li class="definition-item">
                 <span class="definition-entity">${entitynametype}</span>
                 <span class="definition-text">${edge.data().target_generated_definition}</span>
-                <span class="definition-pmid">PMID: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
+                <span class="definition-pmid">Ref: <a class="tooltippubmed-link tooltippubmed-hyperlink" href="javascript:void(0)"
                   data-pmid="${pmidValue}" data-source="${edge.data().originalsource} [${edge.data().sourcetype}]"
                   data-interaction="${edge.data().interaction}" data-target="${entitynametype}" data-section="${sectionValue}">${pmidValue && sectionValue && pmidValue.endsWith('_' + sectionValue) ? pmidValue : (pmidValue + (sectionValue ? '_' + sectionValue : ''))}</a></span>
               </li>
@@ -1926,7 +1932,7 @@
 
       set(key, val) {
         const v = parseFloat(val);
-        const labelMap = { nodeSize: 'node-size', fontSize: 'font-size', edgeFontSize: 'edge-font', overlap: 'overlap' };
+        const labelMap = { nodeSize: 'node-size', fontSize: 'font-size', edgeFontSize: 'edge-font', overlap: 'overlap', edgeLength: 'edge-len' };
         const lbl = document.getElementById('vs-' + (labelMap[key] || key) + '-val');
         if (lbl) lbl.textContent = val;
 
