@@ -1840,19 +1840,22 @@
     const grav = numNodes <= 200 ? 0.15 : numNodes <= 500 ? 0.3 : 0.6;
     console.log(`fcose: nodes=${numNodes}, edges=${numEdges}, repulsion=${repulsion.toFixed(0)}, edgeLen=${userEdgeLen}, gravity=${grav.toFixed(2)}`);
 
+    // Use 'draft' quality for speed — 'default' is too slow for 100+ nodes
+    const quality = numNodes <= 50 ? 'default' : 'draft';
+
     layout = cy.layout({
       ...layoutOptions,
       name: 'fcose',
       animate: false,
-      quality: 'default',
+      quality: quality,
       randomize: true,
       nodeRepulsion: () => repulsion,
       idealEdgeLength: () => userEdgeLen,
       edgeElasticity: () => 0.45,
       gravity: grav,
       gravityRange: 3.8,
-      nodeDimensionsIncludeLabels: true,
-      sampleSize: numNodes > 500 ? 100 : 25,
+      nodeDimensionsIncludeLabels: false,
+      sampleSize: 25,
     });
 
     layout.on('layoutstart', () => console.log(`${layout.options.name} layout started...`));
