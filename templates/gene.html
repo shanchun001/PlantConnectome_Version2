@@ -508,11 +508,7 @@
         <h3 style="margin: 0 0 6px 0; font-weight: 700; font-size: 1.35em; color: #2c3e50;">
           Search results for:
         </h3>
-        <div id="search-term-wrapper" style="margin-bottom: 8px; position: relative;">
-          <div id="search-term-display" style="max-height: 1.6em; overflow: hidden; transition: max-height 0.3s ease;"></div>
-          <span id="search-term-toggle" style="display:none; font-size:11px; color:#3498db; cursor:pointer; margin-top:2px;"
-                onclick="var d=document.getElementById('search-term-display'); if(d.style.maxHeight==='none'){d.style.maxHeight='1.6em';this.textContent='Show more...';}else{d.style.maxHeight='none';this.textContent='Show less';}">Show more...</span>
-        </div>
+        <div id="search-term-display" style="margin-bottom: 8px; max-height: 3.2em; overflow-y: auto; white-space: normal; scrollbar-width: thin; scrollbar-color: #aed6f1 transparent;"></div>
       </div>
       <div class="graph-info" style="font-size: 0.9em; color: #6b7280;">
         <span id="element-len"></span> &middot;
@@ -546,13 +542,6 @@
         }
       });
       container.innerHTML = html;
-      // Show toggle if content overflows 1 line
-      requestAnimationFrame(() => {
-        const toggle = document.getElementById('search-term-toggle');
-        if (toggle && container.scrollHeight > container.clientHeight + 2) {
-          toggle.style.display = 'inline-block';
-        }
-      });
     })();
     </script>
 
