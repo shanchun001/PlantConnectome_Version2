@@ -1824,35 +1824,51 @@
     // Dynamic layout parameters scale with graph size and density
     console.log(`Graph: ${numNodes} nodes, ${numEdges} edges, density=${density.toFixed(1)}`);
 
-    // Edge length from slider (default 120), used directly as idealEdgeLength
     const userEdgeLen = parseInt(document.getElementById('vs-edge-len')?.value || 120);
-    const edgeLenMult = userEdgeLen / 120;  // 1x at default
 
-    // fcose params scaled by graph size and user edge length
-    const repulsion = (numNodes <= 200 ? 12000 : numNodes <= 500 ? 8000 : 6000) * edgeLenMult;
-    const edgeLen = userEdgeLen;
-    const grav = numNodes <= 200 ? 0.15 : numNodes <= 500 ? 0.3 : 0.6;
-    const animate = numNodes <= 200;
-    // Always use 'default' quality — 'draft' produces broken layouts
-    const quality = 'default';
+    if (numNodes <= 1000) {
+      // Small/medium networks: use cose (matching GitHub PlantConnectome)
+      console.log(`cose: nodes=${numNodes}, edges=${numEdges}`);
+      layout = cy.layout({
+        ...layoutOptions,
+        name: 'cose',
+        animate: numNodes <= 300,
+        animationDuration: 800,
+        refresh: 4,
+        nodeRepulsion: 400000 * (userEdgeLen / 120),
+        idealEdgeLength: userEdgeLen * 0.5,
+        edgeElasticity: 50,
+        gravity: 80,
+        numIter: 200,
+        initialTemp: 200,
+        coolingFactor: 0.95,
+        minTemp: 1.0,
+        nodeDimensionsIncludeLabels: true,
+      });
+    } else {
+      // Large networks: use fcose
+      const edgeLenMult = userEdgeLen / 120;
+      const repulsion = 6000 * edgeLenMult;
+      const grav = numNodes <= 2000 ? 0.4 : 0.8;
+      const animate = numNodes <= 2000;
 
-    console.log(`fcose: nodes=${numNodes}, edges=${numEdges}, repulsion=${repulsion.toFixed(0)}, edgeLen=${edgeLen.toFixed(0)}, gravity=${grav.toFixed(2)}, animate=${animate}`);
-
-    layout = cy.layout({
-      ...layoutOptions,
-      name: 'fcose',
-      animate: animate,
-      animationDuration: animate ? 800 : 0,
-      quality: quality,
-      randomize: true,
-      nodeRepulsion: () => repulsion,
-      idealEdgeLength: () => edgeLen,
-      edgeElasticity: () => 0.45,
-      gravity: grav,
-      gravityRange: 3.8,
-      nodeDimensionsIncludeLabels: true,
-      sampleSize: numNodes > 500 ? 100 : 25,
-    });
+      console.log(`fcose: nodes=${numNodes}, edges=${numEdges}, repulsion=${repulsion.toFixed(0)}, gravity=${grav.toFixed(2)}`);
+      layout = cy.layout({
+        ...layoutOptions,
+        name: 'fcose',
+        animate: animate,
+        animationDuration: animate ? 800 : 0,
+        quality: 'default',
+        randomize: true,
+        nodeRepulsion: () => repulsion,
+        idealEdgeLength: () => userEdgeLen,
+        edgeElasticity: () => 0.45,
+        gravity: grav,
+        gravityRange: 3.8,
+        nodeDimensionsIncludeLabels: true,
+        sampleSize: 100,
+      });
+    }
 
     layout.on('layoutstart', () => console.log(`${layout.options.name} layout started...`));
     layout.on('layoutready', () => {
