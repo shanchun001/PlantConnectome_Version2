@@ -639,9 +639,11 @@
       const isTarget = edge.data().target === node.data().id;
       if (!isSource && !isTarget) return;
 
-      const otherName = isSource ? edge.data().originaltarget : edge.data().originalsource;
-      const otherType = isSource ? edge.data().targettype : edge.data().sourcetype;
-      const direction = isSource ? '&rarr;' : '&larr;';
+      // Always show as source → relationship → target
+      const srcName = edge.data().originalsource;
+      const srcType = edge.data().sourcetype;
+      const tgtName = edge.data().originaltarget;
+      const tgtType = edge.data().targettype;
       const interaction = edge.data().interaction;
       const edgeCat = titleCaseCategory(edge.data().category) || '';
 
@@ -655,9 +657,9 @@
       edgeInfo += `
         <div class="node-tp-edge">
           <div class="edge-tp-connection" style="font-size:12px;">
-            <strong>${nodeId}</strong>
-            <span style="color:#DC143C;font-weight:600;">${direction} ${interaction} ${direction}</span>
-            <strong>${otherName}</strong> <small style="color:#6b7280;">(${otherType})</small>
+            <strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>
+            <span style="font-weight:600;">&rarr; ${interaction} &rarr;</span>
+            <strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>
           </div>
           ${edgeCat && edgeCat !== 'N/A' && edgeCat !== 'Na'
             ? `<div style="margin:2px 0 4px 0;"><span style="font-size:10px;color:#6b7280;">Relationship Category:</span> <span class="edge-tp-category-badge">${edgeCat}</span></div>`
