@@ -1838,15 +1838,12 @@
     // fcose for all network sizes — best balance of speed, spacing, and quality
     const repulsion = (numNodes <= 200 ? 12000 : numNodes <= 500 ? 8000 : 6000) * edgeLenMult;
     const grav = numNodes <= 200 ? 0.15 : numNodes <= 500 ? 0.3 : 0.6;
-    const animate = numNodes <= 300;
-
     console.log(`fcose: nodes=${numNodes}, edges=${numEdges}, repulsion=${repulsion.toFixed(0)}, edgeLen=${userEdgeLen}, gravity=${grav.toFixed(2)}`);
 
     layout = cy.layout({
       ...layoutOptions,
       name: 'fcose',
-      animate: animate,
-      animationDuration: animate ? 800 : 0,
+      animate: false,
       quality: 'default',
       randomize: true,
       nodeRepulsion: () => repulsion,
