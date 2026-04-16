@@ -2025,9 +2025,20 @@
         if (name === 'fcose') { applyLayout(); return; }
 
         const n = cy.nodes(':visible').length;
-        const uel = parseInt(document.getElementById('vs-edge-len')?.value || 80);
-        const opts = { name, fit: true, padding: 40, randomize: true, animate: n <= 200, animationDuration: 600 };
-        if (name === 'cose') Object.assign(opts, { nodeRepulsion: 400000 * (uel/80), idealEdgeLength: uel, gravity: 80, numIter: 100, animate: n <= 120 });
+        const uel = parseInt(document.getElementById('vs-edge-len')?.value || 120);
+        const opts = { name, fit: true, padding: 40, randomize: true, animate: n <= 300, animationDuration: 800 };
+        if (name === 'cose') Object.assign(opts, {
+          nodeRepulsion: 400000 * (uel / 120),
+          idealEdgeLength: uel * 0.5,
+          edgeElasticity: 50,
+          gravity: 80,
+          numIter: 200,
+          initialTemp: 200,
+          coolingFactor: 0.95,
+          minTemp: 1.0,
+          nodeDimensionsIncludeLabels: true,
+          animate: n <= 300,
+        });
         if (name === 'concentric') { opts.concentric = nd => nd.degree(); opts.levelWidth = () => 2; }
         if (name === 'breadthfirst') { opts.directed = true; opts.spacingFactor = 1.2; }
 
