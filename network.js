@@ -28,13 +28,13 @@
   let baselinePositions = {};  // nodeId -> {x, y} — saved after each layout run
   let NODES_TO_RENDER = prepareNodes();
   let EDGES_TO_RENDER = prepareEdges();
-  var queryTerm = queryTerms.split(',').map(term => {
-    // Strip bracket suffix (e.g., "CESA GENES [Gene / Protein]" -> "CESA GENES")
-    let t = term.trim().toUpperCase();
+  // Split on "], " to handle commas inside bracket content like [Gene / Protein, Genomic / ...]
+  var queryTerm = queryTerms.split(/\],\s*/).map(term => {
+    let t = term.trim().replace(/\]$/, '').toUpperCase();
     const bi = t.lastIndexOf(' [');
     if (bi > 0) t = t.substring(0, bi).trim();
     return t;
-  });
+  }).filter(t => t.length > 0);
 
   /**
    * Utility functions to prepare nodes and edges
