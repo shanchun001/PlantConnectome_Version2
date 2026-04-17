@@ -1061,15 +1061,12 @@
   }
 
   function onGroupToggle(gi, checked) {
-    // When a group checkbox is toggled, select/deselect the corresponding
-    // entities in the Step 1 table:
-    //   checked   → select representative, deselect aliases
-    //   unchecked → deselect representative (leave aliases as-is)
+    // When a group checkbox is toggled, select/deselect ALL entities
+    // in the group (representative + similar) in the Step 1 table
     const groups = window._similarityGroups;
     if (!groups || !groups[gi]) return;
     const group = groups[gi];
-    const canonicalName = group[0].name.toLowerCase();
-    const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
+    const allNames = new Set(group.map(e => e.name.toLowerCase()));
 
     document.querySelectorAll('.entity-checkbox').forEach(entityCb => {
       const row = entityCb.closest('tr');
@@ -1078,13 +1075,8 @@
       const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
       if (!entityName) return;
 
-      if (checked) {
-        // Select representative, deselect aliases
-        if (entityName === canonicalName) entityCb.checked = true;
-        else if (otherNames.has(entityName)) entityCb.checked = false;
-      } else {
-        // Deselect representative
-        if (entityName === canonicalName) entityCb.checked = false;
+      if (allNames.has(entityName)) {
+        entityCb.checked = checked;
       }
     });
     updateTotalNodeCount();
