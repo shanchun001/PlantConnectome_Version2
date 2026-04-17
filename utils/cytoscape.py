@@ -46,6 +46,8 @@ def graphConverter(graph, ref):
 def edgeConverter(elements):
     updatedElements = []
     for i in elements:
+        if not i[0] or not str(i[0]).strip() or not i[2] or not str(i[2]).strip():
+            continue  # skip entries with empty source or target
         updatedElements.append({
             "source": str(i[0]).replace("'", "").replace('"', '').replace('\n', ''),
             "sourcetype": str(i[1]).replace("'", "").replace('"', '').replace('\n', ''),
@@ -208,10 +210,14 @@ def generate_cytoscape_js(elements, ab, fa):
 
     nodes_js = []
     for name, cat_counts in node_data.items():
+        if not name or not name.strip():
+            continue  # skip empty node names — Cytoscape rejects empty IDs
         non_other = {c: v for c, v in cat_counts.items() if c != 'OTHER'}
         best_cat = max(non_other, key=non_other.get) if non_other else 'OTHER'
         best_type = max(node_type_counts[name], key=node_type_counts[name].get)
         safe_name = escape_js_string(name)
+        if not safe_name:
+            continue  # skip if escaping produced empty string
         ident = escape_js_string(node_identifiers.get(name, ""))
         nodes_js.append(
             f"{{ data: {{ id: '{safe_name}', originalId: '{safe_name}', type: '{escape_js_string(best_type)}', category: '{escape_js_string(best_cat)}', identifier: '{ident}' }} }}"
@@ -222,6 +228,8 @@ def generate_cytoscape_js(elements, ab, fa):
     for edge in elements:
         src = edge["source"]
         tgt = edge["target"]
+        if not src or not src.strip() or not tgt or not tgt.strip():
+            continue  # skip edges with empty source or target
         rel_label = edge.get("relationship_label", "")
         interaction = edge.get("interaction", "")
         cat = get_edge_category(rel_label, interaction)
