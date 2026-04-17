@@ -410,6 +410,145 @@
     background: #9ca3af;
     cursor: not-allowed;
   }
+
+  /* ── Similarity Results ── */
+  .sim-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f3edf7;
+    border: 1px solid #d2b4de;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .sim-summary-text {
+    font-size: 13px;
+    color: #2c3e50;
+  }
+  .sim-summary-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .sim-action-btn {
+    font-size: 12px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    background: #8e44ad;
+    color: white;
+    transition: background 0.2s;
+  }
+  .sim-action-btn:hover { background: #7d3c98; }
+  .sim-action-btn-outline {
+    background: white;
+    color: #8e44ad;
+    border: 1px solid #8e44ad;
+  }
+  .sim-action-btn-outline:hover { background: #f3edf7; }
+  .sim-action-btn-green {
+    background: #27ae60;
+  }
+  .sim-action-btn-green:hover { background: #229954; }
+
+  .sim-groups-container {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+  }
+  .sim-groups-container::-webkit-scrollbar { width: 5px; }
+  .sim-groups-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+
+  .sim-group {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: opacity 0.3s;
+  }
+  .sim-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #faf8fd;
+    border-bottom: 1px solid #f0ebf5;
+  }
+  .sim-group-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin: 0;
+  }
+  .sim-group-checkbox { cursor: pointer; }
+  .sim-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c3483;
+  }
+  .sim-group-count {
+    font-size: 11px;
+    color: #888;
+  }
+
+  .sim-group-body {
+    padding: 10px 12px;
+  }
+  .sim-representative {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .sim-rep-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #27ae60;
+    color: white;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .sim-rep-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a5276;
+  }
+
+  .sim-aliases {
+    padding-left: 2px;
+  }
+  .sim-aliases-label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .sim-alias-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .sim-alias-pill {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    background: #fef5e7;
+    border: 1px solid #f0d9a8;
+    border-radius: 4px;
+    color: #7d6608;
+  }
 </style>
 
 <!-- =========================
@@ -746,21 +885,14 @@
     const resultsDiv = document.getElementById('similarityResults');
     const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.70);
 
-    // Get all entity names from current data
     const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
+    if (entities.length === 0) { alert('No entities to compare.'); return; }
 
-    if (entities.length === 0) {
-      alert('No entities to compare.');
-      return;
-    }
-
-    // Show loading state in results div
     resultsDiv.innerHTML = `
-      <div style="text-align:center;padding:20px;">
-        <div style="display:inline-block;width:20px;height:20px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-        <p style="margin-top:8px;color:#6b7280;font-size:13px;">Computing embeddings for ${entities.length} entities...</p>
-      </div>
-    `;
+      <div style="text-align:center;padding:24px;">
+        <div style="display:inline-block;width:22px;height:22px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <p style="margin-top:10px;color:#6b7280;font-size:13px;">Computing embeddings for ${entities.length} entities...</p>
+      </div>`;
     btn.disabled = true;
     btn.textContent = 'Computing...';
 
@@ -772,80 +904,138 @@
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
-      btn.textContent = 'Find Similar Entities';
+      btn.textContent = 'Find Duplicates';
 
-      if (data.error) {
-        resultsDiv.innerHTML = `<p style="color:#e74c3c;">${data.error}</p>`;
-        return;
-      }
-
+      if (data.error) { resultsDiv.innerHTML = `<p style="color:#e74c3c;">${data.error}</p>`; return; }
       if (data.groups.length === 0) {
-        resultsDiv.innerHTML = `<p style="color:#6b7280;">No similar entities found at threshold ${threshold}. Try lowering the threshold.</p>`;
+        resultsDiv.innerHTML = `<p style="color:#6b7280;padding:8px 0;">No duplicates found at threshold ${threshold}. Try lowering the sensitivity slider.</p>`;
         return;
       }
 
-      let html = `<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Found <strong>${data.total_groups}</strong> groups of similar entities (threshold: ${data.threshold})</p>`;
-
-      data.groups.forEach((group, gi) => {
-        html += `<div style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:10px;margin-bottom:8px;">`;
-        html += `<div style="font-size:12px;font-weight:600;color:#6c3483;margin-bottom:6px;">Group ${gi+1} (${group.length} entities)</div>`;
-        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;">`;
-        group.forEach((entity, ei) => {
-          const bgColor = ei === 0 ? '#d5f5e3' : '#fdebd0';
-          html += `<span style="display:inline-block;font-size:12px;padding:3px 8px;background:${bgColor};border-radius:4px;border:1px solid #e5e7eb;">${entity.name}</span>`;
-        });
-        html += `</div>`;
-        // Merge button: select only the first (canonical) entity, deselect others
-        html += `<button onclick="mergeGroup(${gi})" style="margin-top:6px;font-size:11px;padding:3px 10px;background:#27ae60;color:white;border:none;border-radius:4px;cursor:pointer;">Select canonical (${group[0].name})</button>`;
-        html += `</div>`;
-      });
-
-      resultsDiv.innerHTML = html;
-
-      // Store groups globally for merge
       window._similarityGroups = data.groups;
+      renderSimilarityResults(data);
     })
     .catch(err => {
       btn.disabled = false;
-      btn.textContent = 'Find Similar Entities';
+      btn.textContent = 'Find Duplicates';
       resultsDiv.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
     });
   }
 
-  function mergeGroup(groupIndex) {
-    const group = window._similarityGroups?.[groupIndex];
-    if (!group || group.length < 2) return;
+  function renderSimilarityResults(data) {
+    const resultsDiv = document.getElementById('similarityResults');
+    const groups = data.groups;
+    const totalDuplicates = groups.reduce((sum, g) => sum + g.length - 1, 0);
 
-    // Check the canonical entity (first/shortest), uncheck others
-    const canonicalName = group[0].name.toLowerCase();
-    const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
+    let html = '';
 
-    let matched = 0;
-    document.querySelectorAll('.entity-checkbox').forEach(cb => {
-      const row = cb.closest('tr');
-      if (!row) return;
-      // Try multiple ways to get entity name
-      const link = row.querySelector('.entity-name a');
-      const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
-      if (!entityName) return;
+    // Summary bar with actions
+    html += `<div class="sim-summary">
+      <div class="sim-summary-text">
+        Found <strong>${groups.length}</strong> groups with <strong>${totalDuplicates}</strong> potential duplicates
+      </div>
+      <div class="sim-summary-actions">
+        <button onclick="toggleAllGroups(true)" class="sim-action-btn">Select All Groups</button>
+        <button onclick="toggleAllGroups(false)" class="sim-action-btn sim-action-btn-outline">Deselect All</button>
+        <button onclick="applyMerge()" class="sim-action-btn sim-action-btn-green">Apply Merge</button>
+      </div>
+    </div>`;
 
-      if (entityName === canonicalName) {
-        cb.checked = true;
-        matched++;
-      } else if (otherNames.has(entityName)) {
-        cb.checked = false;
-        matched++;
-      }
+    // Scrollable group list
+    html += `<div class="sim-groups-container">`;
+
+    groups.forEach((group, gi) => {
+      const representative = group[0];
+      const aliases = group.slice(1);
+
+      html += `<div class="sim-group" data-group="${gi}">
+        <div class="sim-group-header">
+          <label class="sim-group-checkbox-label">
+            <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" checked>
+            <span class="sim-group-title">Group ${gi + 1}</span>
+          </label>
+          <span class="sim-group-count">${group.length} entities</span>
+        </div>
+
+        <div class="sim-group-body">
+          <div class="sim-representative">
+            <span class="sim-rep-badge">Representative</span>
+            <span class="sim-rep-name">${representative.name}</span>
+          </div>
+
+          <div class="sim-aliases">
+            <span class="sim-aliases-label">Will be merged into representative:</span>
+            <div class="sim-alias-list">`;
+
+      aliases.forEach(a => {
+        html += `<span class="sim-alias-pill">${a.name}</span>`;
+      });
+
+      html += `</div>
+          </div>
+        </div>
+      </div>`;
     });
+
+    html += `</div>`;
+    resultsDiv.innerHTML = html;
+  }
+
+  function toggleAllGroups(checked) {
+    document.querySelectorAll('.sim-group-checkbox').forEach(cb => {
+      cb.checked = checked;
+    });
+  }
+
+  function applyMerge() {
+    const groups = window._similarityGroups;
+    if (!groups) return;
+
+    let totalMerged = 0;
+
+    // For each checked group, select representative in table, deselect aliases
+    document.querySelectorAll('.sim-group-checkbox:checked').forEach(cb => {
+      const gi = parseInt(cb.dataset.group);
+      const group = groups[gi];
+      if (!group || group.length < 2) return;
+
+      const canonicalName = group[0].name.toLowerCase();
+      const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
+
+      document.querySelectorAll('.entity-checkbox').forEach(entityCb => {
+        const row = entityCb.closest('tr');
+        if (!row) return;
+        const link = row.querySelector('.entity-name a');
+        const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+        if (!entityName) return;
+
+        if (entityName === canonicalName) {
+          entityCb.checked = true;
+          totalMerged++;
+        } else if (otherNames.has(entityName)) {
+          entityCb.checked = false;
+          totalMerged++;
+        }
+      });
+    });
+
     updateTotalNodeCount();
 
     // Visual feedback
-    const btn = event?.target;
-    if (btn) {
-      btn.textContent = `Done (${matched} updated)`;
-      btn.style.background = '#6b7280';
-      btn.disabled = true;
+    const resultsDiv = document.getElementById('similarityResults');
+    const summary = resultsDiv.querySelector('.sim-summary-text');
+    if (summary) {
+      summary.innerHTML = `Merged! <strong>${totalMerged}</strong> entities updated in the table above.`;
     }
+
+    // Mark applied groups
+    document.querySelectorAll('.sim-group-checkbox:checked').forEach(cb => {
+      const card = cb.closest('.sim-group');
+      if (card) {
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
+      }
+    });
   }
 </script>
 {% endblock %}
