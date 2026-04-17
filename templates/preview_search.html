@@ -538,17 +538,35 @@
   .sim-alias-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 5px;
   }
   .sim-alias-pill {
     display: inline-block;
     font-size: 12px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     background: #fef5e7;
     border: 1px solid #f0d9a8;
     border-radius: 4px;
     color: #7d6608;
   }
+  .sim-alias-hidden {
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .sim-show-more {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #8e44ad;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+    text-decoration: underline;
+  }
+  .sim-show-more:hover { color: #6c3483; }
 </style>
 
 <!-- =========================
@@ -948,37 +966,65 @@
       const representative = group[0];
       const aliases = group.slice(1);
 
+      const MAX_VISIBLE = 8;
+      const hasMore = aliases.length > MAX_VISIBLE;
+      const visibleAliases = hasMore ? aliases.slice(0, MAX_VISIBLE) : aliases;
+      const hiddenAliases = hasMore ? aliases.slice(MAX_VISIBLE) : [];
+
       html += `<div class="sim-group" data-group="${gi}">
         <div class="sim-group-header">
           <label class="sim-group-checkbox-label">
             <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" checked>
             <span class="sim-group-title">Group ${gi + 1}</span>
           </label>
-          <span class="sim-group-count">${group.length} entities</span>
+          <span class="sim-group-count">${aliases.length} duplicate${aliases.length !== 1 ? 's' : ''}</span>
         </div>
 
         <div class="sim-group-body">
           <div class="sim-representative">
-            <span class="sim-rep-badge">Representative</span>
+            <span class="sim-rep-badge">Keep</span>
             <span class="sim-rep-name">${representative.name}</span>
           </div>
 
           <div class="sim-aliases">
-            <span class="sim-aliases-label">Will be merged into representative:</span>
-            <div class="sim-alias-list">`;
+            <span class="sim-aliases-label">Duplicates to deselect:</span>
+            <div class="sim-alias-list" id="sim-aliases-${gi}">`;
 
-      aliases.forEach(a => {
+      visibleAliases.forEach(a => {
         html += `<span class="sim-alias-pill">${a.name}</span>`;
       });
 
+      if (hasMore) {
+        html += `</div>
+            <div class="sim-alias-list sim-alias-hidden" id="sim-aliases-hidden-${gi}" style="display:none;">`;
+        hiddenAliases.forEach(a => {
+          html += `<span class="sim-alias-pill">${a.name}</span>`;
+        });
+        html += `</div>
+            <button class="sim-show-more" onclick="toggleAliases(${gi}, this)">Show all ${aliases.length} duplicates</button>`;
+      } else {
+        html += `</div>`;
+      }
+
       html += `</div>
-          </div>
         </div>
       </div>`;
     });
 
     html += `</div>`;
     resultsDiv.innerHTML = html;
+  }
+
+  function toggleAliases(gi, btn) {
+    const hidden = document.getElementById(`sim-aliases-hidden-${gi}`);
+    if (hidden.style.display === 'none') {
+      hidden.style.display = 'flex';
+      btn.textContent = 'Show fewer';
+    } else {
+      hidden.style.display = 'none';
+      const count = hidden.querySelectorAll('.sim-alias-pill').length + document.getElementById(`sim-aliases-${gi}`).querySelectorAll('.sim-alias-pill').length;
+      btn.textContent = `Show all ${count} duplicates`;
+    }
   }
 
   function toggleAllGroups(checked) {
