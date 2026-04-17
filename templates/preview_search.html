@@ -19,8 +19,8 @@
       <div>
         <strong style="font-size:14px;">How to use this page</strong>
         <ol style="margin:6px 0 0 0;padding-left:20px;">
-          <li><strong>Review</strong> &mdash; All entities are pre-selected. Uncheck any you don't want, or use the search box and category filter to narrow down.</li>
-          <li><strong>Deduplicate</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to merge entities with similar names. Then click <strong style="color:#27ae60;">Apply Merge</strong> to deselect duplicates automatically.</li>
+          <li><strong>Select</strong> &mdash; Check the entities you want to explore, or use the search box and category filter to narrow down.</li>
+          <li><strong>Find Similar</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to find groups of similar names. Check a group to select its representative and deselect its aliases in the table above.</li>
           <li><strong>Visualize</strong> &mdash; Click <strong style="color:#3498db;">Show Selected Entities</strong> to generate the knowledge network graph.</li>
         </ol>
       </div>
@@ -664,11 +664,9 @@
     if (cachedData && cachedData.preview_results && cachedData.preview_results.length > 0) {
       allRowsData = cachedData.preview_results;
       applyFilterAndRender();
-      selectAllOnLoad();
     } else {
       allRowsData = {{ preview_results | tojson }};
       applyFilterAndRender();
-      selectAllOnLoad();
       cacheSearchResults(search_term + CACHE_VERSION, search_type, {
         preview_results: allRowsData,
         unique_id: unique_id
@@ -1009,7 +1007,7 @@
       html += `<div class="sim-group" data-group="${gi}">
         <div class="sim-group-header">
           <label class="sim-group-checkbox-label">
-            <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" checked>
+            <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" onchange="onGroupToggle(${gi}, this.checked)">
             <span class="sim-group-title">Group ${gi + 1}</span>
           </label>
           <span class="sim-group-count">${aliases.length} similar entit${aliases.length !== 1 ? 'ies' : 'y'}</span>
@@ -1062,61 +1060,59 @@
     }
   }
 
+  function onGroupToggle(gi, checked) {
+    // When a group checkbox is toggled, select/deselect the corresponding
+    // entities in the Step 1 table:
+    //   checked   → select representative, deselect aliases
+    //   unchecked → deselect representative (leave aliases as-is)
+    const groups = window._similarityGroups;
+    if (!groups || !groups[gi]) return;
+    const group = groups[gi];
+    const canonicalName = group[0].name.toLowerCase();
+    const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
+
+    document.querySelectorAll('.entity-checkbox').forEach(entityCb => {
+      const row = entityCb.closest('tr');
+      if (!row) return;
+      const link = row.querySelector('.entity-name a');
+      const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+      if (!entityName) return;
+
+      if (checked) {
+        // Select representative, deselect aliases
+        if (entityName === canonicalName) entityCb.checked = true;
+        else if (otherNames.has(entityName)) entityCb.checked = false;
+      } else {
+        // Deselect representative
+        if (entityName === canonicalName) entityCb.checked = false;
+      }
+    });
+    updateTotalNodeCount();
+  }
+
   function toggleAllGroups(checked) {
     document.querySelectorAll('.sim-group-checkbox').forEach(cb => {
       cb.checked = checked;
+      const gi = parseInt(cb.dataset.group);
+      onGroupToggle(gi, checked);
     });
   }
 
   function applyMerge() {
-    const groups = window._similarityGroups;
-    if (!groups) return;
-
+    // Apply all checked groups at once
     let totalMerged = 0;
-
-    // For each checked group, select representative in table, deselect aliases
     document.querySelectorAll('.sim-group-checkbox:checked').forEach(cb => {
       const gi = parseInt(cb.dataset.group);
-      const group = groups[gi];
-      if (!group || group.length < 2) return;
-
-      const canonicalName = group[0].name.toLowerCase();
-      const otherNames = new Set(group.slice(1).map(e => e.name.toLowerCase()));
-
-      document.querySelectorAll('.entity-checkbox').forEach(entityCb => {
-        const row = entityCb.closest('tr');
-        if (!row) return;
-        const link = row.querySelector('.entity-name a');
-        const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
-        if (!entityName) return;
-
-        if (entityName === canonicalName) {
-          entityCb.checked = true;
-          totalMerged++;
-        } else if (otherNames.has(entityName)) {
-          entityCb.checked = false;
-          totalMerged++;
-        }
-      });
+      totalMerged++;
     });
-
-    updateTotalNodeCount();
 
     // Visual feedback
     const resultsDiv = document.getElementById('similarityResults');
     const summary = resultsDiv.querySelector('.sim-summary-text');
     if (summary) {
-      summary.innerHTML = `Merged! <strong>${totalMerged}</strong> entities updated in the table above.`;
+      const checkedCount = document.querySelectorAll('.sim-group-checkbox:checked').length;
+      summary.innerHTML = `Applied! <strong>${checkedCount}</strong> groups merged. Representatives selected in the table above.`;
     }
-
-    // Mark applied groups
-    document.querySelectorAll('.sim-group-checkbox:checked').forEach(cb => {
-      const card = cb.closest('.sim-group');
-      if (card) {
-        card.style.opacity = '0.5';
-        card.style.pointerEvents = 'none';
-      }
-    });
   }
 </script>
 {% endblock %}
