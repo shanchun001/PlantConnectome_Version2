@@ -47,14 +47,13 @@
     </select>
   </div>
 
-  <!-- Status Bar -->
-  <div class="preview-status-bar">
-    <div class="preview-node-count">
-      Total Nodes Selected: <strong id="totalNodeCount">0</strong>
-    </div>
-    <div class="preview-info-hint">
-      Node counts are per-cluster. Shared nodes across clusters reduce the final count.
-    </div>
+  <!-- Quick Select Buttons -->
+  <div class="quick-select-bar">
+    <span class="quick-select-label">Quick select:</span>
+    <button class="quick-select-btn" onclick="selectTopN(10)">Top 10</button>
+    <button class="quick-select-btn" onclick="selectTopN(25)">Top 25</button>
+    <button class="quick-select-btn" onclick="selectTopN(50)">Top 50</button>
+    <button class="quick-select-btn quick-select-btn-outline" onclick="selectNone()">Clear All</button>
   </div>
 
   <!-- Warning -->
@@ -117,13 +116,18 @@
     <div id="similarityResults"></div>
   </div>
 
-  <!-- Step 3: Visualize -->
-  <div style="margin-bottom:4px;">
-    <span style="display:inline-block;background:#27ae60;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 3</span>
-    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Generate knowledge network</span>
-  </div>
+  <!-- Spacer so sticky bar doesn't overlap content -->
+  <div style="height:70px;"></div>
+</div>
 
-  <div class="preview-actions">
+<!-- Sticky Action Bar (outside grid-container so it spans full width) -->
+<div class="sticky-action-bar">
+  <div class="sticky-action-inner">
+    <div class="sticky-action-info">
+      <span class="sticky-selected-count"><strong id="selectedEntityCount">0</strong> entities selected</span>
+      <span class="sticky-divider">&middot;</span>
+      <span class="sticky-node-count">~<strong id="totalNodeCount">0</strong> relationships</span>
+    </div>
     <button id="showSelectedButton" class="preview-submit-btn" onclick="getSelectedEntities()">
       Show Selected Entities
     </button>
@@ -286,11 +290,72 @@
     font-weight: 600;
   }
 
-  /* ── Actions ── */
-  .preview-actions {
-    text-align: center;
-    padding: 20px 0;
+  /* ── Quick Select Bar ── */
+  .quick-select-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
   }
+  .quick-select-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-right: 2px;
+  }
+  .quick-select-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .quick-select-btn:hover { background: #2980b9; }
+  .quick-select-btn-outline {
+    background: white;
+    color: #e74c3c;
+    border-color: #e74c3c;
+  }
+  .quick-select-btn-outline:hover { background: #fef2f2; }
+
+  /* ── Sticky Action Bar ── */
+  .sticky-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 2px solid #e5e7eb;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+    z-index: 100;
+    padding: 10px 0;
+  }
+  .sticky-action-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .sticky-action-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #374151;
+  }
+  .sticky-selected-count strong { color: #3498db; }
+  .sticky-node-count strong { color: #27ae60; }
+  .sticky-divider { color: #d1d5db; }
+
+  /* ── Actions ── */
   .preview-submit-btn {
     background-color: #3498db;
     color: #fff;
@@ -808,15 +873,31 @@
   // =========================
   // SELECT ALL
   // =========================
-  function selectAllOnLoad() {
-    // Pre-select all entities on page load so the user can deselect what they don't want
-    const selectAll = document.getElementById('selectAllCheckbox');
-    selectAll.checked = true;
-    const checkboxes = document.querySelectorAll("#resultsTable tbody .entity-checkbox");
-    checkboxes.forEach(cb => {
-      cb.checked = true;
-      selectedEntities.add(cb.value);
+  function selectTopN(n) {
+    // Sort allRowsData by count (index 3) desc, select top N
+    const sorted = [...allRowsData].sort((a, b) => {
+      const countA = Array.isArray(a) ? (parseFloat(a[3]) || 0) : (parseFloat(a.network_count) || 0);
+      const countB = Array.isArray(b) ? (parseFloat(b[3]) || 0) : (parseFloat(b.network_count) || 0);
+      return countB - countA;
     });
+    const topNames = new Set(sorted.slice(0, n).map(item =>
+      (Array.isArray(item) ? item[0] : item.entity).toLowerCase()
+    ));
+
+    document.querySelectorAll('.entity-checkbox').forEach(cb => {
+      const row = cb.closest('tr');
+      if (!row) return;
+      const link = row.querySelector('.entity-name a');
+      const name = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+      cb.checked = topNames.has(name);
+    });
+    updateTotalNodeCount();
+    updateSelectAllCheckbox();
+  }
+
+  function selectNone() {
+    document.querySelectorAll('.entity-checkbox').forEach(cb => { cb.checked = false; });
+    document.getElementById('selectAllCheckbox').checked = false;
     updateTotalNodeCount();
   }
 
@@ -845,9 +926,11 @@
   function updateTotalNodeCount() {
     totalNodes = 0;
     selectedEntities.clear();
+    let entityCount = 0;
     document.querySelectorAll(".entity-checkbox:checked").forEach(checkbox => {
       const row = checkbox.closest("tr");
       if (row) {
+        entityCount++;
         const countEl = row.querySelector("td:nth-child(4) strong");
         if (countEl) {
           const count = parseFloat(countEl.textContent);
@@ -859,6 +942,8 @@
       }
     });
     document.getElementById("totalNodeCount").textContent = totalNodes;
+    const entityCountEl = document.getElementById("selectedEntityCount");
+    if (entityCountEl) entityCountEl.textContent = entityCount;
     const warning = document.getElementById("warningMessageContainer");
     const btn = document.getElementById("showSelectedButton");
     if (totalNodes > 8000) {
@@ -866,7 +951,7 @@
       btn.disabled = true;
     } else {
       warning.style.display = "none";
-      btn.disabled = false;
+      btn.disabled = (entityCount === 0);
     }
   }
 
