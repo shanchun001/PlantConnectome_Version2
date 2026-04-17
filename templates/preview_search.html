@@ -84,27 +84,38 @@
     </div>
   </div>
 
-  <!-- Step 2: Optional similarity -->
-  <div style="margin-top:16px;margin-bottom:4px;">
+  <!-- Step 2: Optional similarity deduplication -->
+  <div style="margin-top:20px;margin-bottom:6px;">
     <span style="display:inline-block;background:#8e44ad;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 2</span>
-    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Deduplicate similar entities <em style="font-weight:400;color:#6b7280;">(optional)</em></span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Find &amp; merge duplicate entities</span>
+    <span style="font-size:12px;color:#6b7280;margin-left:4px;">(optional)</span>
   </div>
 
-  <div style="background:#f8f4fc;border:1px solid #d2b4de;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <p style="margin:0;font-size:12px;color:#6b7280;max-width:500px;">
-        Uses AI to find entities with similar names (e.g. "CesA genes" &amp; "cellulose synthase genes").
-        Adjust the threshold slider &mdash; lower values find more matches.
-      </p>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;color:#6b7280;">Similarity:</label>
-        <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.70"
-               style="width:80px;" oninput="document.getElementById('simThresholdVal').textContent=this.value">
-        <span id="simThresholdVal" style="font-size:12px;font-weight:600;width:30px;">0.70</span>
-        <button id="findSimilarBtn" onclick="findSimilarEntities()" style="font-size:12px;padding:6px 14px;background:#8e44ad;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500;">Find Similar</button>
-      </div>
+  <div class="similarity-card">
+    <div class="similarity-description">
+      Different papers may refer to the same entity using different names
+      (e.g. <em>"CesA genes"</em> vs <em>"cellulose synthase genes"</em>).
+      This tool uses AI embeddings to identify such duplicates so you can merge them.
     </div>
-    <div id="similarityResults" style="margin-top:10px;"></div>
+
+    <div class="similarity-controls">
+      <div class="similarity-slider-group">
+        <label for="simThreshold">Sensitivity</label>
+        <div class="similarity-slider-row">
+          <span class="similarity-label-end">More matches</span>
+          <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.70"
+                 oninput="document.getElementById('simThresholdVal').textContent=this.value">
+          <span class="similarity-label-end">Fewer matches</span>
+          <span id="simThresholdVal" class="similarity-threshold-badge">0.70</span>
+        </div>
+      </div>
+
+      <button id="findSimilarBtn" onclick="findSimilarEntities()" class="similarity-btn">
+        Find Duplicates
+      </button>
+    </div>
+
+    <div id="similarityResults"></div>
   </div>
 
   <!-- Step 3: Visualize -->
@@ -299,6 +310,104 @@
   .preview-submit-btn:active { transform: scale(0.97); }
   .preview-submit-btn:disabled {
     background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  /* ── Similarity Card ── */
+  .similarity-card {
+    background: #faf8fd;
+    border: 1px solid #e0d4ed;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .similarity-description {
+    font-size: 13px;
+    color: #4a4a4a;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .similarity-description em {
+    background: #f0ebf5;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-style: normal;
+    font-weight: 500;
+    color: #6c3483;
+  }
+  .similarity-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .similarity-slider-group {
+    flex: 1;
+    min-width: 260px;
+  }
+  .similarity-slider-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a4a4a;
+    margin-bottom: 6px;
+  }
+  .similarity-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .similarity-label-end {
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+  }
+  .similarity-slider-row input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, #d2b4de, #8e44ad);
+    border-radius: 3px;
+    outline: none;
+  }
+  .similarity-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #8e44ad;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  .similarity-threshold-badge {
+    display: inline-block;
+    background: #8e44ad;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 36px;
+    text-align: center;
+  }
+  .similarity-btn {
+    background: #8e44ad;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .similarity-btn:hover { background: #7d3c98; }
+  .similarity-btn:active { transform: scale(0.97); }
+  .similarity-btn:disabled {
+    background: #9ca3af;
     cursor: not-allowed;
   }
 </style>
