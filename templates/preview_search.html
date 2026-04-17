@@ -457,12 +457,13 @@
   .sim-action-btn-green:hover { background: #229954; }
 
   .sim-groups-container {
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: block !important;
     padding-right: 4px;
+  }
+  .sim-groups-container > .sim-group {
+    margin-bottom: 10px;
   }
   .sim-groups-container::-webkit-scrollbar { width: 5px; }
   .sim-groups-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
@@ -471,16 +472,18 @@
     background: white !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 8px !important;
-    overflow: hidden;
+    overflow: visible !important;
     transition: opacity 0.3s;
   }
   .sim-group-header {
     display: flex !important;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-between !important;
+    align-items: center !important;
     padding: 10px 14px !important;
     background: #faf8fd !important;
     border-bottom: 1px solid #f0ebf5 !important;
+    min-height: 36px !important;
+    overflow: visible !important;
   }
   .sim-group-checkbox-label {
     display: flex !important;
@@ -512,12 +515,18 @@
 
   .sim-group-body {
     padding: 12px 14px !important;
+    display: block !important;
+    visibility: visible !important;
+    min-height: 40px !important;
+    overflow: visible !important;
   }
   .sim-representative {
     display: flex !important;
-    align-items: center;
+    align-items: center !important;
     gap: 8px;
     margin-bottom: 10px;
+    overflow: visible !important;
+    min-height: 24px !important;
   }
   .sim-rep-badge {
     font-size: 11px !important;
