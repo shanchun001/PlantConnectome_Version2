@@ -328,42 +328,19 @@
     'other'
   ]);
 
-  // Full display names for visualization categories (no shortening)
+  // Category names — displayed as-is, no shortening
   const CAT_ALIAS = {
-    // Short forms in data → full display
-    'GENE/PROTEIN':                                                              'Gene / Protein',
-    'PHENOTYPE':                                                                 'Phenotype / Trait / Disease',
-    'CELL/ORGAN/ORGANISM':                                                       'Complex / Structure / Compartment / Cell / Organ / Organism',
-    'CHEMICAL':                                                                  'Chemical / Metabolite / Cofactor / Ligand',
-    'TREATMENT':                                                                 'Treatment / Perturbation / Stress / Mutant',
-    'BIOLOGICAL PROCESS':                                                        'Biological Process / Pathway / Function',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE':                                            'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
-    'METHOD':                                                                    'Method / Assay / Experimental Setup / Parameter / Sample',
-    'GENE IDENTIFIER':                                                           'Gene Identifier',
-    'NA':                                                                        'Mixed',
-    'OTHER':                                                                     'Other',
-    // Long DB category strings → full display (title-cased)
-    'GENE / PROTEIN':                                                            'Gene / Protein',
-    'GENOMIC / PROTEOMIC FEATURE':                                               'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':                 'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':   'Genomic / Transcriptomic / Proteomic / Epigenomic Feature',
-    'PHENOTYPE / TRAIT / DISEASE':                                               'Phenotype / Trait / Disease',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':               'Complex / Structure / Compartment / Cell / Organ / Organism',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                             'Taxonomic / Evolutionary / Phylogenetic Group',
-    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                                 'Chemical / Metabolite / Cofactor / Ligand',
-    'TREATMENT / PERTURBATION / STRESS / MUTANT':                                'Treatment / Perturbation / Stress / Mutant',
-    'TREATMENT / EXPOSURE / PERTURBATION':                                       'Treatment / Exposure / Perturbation',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                                   'Biological Process / Pathway / Function',
-    'REGULATORY / SIGNALING MECHANISM':                                          'Regulatory / Signaling Mechanism',
-    'BIOLOGICAL PROCESS / FUNCTION':                                             'Biological Process / Function',
-    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':                  'Method / Assay / Experimental Setup / Parameter / Sample',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':                         'Computational / Model / Algorithm / Data / Metric',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                                'Equipment / Device / Material / Instrument',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':                       'Environmental / Ecological / Soil / Climate Context',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                                   'Clinical / Epidemiological / Population',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':                  'Other',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                                 'Other',
-    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                                   'Other',
+    'GENE/PROTEIN': 'GENE/PROTEIN',
+    'PHENOTYPE': 'PHENOTYPE',
+    'CELL/ORGAN/ORGANISM': 'CELL/ORGAN/ORGANISM',
+    'CHEMICAL': 'CHEMICAL',
+    'TREATMENT': 'TREATMENT',
+    'BIOLOGICAL PROCESS': 'BIOLOGICAL PROCESS',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'METHOD': 'METHOD',
+    'GENE IDENTIFIER': 'GENE IDENTIFIER',
+    'NA': 'NA',
+    'OTHER': 'OTHER',
   };
   function catAlias(cat) {
     if (!cat) return '—';
