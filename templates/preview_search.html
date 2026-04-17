@@ -19,9 +19,8 @@
       <div>
         <strong style="font-size:14px;">How to use this page</strong>
         <ol style="margin:6px 0 0 0;padding-left:20px;">
-          <li><strong>Filter</strong> &mdash; Use the search box and category dropdown to narrow down entities.</li>
-          <li><strong>Select</strong> &mdash; Check the entities you want to explore. The node count updates as you select.</li>
-          <li><strong>Find Similar</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to identify semantically similar names (uses AI embeddings). You can then keep only the canonical form.</li>
+          <li><strong>Review</strong> &mdash; All entities are pre-selected. Uncheck any you don't want, or use the search box and category filter to narrow down.</li>
+          <li><strong>Deduplicate</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to merge entities with similar names. Then click <strong style="color:#27ae60;">Apply Merge</strong> to deselect duplicates automatically.</li>
           <li><strong>Visualize</strong> &mdash; Click <strong style="color:#3498db;">Show Selected Entities</strong> to generate the knowledge network graph.</li>
         </ol>
       </div>
@@ -87,7 +86,7 @@
   <!-- Step 2: Optional similarity deduplication -->
   <div style="margin-top:20px;margin-bottom:6px;">
     <span style="display:inline-block;background:#8e44ad;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 2</span>
-    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Find &amp; merge duplicate entities</span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Find &amp; merge similar entities</span>
     <span style="font-size:12px;color:#6b7280;margin-left:4px;">(optional)</span>
   </div>
 
@@ -95,7 +94,7 @@
     <div class="similarity-description">
       Different papers may refer to the same entity using different names
       (e.g. <em>"CesA genes"</em> vs <em>"cellulose synthase genes"</em>).
-      This tool uses AI embeddings to identify such duplicates so you can merge them.
+      This tool uses AI embeddings to identify similar entities so you can merge them.
     </div>
 
     <div class="similarity-controls">
@@ -111,7 +110,7 @@
       </div>
 
       <button id="findSimilarBtn" onclick="findSimilarEntities()" class="similarity-btn">
-        Find Duplicates
+        Find Similar Entities
       </button>
     </div>
 
@@ -660,14 +659,16 @@
 
     document.getElementById('selectAllCheckbox').addEventListener('click', toggleSelectAll);
 
-    const CACHE_VERSION = 'v3';
+    const CACHE_VERSION = 'v4';
     const cachedData = getCachedSearch(search_term + CACHE_VERSION, search_type);
     if (cachedData && cachedData.preview_results && cachedData.preview_results.length > 0) {
       allRowsData = cachedData.preview_results;
       applyFilterAndRender();
+      selectAllOnLoad();
     } else {
       allRowsData = {{ preview_results | tojson }};
       applyFilterAndRender();
+      selectAllOnLoad();
       cacheSearchResults(search_term + CACHE_VERSION, search_type, {
         preview_results: allRowsData,
         unique_id: unique_id
@@ -809,6 +810,18 @@
   // =========================
   // SELECT ALL
   // =========================
+  function selectAllOnLoad() {
+    // Pre-select all entities on page load so the user can deselect what they don't want
+    const selectAll = document.getElementById('selectAllCheckbox');
+    selectAll.checked = true;
+    const checkboxes = document.querySelectorAll("#resultsTable tbody .entity-checkbox");
+    checkboxes.forEach(cb => {
+      cb.checked = true;
+      selectedEntities.add(cb.value);
+    });
+    updateTotalNodeCount();
+  }
+
   function toggleSelectAll(eventOrCheckbox) {
     const checkbox = eventOrCheckbox.target ? eventOrCheckbox.target : eventOrCheckbox;
     const visibleCheckboxes = document.querySelectorAll("#resultsTable tbody .entity-checkbox");
@@ -944,11 +957,11 @@
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
-      btn.textContent = 'Find Duplicates';
+      btn.textContent = 'Find Similar Entities';
 
       if (data.error) { resultsDiv.innerHTML = `<p style="color:#e74c3c;">${data.error}</p>`; return; }
       if (data.groups.length === 0) {
-        resultsDiv.innerHTML = `<p style="color:#6b7280;padding:8px 0;">No duplicates found at threshold ${threshold}. Try lowering the sensitivity slider.</p>`;
+        resultsDiv.innerHTML = `<p style="color:#6b7280;padding:8px 0;">No similar entities found at threshold ${threshold}. Try lowering the sensitivity slider.</p>`;
         return;
       }
 
@@ -957,7 +970,7 @@
     })
     .catch(err => {
       btn.disabled = false;
-      btn.textContent = 'Find Duplicates';
+      btn.textContent = 'Find Similar Entities';
       resultsDiv.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
     });
   }
@@ -972,7 +985,7 @@
     // Summary bar with actions
     html += `<div class="sim-summary">
       <div class="sim-summary-text">
-        Found <strong>${groups.length}</strong> groups with <strong>${totalDuplicates}</strong> potential duplicates
+        Found <strong>${groups.length}</strong> groups with <strong>${totalDuplicates}</strong> similar entities
       </div>
       <div class="sim-summary-actions">
         <button onclick="toggleAllGroups(true)" class="sim-action-btn">Select All Groups</button>
@@ -999,7 +1012,7 @@
             <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" checked>
             <span class="sim-group-title">Group ${gi + 1}</span>
           </label>
-          <span class="sim-group-count">${aliases.length} duplicate${aliases.length !== 1 ? 's' : ''}</span>
+          <span class="sim-group-count">${aliases.length} similar entit${aliases.length !== 1 ? 'ies' : 'y'}</span>
         </div>
 
         <div class="sim-group-body">
@@ -1009,7 +1022,7 @@
           </div>
 
           <div class="sim-aliases">
-            <span class="sim-aliases-label">Duplicates to deselect:</span>
+            <span class="sim-aliases-label">Similar entities (will be deselected when you Apply Merge):</span>
             <div class="sim-alias-list" id="sim-aliases-${gi}">`;
 
       visibleAliases.forEach(a => {
@@ -1023,7 +1036,7 @@
           html += `<span class="sim-alias-pill">${a.name}</span>`;
         });
         html += `</div>
-            <button class="sim-show-more" onclick="toggleAliases(${gi}, this)">Show all ${aliases.length} duplicates</button>`;
+            <button class="sim-show-more" onclick="toggleAliases(${gi}, this)">Show all ${aliases.length} similar entities</button>`;
       } else {
         html += `</div>`;
       }
@@ -1045,7 +1058,7 @@
     } else {
       hidden.style.display = 'none';
       const count = hidden.querySelectorAll('.sim-alias-pill').length + document.getElementById(`sim-aliases-${gi}`).querySelectorAll('.sim-alias-pill').length;
-      btn.textContent = `Show all ${count} duplicates`;
+      btn.textContent = `Show all ${count} similar entities`;
     }
   }
 
