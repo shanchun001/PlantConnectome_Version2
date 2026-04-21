@@ -859,6 +859,29 @@ def generate_multi_search_route(search_type):
             if not raw_pairs:
                 return render_template('not_found.html', search_term=multi_query)
 
+            # Parse merge clusters: [{label, members: [entity, ...]}, ...]
+            # Build upper_name -> cluster_label map so any member of a cluster
+            # is rewritten to the cluster label when building the graph.
+            merge_clusters = data.get("merge_clusters", []) or []
+            merge_map = {}                      # UPPER member name -> cluster label
+            cluster_label_to_type = {}          # cluster label -> "cluster"
+            for c in merge_clusters:
+                label = (c.get("label") or "").strip()
+                members = c.get("members") or []
+                if not label or not members:
+                    continue
+                for m in members:
+                    if m:
+                        merge_map[m.upper()] = label
+                cluster_label_to_type[label] = "cluster"
+
+            def apply_merge_name(name):
+                """Return (display_name, type_override) if entity is in a cluster, else (name, None)."""
+                mapped = merge_map.get((name or "").upper())
+                if mapped is not None:
+                    return mapped, "cluster"
+                return name, None
+
             # Extract entity names from selected pairs (format: "entity_name|entity_type|display_category")
             selected_entity_names = set()
             display_labels = []
@@ -885,33 +908,49 @@ def generate_multi_search_route(search_type):
             for doc in result_list:
                 e1, e1t = doc["entity1"], doc.get("entity1type", "")
                 e2, e2t = doc["entity2"], doc.get("entity2type", "")
-                if e1.upper() in selected_entity_names or e2.upper() in selected_entity_names:
-                    forSending.append(Gene(
-                        e1, e1t, e2, e2t,
-                        doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
-                        doc.get("species"), doc.get("basis"),
-                        doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                        doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
-                        doc.get("source_identifier", ""), doc.get("target_identifier", ""),
-                        doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
-                        doc.get("relevant_citations", "")
-                    ))
-                    elements.append((
-                        e1, e1t, e2, e2t,
-                        doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
-                        doc.get("species"), doc.get("basis"),
-                        doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
-                        doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
-                        doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
-                        doc.get("source_identifier", ""), doc.get("target_identifier", ""),
-                        doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
-                        doc.get("relevant_citations", "")
-                    ))
+                if e1.upper() not in selected_entity_names and e2.upper() not in selected_entity_names:
+                    continue
+
+                # Apply merge mapping: rewrite endpoint name + type when in a cluster
+                e1_display, e1_type_override = apply_merge_name(e1)
+                e2_display, e2_type_override = apply_merge_name(e2)
+                e1_t_final = e1_type_override or e1t
+                e2_t_final = e2_type_override or e2t
+
+                # Skip self-loops that arise when two members of the same
+                # cluster had an edge between them (both sides collapse
+                # to the cluster label).
+                if e1_display == e2_display:
+                    continue
+
+                forSending.append(Gene(
+                    e1_display, e1_t_final, e2_display, e2_t_final,
+                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                    doc.get("species"), doc.get("basis"),
+                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                    doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                    doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                    doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                    doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                    doc.get("relevant_citations", "")
+                ))
+                elements.append((
+                    e1_display, e1_t_final, e2_display, e2_t_final,
+                    doc.get("edge"), doc.get("pubmedID"), doc.get("p_source"),
+                    doc.get("species"), doc.get("basis"),
+                    doc.get("source_extracted_definition"), doc.get("source_generated_definition"),
+                    doc.get("target_extracted_definition"), doc.get("target_generated_definition"),
+                    doc.get("entity1category", ""), doc.get("entity2category", ""), doc.get("relationship_label", ""),
+                    doc.get("source_identifier", ""), doc.get("target_identifier", ""),
+                    doc.get("extracted_associated_process_or_pathway", ""), doc.get("generated_associated_process_or_pathway", ""),
+                    doc.get("relevant_citations", "")
+                ))
 
             if not forSending:
                 return render_template('not_found.html', search_term=multi_query)
 
+            # `set(elements)` naturally collapses duplicate edges created by
+            # merging (e.g. cesa1->CSCs and cesa2->CSCs both become cluster->CSCs).
             updatedElements = process_network(list(set(elements)))
             cytoscape_js_code = generate_cytoscape_js(updatedElements, {}, {})
             finalSummaryText = make_text(forSending)

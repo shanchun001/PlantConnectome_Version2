@@ -107,6 +107,25 @@
     </div>
 
     <div id="anchorResults" style="margin-top:10px;"></div>
+
+    <!-- Merge clusters: fold several entities into one node in the graph -->
+    <div id="mergeClustersSection" style="margin-top:16px; padding-top:14px; border-top:1px dashed #e5e7eb;">
+      <div style="font-size:13px; font-weight:600; color:#2c3e50; margin-bottom:4px;">
+        Merge selected entities into one cluster <span style="font-weight:400; color:#6b7280;">(optional)</span>
+      </div>
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+        Collapse the currently-ticked entities into a single labelled node in the network. Edges pointing to any member are redirected to the cluster, and duplicate edges are de-duplicated.
+      </div>
+      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+        <input type="text" id="clusterNameInput"
+               placeholder='Cluster label (e.g. "CESA mutants (merged)")'
+               style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
+        <button onclick="createMergeCluster()" class="similarity-btn" style="flex:0 0 auto;">
+          Group Selected into Cluster
+        </button>
+      </div>
+      <div id="mergeClustersList" style="margin-top:10px;"></div>
+    </div>
   </div>
 
   <!-- Spacer so sticky bar doesn't overlap content -->
@@ -1046,10 +1065,97 @@
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'selected_entities_json';
-    input.value = JSON.stringify({ selected_entities: selectedArray, search_term: search_term });
+    input.value = JSON.stringify({
+      selected_entities: selectedArray,
+      search_term: search_term,
+      merge_clusters: _mergeClusters,
+    });
     form.appendChild(input);
     document.body.appendChild(form);
     form.submit();
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // MERGE CLUSTERS
+  // Each cluster is { label: "<display name>", members: [<entity>, ...] }.
+  // When the user clicks Show Selected Entities the list is sent to the
+  // backend which rewrites each member to the cluster label before building
+  // the Cytoscape graph, collapsing all edges onto a single node.
+  // ────────────────────────────────────────────────────────────────
+  let _mergeClusters = [];
+
+  function createMergeCluster() {
+    if (selectedEntities.size === 0) {
+      alert('No entities selected. Tick some entities in the table first.');
+      return;
+    }
+    // Collect entity names from the sticky selection (value = "name|type|category")
+    const memberNames = [];
+    selectedEntities.forEach(val => {
+      const name = (val || '').split('|')[0];
+      if (name) memberNames.push(name);
+    });
+    if (memberNames.length < 2) {
+      alert('Pick at least 2 entities to merge into a cluster.');
+      return;
+    }
+    const input = document.getElementById('clusterNameInput');
+    let label = (input.value || '').trim();
+    if (!label) {
+      // Sensible default: first member + "cluster"
+      label = `${memberNames[0]} cluster (${memberNames.length})`;
+    }
+    _mergeClusters.push({ label, members: memberNames });
+    input.value = '';
+    renderMergeClusters();
+  }
+
+  function removeMergeCluster(idx) {
+    _mergeClusters.splice(idx, 1);
+    renderMergeClusters();
+  }
+
+  function clearAllMergeClusters() {
+    _mergeClusters = [];
+    renderMergeClusters();
+  }
+
+  function renameMergeCluster(idx) {
+    const cur = _mergeClusters[idx];
+    if (!cur) return;
+    const newLabel = prompt('New cluster label:', cur.label);
+    if (newLabel && newLabel.trim()) {
+      cur.label = newLabel.trim();
+      renderMergeClusters();
+    }
+  }
+
+  function renderMergeClusters() {
+    const list = document.getElementById('mergeClustersList');
+    if (!list) return;
+    if (_mergeClusters.length === 0) {
+      list.innerHTML = '';
+      return;
+    }
+    let html = `<div style="font-size:12px;color:#374151;margin-bottom:6px;">
+      <strong>${_mergeClusters.length}</strong> cluster${_mergeClusters.length > 1 ? 's' : ''} defined —
+      <button onclick="clearAllMergeClusters()" class="sim-action-btn sim-action-btn-outline" style="padding:2px 8px;font-size:11px;">Clear All</button>
+    </div>`;
+    _mergeClusters.forEach((c, idx) => {
+      const preview = c.members.slice(0, 4).map(m => m.replace(/</g, '&lt;')).join(', ');
+      const more = c.members.length > 4 ? `, +${c.members.length - 4} more` : '';
+      html += `<div style="background:#f9f6fd;border:1px solid #e4d9f0;border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1 1 auto;min-width:0;">
+          <div style="font-weight:600;font-size:13px;color:#2c3e50;">${c.label.replace(/</g, '&lt;')} <span style="font-weight:400;color:#6b7280;">(${c.members.length} entities)</span></div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;word-break:break-word;">${preview}${more}</div>
+        </div>
+        <div style="flex:0 0 auto;display:flex;gap:4px;">
+          <button onclick="renameMergeCluster(${idx})" class="sim-action-btn sim-action-btn-outline" style="padding:2px 8px;font-size:11px;">Rename</button>
+          <button onclick="removeMergeCluster(${idx})" class="sim-action-btn sim-action-btn-outline" style="padding:2px 8px;font-size:11px;color:#c0392b;border-color:#f5c6cb;">Remove</button>
+        </div>
+      </div>`;
+    });
+    list.innerHTML = html;
   }
 
   // =========================
