@@ -742,7 +742,7 @@
 
     // Bottom block: Validate button (3rd) then Source/Target Entity (below Source Text)
     ab.innerHTML = `
-      <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
+      <button id="validateEdge" class="edge-tp-validate-btn" style="margin-top:12px;">Validate Edge</button>
 
       <div class="edge-tp-section-title" style="margin-top:10px;">Source Entity</div>
       <div class="edge-tp-meta">
