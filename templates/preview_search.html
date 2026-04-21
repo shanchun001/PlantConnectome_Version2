@@ -680,22 +680,22 @@
     'other'
   ]);
 
-  // Short vis categories used by the filter dropdown
-  const CAT_ALIAS = {
-    'GENE/PROTEIN': 'GENE/PROTEIN',
-    'PHENOTYPE': 'PHENOTYPE',
-    'CELL/ORGAN/ORGANISM': 'CELL/ORGAN/ORGANISM',
-    'CHEMICAL': 'CHEMICAL',
-    'TREATMENT': 'TREATMENT',
-    'BIOLOGICAL PROCESS': 'BIOLOGICAL PROCESS',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'METHOD': 'METHOD',
-    'GENE IDENTIFIER': 'GENE IDENTIFIER',
-    'OTHER': 'OTHER',
+  // Canonical short vis categories (used by filter dropdown) + their display names
+  // Key = short vis category (uppercase, used for matching); value = nice-case display name
+  const VIS_CAT_DISPLAY = {
+    'GENE/PROTEIN': 'Gene / Protein',
+    'PHENOTYPE': 'Phenotype',
+    'CELL/ORGAN/ORGANISM': 'Cell / Organ / Organism',
+    'CHEMICAL': 'Chemical',
+    'TREATMENT': 'Treatment',
+    'BIOLOGICAL PROCESS': 'Biological Process',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic / Transcriptomic Feature',
+    'METHOD': 'Method',
+    'GENE IDENTIFIER': 'Gene Identifier',
+    'OTHER': 'Others',
   };
 
-  // Map full prompt category strings (from DB, e.g. "Gene / Protein")
-  // to the short vis category used by the filter and display.
+  // Map full prompt category strings (UPPERCASE, from DB) to short vis category
   const PROMPT_TO_VIS_CAT = {
     'GENE / PROTEIN': 'GENE/PROTEIN',
     'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
@@ -714,23 +714,43 @@
     'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
     'BIOLOGICAL PROCESS / FUNCTION': 'BIOLOGICAL PROCESS',
     'REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
-    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT': 'OTHER',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT': 'OTHER',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION': 'OTHER',
-    'PROPERTY / CHARACTERIZATION': 'OTHER',
     'GENE IDENTIFIER': 'GENE IDENTIFIER',
-    'NA': 'OTHER',
-    'OTHER': 'OTHER',
   };
 
-  function catAlias(cat) {
-    if (!cat) return '—';
+  // Known relationship-label strings that sometimes leak into the entity category field.
+  // These are NOT valid entity categories and should be dropped from display.
+  const RELATIONSHIP_LABEL_TOKENS = new Set([
+    'ASSOCIATION', 'INTERACTION', 'BINDING',
+    'LOCALIZATION', 'CONTAINMENT', 'COMPOSITION',
+    'MODIFICATION', 'CHANGES', 'ALTERS',
+    'COMPARISON', 'EVALUATION', 'BENCHMARKING',
+    'ACTIVATION', 'INDUCTION', 'PROMOTION', 'CAUSATION',
+    'REPRESSION', 'INHIBITION', 'DECREASE', 'NEGATIVE',
+    'EXPRESSION', 'DETECTION', 'IDENTIFICATION',
+    'REQUIREMENT', 'ESSENTIALITY', 'ACTIVITY', 'FUNCTION', 'PARTICIPATION',
+    'ENCODING', 'SYNTHESIS', 'FORMATION',
+  ]);
+
+  function isLikelyRelationshipLabel(upperCat) {
+    // A category is classified as a relationship label if all its tokens are in the set
+    const tokens = upperCat.split(/[\s/|;,]+/).filter(w => w.length >= 2);
+    if (tokens.length === 0) return false;
+    return tokens.every(t => RELATIONSHIP_LABEL_TOKENS.has(t));
+  }
+
+  // Returns the short vis category (uppercase key) for a raw DB category string.
+  // Unmappable inputs (empty, NA, or relationship labels) return 'OTHER'.
+  function resolveVisCat(cat) {
+    if (!cat) return 'OTHER';
     const upper = cat.toString().trim().toUpperCase();
-    // 1. Direct match on short vis category
-    if (CAT_ALIAS[upper]) return CAT_ALIAS[upper];
-    // 2. Full prompt category → short vis
+    if (!upper || upper === 'NA' || upper === 'N/A') return 'OTHER';
+    // Direct short-form match
+    if (VIS_CAT_DISPLAY[upper]) return upper;
+    // Full prompt category → short vis
     if (PROMPT_TO_VIS_CAT[upper]) return PROMPT_TO_VIS_CAT[upper];
-    // 3. Token-overlap fallback: score against each full prompt category
+    // Relationship labels → Others
+    if (isLikelyRelationshipLabel(upper)) return 'OTHER';
+    // Token-overlap fallback against full prompt categories
     const tokens = new Set(upper.split(/[\s/|;,]+/).filter(w => w.length >= 2));
     let bestCat = null, bestScore = 0;
     for (const full of Object.keys(PROMPT_TO_VIS_CAT)) {
@@ -745,6 +765,16 @@
     return bestCat ? PROMPT_TO_VIS_CAT[bestCat] : 'OTHER';
   }
 
+  // Nice-case display name for a raw DB category string
+  function catDisplay(cat) {
+    return VIS_CAT_DISPLAY[resolveVisCat(cat)] || 'Others';
+  }
+
+  // Short uppercase key for a raw DB category (used by filter matching)
+  function catAlias(cat) {
+    return resolveVisCat(cat);
+  }
+
   function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -755,12 +785,14 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    // Build dropdown from unique CAT_ALIAS values (already full names)
-    const uniqueLabels = [...new Set(Object.values(CAT_ALIAS))].sort();
-    uniqueLabels.forEach(label => {
+    // Build dropdown: option.value = short uppercase key (used by filter),
+    //                 option.textContent = nice-case display name
+    const entries = Object.entries(VIS_CAT_DISPLAY)
+      .sort((a, b) => a[1].localeCompare(b[1]));
+    entries.forEach(([key, label]) => {
       const option = document.createElement("option");
-      option.value = label.toLowerCase();
-      option.textContent = label;
+      option.value = key;  // e.g. "GENE/PROTEIN"
+      option.textContent = label;  // e.g. "Gene / Protein"
       dropdown.appendChild(option);
     });
 
@@ -820,16 +852,17 @@
   // =========================
   function applyFilterAndRender() {
     const searchValue = document.getElementById('entityNameSearchInput').value.toLowerCase();
-    const typeFilter = document.getElementById('entityTypeFilter').value.toLowerCase();
+    // typeFilter = short uppercase key (e.g. "GENE/PROTEIN"), matches option.value
+    const typeFilter = document.getElementById('entityTypeFilter').value;
 
     filteredRowsData = allRowsData.filter(item => {
       const entity = Array.isArray(item) ? item[0] : item.entity;
       const rawCat = Array.isArray(item) ? (item[4] || item[1] || 'OTHER') : (item.display_cat || item.entity_type || 'OTHER');
       const nameMatch = entity.toLowerCase().includes(searchValue);
       if (typeFilter === '') return nameMatch;
-      // Split comma-separated categories and check if any matches the filter
-      const shortCats = rawCat.split(',').map(c => catAlias(c.trim()).toLowerCase());
-      const categoryMatch = shortCats.some(c => c === typeFilter);
+      // Split comma-separated categories, resolve each to its vis key, then compare
+      const visKeys = rawCat.split(',').map(c => catAlias(c.trim()));
+      const categoryMatch = visKeys.some(k => k === typeFilter);
       return nameMatch && categoryMatch;
     });
 
@@ -891,14 +924,13 @@
       nameCell.appendChild(link);
       row.appendChild(nameCell);
 
-      // Entity Category — convert long DB categories to short labels via catAlias
+      // Entity Category — render nice-case display names, dedupe so "Others" only appears once
       const typeCell = document.createElement('td');
       typeCell.classList.add('entity-type');
-      // display_cat may be comma-separated list of raw categories — shorten each
       const rawCat = display_cat || entity_type || '';
-      const shortCats = rawCat.split(',').map(c => catAlias(c.trim())).filter(c => c && c !== '—');
-      const uniqueShortCats = [...new Set(shortCats)];
-      typeCell.textContent = uniqueShortCats.join(', ') || 'Other';
+      const names = rawCat.split(',').map(c => catDisplay(c.trim())).filter(Boolean);
+      const uniqueNames = [...new Set(names)];
+      typeCell.textContent = uniqueNames.join(', ') || 'Others';
       row.appendChild(typeCell);
 
       // Unique Nodes
