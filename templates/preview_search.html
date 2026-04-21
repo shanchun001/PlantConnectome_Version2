@@ -1153,7 +1153,7 @@
     fetch('/compute-anchor-similarity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entities, anchor, limit: 30, min_similarity: minSim })
+      body: JSON.stringify({ entities, anchor, limit: 500, min_similarity: minSim })
     })
     .then(r => r.json())
     .then(data => {
@@ -1172,8 +1172,28 @@
     });
   }
 
-  // How many anchor results are currently displayed (grows in steps of 30)
-  let _anchorVisibleCount = 30;
+  // Find the Step 1 entity-checkbox for a given lowercase entity name.
+  // Returns the DOM element or null. Works even if the table is currently
+  // filtered (hidden rows still have their checkbox in the DOM).
+  function _findTableCheckboxByName(nameLower) {
+    const rows = document.querySelectorAll('#resultsTable tbody tr');
+    for (const row of rows) {
+      const link = row.querySelector('.entity-name a');
+      const n = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+      if (n === nameLower) return row.querySelector('.entity-checkbox');
+    }
+    return null;
+  }
+
+  // Check/uncheck the Step 1 table row for the given entity name (if visible),
+  // then refresh the Step 1 counters.
+  function _syncTableEntity(nameLower, checked) {
+    const cb = _findTableCheckboxByName(nameLower);
+    if (cb && cb.checked !== checked) {
+      cb.checked = checked;
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
 
   function renderAnchorResults(data) {
     const resultsDiv = document.getElementById('anchorResults');
@@ -1185,17 +1205,7 @@
 
     window._anchorResults = results;
     window._anchorData = data;
-    _anchorVisibleCount = Math.min(30, results.length);
-    renderAnchorResultsList();
-  }
 
-  // Render the anchor results list (first _anchorVisibleCount rows).
-  // Rebuilt whenever the visible count changes or "select/deselect all" clicked.
-  function renderAnchorResultsList() {
-    const resultsDiv = document.getElementById('anchorResults');
-    const results = window._anchorResults || [];
-    const data = window._anchorData || {};
-    const visible = Math.min(_anchorVisibleCount, results.length);
     const safeAnchor = (data.anchor || '').replace(/</g, '&lt;');
 
     // Preserve previously-set checkbox state keyed by entity name (lowercase)
@@ -1206,22 +1216,29 @@
 
     let html = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
       <div style="font-size:12px;color:#374151;">
-        Showing <strong>${visible}</strong> of <strong>${results.length}</strong> entities closest to <strong>${safeAnchor}</strong>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="toggleAllAnchorResults(true)" class="sim-action-btn" style="padding:4px 10px;font-size:11px;">Select All Visible</button>
-        <button onclick="toggleAllAnchorResults(false)" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Deselect All</button>
-        <button onclick="selectAnchorResultsInTable()" class="sim-action-btn sim-action-btn-green" style="padding:4px 10px;font-size:11px;">Apply to Table</button>
+        <strong>${results.length}</strong> entities closest to <strong>${safeAnchor}</strong>
+        <span style="color:#6b7280;margin-left:6px;">— ticking a box syncs the Step 1 table</span>
       </div>
     </div>`;
 
-    html += `<div class="sim-groups-container" style="max-height:320px;">`;
-    for (let i = 0; i < visible; i++) {
-      const r = results[i];
+    // Quick-select buttons
+    html += `<div class="anchor-quick-select" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+      <button onclick="anchorSelectTopN(10)"  class="sim-action-btn" style="padding:4px 10px;font-size:11px;">Top 10</button>
+      <button onclick="anchorSelectTopN(25)"  class="sim-action-btn" style="padding:4px 10px;font-size:11px;">Top 25</button>
+      <button onclick="anchorSelectTopN(50)"  class="sim-action-btn" style="padding:4px 10px;font-size:11px;">Top 50</button>
+      <button onclick="anchorSelectTopN(100)" class="sim-action-btn" style="padding:4px 10px;font-size:11px;">Top 100</button>
+      <button onclick="anchorSelectByScore(0.8)" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Score ≥ 0.80</button>
+      <button onclick="anchorSelectByScore(0.6)" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Score ≥ 0.60</button>
+      <button onclick="toggleAllAnchorResults(true)"  class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Select All</button>
+      <button onclick="toggleAllAnchorResults(false)" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Deselect All</button>
+    </div>`;
+
+    html += `<div class="sim-groups-container" style="max-height:340px;">`;
+    results.forEach((r, i) => {
       const pct = Math.round(r.similarity * 100);
       const barColor = r.similarity >= 0.8 ? '#22c55e' : r.similarity >= 0.6 ? '#eab308' : '#94a3b8';
       const nameLower = r.name.toLowerCase();
-      // Default: check top 10 OR any score >= 0.8. Preserve prior state if present.
+      // Default: preserve prior state if rendering is a re-render; otherwise top 10 / score >= 0.8.
       const shouldCheck = prevChecked.size > 0
         ? prevChecked.has(nameLower)
         : (i < 10 || r.similarity >= 0.8);
@@ -1229,7 +1246,7 @@
       const safeName = r.name.replace(/</g, '&lt;').replace(/"/g, '&quot;');
       html += `<label class="sim-group" style="display:flex;align-items:center;gap:10px;padding:6px 10px;cursor:pointer;">
         <input type="checkbox" class="anchor-result-checkbox" data-name="${nameLower}" data-display="${safeName}" ${checkedAttr}
-               onchange="updateAnchorSelectedCount()"
+               onchange="onAnchorCheckboxChange(this)"
                style="flex:0 0 auto;width:14px;height:14px;cursor:pointer;">
         <span style="flex:1 1 auto;font-size:13px;color:#111827;">${safeName}</span>
         <span style="flex:0 0 54px;font-size:11px;color:#6b7280;text-align:right;">${r.similarity.toFixed(3)}</span>
@@ -1237,47 +1254,64 @@
           <div style="width:${pct}%;height:100%;background:${barColor};"></div>
         </div>
       </label>`;
-    }
+    });
     html += `</div>`;
 
-    // Selected count + show-more row
-    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:8px;flex-wrap:wrap;">
+    html += `<div style="margin-top:8px;">
       <span id="anchorSelectedCount" style="font-size:11px;color:#6b7280;"></span>
-      <div style="display:flex;gap:6px;">`;
-    if (visible < results.length) {
-      const remaining = results.length - visible;
-      const nextBatch = Math.min(30, remaining);
-      html += `<button onclick="showMoreAnchorResults()" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Show ${nextBatch} more</button>`;
-      if (remaining > 30) {
-        html += `<button onclick="showAllAnchorResults()" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Show all ${results.length}</button>`;
-      }
-    } else if (results.length > 30) {
-      html += `<button onclick="collapseAnchorResults()" class="sim-action-btn sim-action-btn-outline" style="padding:4px 10px;font-size:11px;">Show fewer</button>`;
-    }
-    html += `</div></div>`;
+    </div>`;
 
     resultsDiv.innerHTML = html;
+
+    // Sync current checkbox state back to Step 1 table (top-10 / 0.8 defaults)
+    document.querySelectorAll('.anchor-result-checkbox').forEach(cb => {
+      _syncTableEntity(cb.dataset.name, cb.checked);
+    });
+    // Anchor itself should be selected too
+    const anchorLower = (data.anchor || '').toLowerCase();
+    if (anchorLower) _syncTableEntity(anchorLower, true);
+
+    updateAnchorSelectedCount();
+  }
+
+  // Live handler: checking/unchecking a single anchor result syncs the table.
+  function onAnchorCheckboxChange(cb) {
+    _syncTableEntity(cb.dataset.name, cb.checked);
     updateAnchorSelectedCount();
   }
 
   function toggleAllAnchorResults(checked) {
-    document.querySelectorAll('.anchor-result-checkbox').forEach(cb => { cb.checked = checked; });
+    document.querySelectorAll('.anchor-result-checkbox').forEach(cb => {
+      if (cb.checked !== checked) {
+        cb.checked = checked;
+        _syncTableEntity(cb.dataset.name, checked);
+      }
+    });
     updateAnchorSelectedCount();
   }
 
-  function showMoreAnchorResults() {
-    _anchorVisibleCount = Math.min(_anchorVisibleCount + 30, (window._anchorResults || []).length);
-    renderAnchorResultsList();
+  function anchorSelectTopN(n) {
+    const boxes = document.querySelectorAll('.anchor-result-checkbox');
+    boxes.forEach((cb, i) => {
+      const want = i < n;
+      if (cb.checked !== want) {
+        cb.checked = want;
+        _syncTableEntity(cb.dataset.name, want);
+      }
+    });
+    updateAnchorSelectedCount();
   }
 
-  function showAllAnchorResults() {
-    _anchorVisibleCount = (window._anchorResults || []).length;
-    renderAnchorResultsList();
-  }
-
-  function collapseAnchorResults() {
-    _anchorVisibleCount = 30;
-    renderAnchorResultsList();
+  function anchorSelectByScore(minScore) {
+    const results = window._anchorResults || [];
+    document.querySelectorAll('.anchor-result-checkbox').forEach((cb, i) => {
+      const want = (results[i]?.similarity || 0) >= minScore;
+      if (cb.checked !== want) {
+        cb.checked = want;
+        _syncTableEntity(cb.dataset.name, want);
+      }
+    });
+    updateAnchorSelectedCount();
   }
 
   function updateAnchorSelectedCount() {
@@ -1286,31 +1320,6 @@
     const total = document.querySelectorAll('.anchor-result-checkbox').length;
     const selected = document.querySelectorAll('.anchor-result-checkbox:checked').length;
     countEl.textContent = `${selected} of ${total} selected`;
-  }
-
-  // Apply the user's checkbox picks to the Step 1 table.
-  function selectAnchorResultsInTable() {
-    const checked = Array.from(document.querySelectorAll('.anchor-result-checkbox:checked'));
-    if (checked.length === 0) {
-      alert('No entities selected. Tick the ones you want before applying.');
-      return;
-    }
-    const targetNames = new Set(checked.map(cb => cb.dataset.name));
-    // Include the anchor itself by default
-    const anchor = document.getElementById('anchorEntityInput')?.value.trim().toLowerCase();
-    if (anchor) targetNames.add(anchor);
-
-    let applied = 0;
-    document.querySelectorAll('.entity-checkbox').forEach(cb => {
-      const row = cb.closest('tr');
-      if (!row) return;
-      const link = row.querySelector('.entity-name a');
-      const name = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
-      if (targetNames.has(name)) { cb.checked = true; applied++; }
-    });
-    if (typeof updateTotalNodeCount === 'function') updateTotalNodeCount();
-    if (typeof updateSelectAllCheckbox === 'function') updateSelectAllCheckbox();
-    alert(`Applied: ${applied} entities checked in the table above.`);
   }
 
   function findSimilarEntities() {

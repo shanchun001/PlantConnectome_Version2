@@ -517,7 +517,7 @@ def compute_anchor_similarity():
     data = request.get_json()
     entities = data.get('entities', [])
     anchor = (data.get('anchor') or '').strip()
-    limit = int(data.get('limit', 30))
+    limit = int(data.get('limit', 500))  # effectively no cap: max entities is 500
     min_sim = float(data.get('min_similarity', 0.3))
 
     if not entities:
