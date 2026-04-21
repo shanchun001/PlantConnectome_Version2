@@ -100,7 +100,7 @@
       <input type="text" id="anchorEntityInput"
              placeholder="Type a term (e.g. CESA mutants, cellulose biosynthesis)..."
              style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
-      <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto;">
+      <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto; padding:8px 20px; border:1px solid #7d3c98; border-radius:6px; line-height:1.4;">
         Find Closest
       </button>
     </div>
@@ -119,7 +119,7 @@
         <input type="text" id="clusterNameInput"
                placeholder='Cluster label (e.g. "CESA mutants (merged)")'
                style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
-        <button onclick="createMergeCluster()" class="similarity-btn" style="flex:0 0 auto;">
+        <button onclick="createMergeCluster()" class="similarity-btn" style="flex:0 0 auto; padding:8px 20px; border:1px solid #7d3c98; border-radius:6px; line-height:1.4;">
           Group Selected into Cluster
         </button>
       </div>
@@ -137,7 +137,7 @@
     <div class="sticky-action-info">
       <span class="sticky-selected-count"><strong id="selectedEntityCount">0</strong> entities selected</span>
       <span class="sticky-divider">&middot;</span>
-      <span class="sticky-node-count">~<strong id="totalNodeCount">0</strong> relationships</span>
+      <span class="sticky-node-count">~<strong id="totalNodeCount">0</strong> nodes</span>
     </div>
     <button id="showSelectedButton" class="preview-submit-btn" onclick="getSelectedEntities()">
       Show Selected Entities
@@ -1302,10 +1302,9 @@
       const pct = Math.round(r.similarity * 100);
       const barColor = r.similarity >= 0.8 ? '#22c55e' : r.similarity >= 0.6 ? '#eab308' : '#94a3b8';
       const nameLower = r.name.toLowerCase();
-      // Default: preserve prior state if rendering is a re-render; otherwise top 10 / score >= 0.8.
-      const shouldCheck = prevChecked.size > 0
-        ? prevChecked.has(nameLower)
-        : (i < 10 || r.similarity >= 0.8);
+      // Preserve prior tick state on re-render; otherwise start with nothing checked —
+      // the user drives selection explicitly via quick-select buttons or individual ticks.
+      const shouldCheck = prevChecked.has(nameLower);
       const checkedAttr = shouldCheck ? 'checked' : '';
       const safeName = r.name.replace(/</g, '&lt;').replace(/"/g, '&quot;');
       html += `<label class="sim-group" style="display:flex;align-items:center;gap:10px;padding:6px 10px;cursor:pointer;">
@@ -1327,13 +1326,11 @@
 
     resultsDiv.innerHTML = html;
 
-    // Sync current checkbox state back to Step 1 table (top-10 / 0.8 defaults)
+    // Sync any pre-existing ticks (from a re-render) back to the Step 1 table.
+    // We no longer auto-tick anything on first render — user-driven selection only.
     document.querySelectorAll('.anchor-result-checkbox').forEach(cb => {
       _syncTableEntity(cb.dataset.name, cb.checked);
     });
-    // Anchor itself should be selected too
-    const anchorLower = (data.anchor || '').toLowerCase();
-    if (anchorLower) _syncTableEntity(anchorLower, true);
 
     updateAnchorSelectedCount();
   }
