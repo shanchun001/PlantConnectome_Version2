@@ -954,27 +954,81 @@
               'population', 'cohort', 'patient', 'clinical'
             ]
           };
-          // Invert categoryMap to type->category lookup
+          // Invert categoryMap to type->category lookup (key = short type, value = full prompt category)
           const typeToCategoryMap = {};
           for (const [cat, types] of Object.entries(categoryMap)) {
-            types.forEach(t => { typeToCategoryMap[t] = cat; });
+            types.forEach(t => { typeToCategoryMap[t.toLowerCase()] = cat; });
+          }
+
+          // Map from full prompt category (with spaces) to the short vis category used in <select> values
+          const PROMPT_TO_VIS = {
+            'gene / protein':                                                 'gene/protein',
+            'genomic / transcriptomic / proteomic / epigenomic feature':      'genomic/transcriptomic feature',
+            'genomic / transcriptomic / epigenomic feature':                  'genomic/transcriptomic feature',
+            'phenotype / trait / disease':                                    'phenotype',
+            'complex / structure / compartment / cell / organ / organism':    'cell/organ/organism',
+            'taxonomic / evolutionary / phylogenetic group':                  'cell/organ/organism',
+            'chemical / metabolite / cofactor / ligand':                      'chemical',
+            'treatment / perturbation / stress / mutant':                     'treatment',
+            'environmental / ecological / soil / climate context':            'treatment',
+            'method / assay / experimental setup / parameter / sample':       'method',
+            'computational / model / algorithm / data / metric':              'method',
+            'equipment / device / material / instrument':                     'method',
+            'biological process / pathway / function':                        'biological process',
+            'biological process / function':                                  'biological process',
+            'regulatory / signaling mechanism':                               'biological process',
+            'clinical / epidemiological / population':                        'cell/organ/organism',
+            'social / economic / policy / management':                        'other',
+            'knowledge / concept / hypothesis / theoretical construct':       'other',
+            'property / measurement / characterization':                      'other',
+            'property / characterization':                                    'other',
+            // short-form passthroughs (when bracket already has vis category)
+            'gene/protein': 'gene/protein',
+            'gene identifier': 'gene identifier',
+            'genomic/transcriptomic feature': 'genomic/transcriptomic feature',
+            'cell/organ/organism': 'cell/organ/organism',
+            'chemical': 'chemical',
+            'biological process': 'biological process',
+            'phenotype': 'phenotype',
+            'treatment': 'treatment',
+            'method': 'method',
+            'other': 'other',
+            'na': 'other'
+          };
+
+          // Resolve one bracket term to the short vis category used by <select>
+          function resolveTerm(term) {
+            if (!term) return null;
+            const t = term.trim().toLowerCase();
+            // 1. Direct match against PROMPT_TO_VIS (full prompt category or short form)
+            if (PROMPT_TO_VIS[t]) return PROMPT_TO_VIS[t];
+            // 2. Short entity type → full prompt category → vis
+            const fullCat = typeToCategoryMap[t];
+            if (fullCat && PROMPT_TO_VIS[fullCat]) return PROMPT_TO_VIS[fullCat];
+            // 3. Token overlap: score against each full prompt category
+            const tokens = new Set(t.split(/[\s/|;,]+/).filter(w => w.length >= 2));
+            let bestCat = null, bestScore = 0;
+            for (const cat of Object.keys(PROMPT_TO_VIS)) {
+              const catTokens = new Set(cat.split(/[\s/|;,]+/).filter(w => w.length >= 2));
+              let inter = 0;
+              for (const tok of tokens) if (catTokens.has(tok)) inter++;
+              if (inter === 0) continue;
+              const union = new Set([...tokens, ...catTokens]).size;
+              const score = inter / union;
+              if (score > bestScore) { bestScore = score; bestCat = cat; }
+            }
+            return bestCat ? PROMPT_TO_VIS[bestCat] : null;
           }
 
           // Default category
           let detectedCategory = 'other';
 
-          // Check which category the extracted entity type belongs to
-          if (typeof formattedQuery2 === "string") {
-            detectedCategory = typeToCategoryMap[formattedQuery2] || 'other';
-          } else {
-            for (const term of formattedQuery2) {
-              if (typeToCategoryMap[term]) {
-                detectedCategory = typeToCategoryMap[term];
-                break;
-              }
-            }
+          const terms = typeof formattedQuery2 === "string" ? [formattedQuery2] : formattedQuery2;
+          for (const term of terms) {
+            const resolved = resolveTerm(term);
+            if (resolved) { detectedCategory = resolved; break; }
           }
-      
+
           console.log("Final Detected Category:", detectedCategory);
       
           // Get dropdown
