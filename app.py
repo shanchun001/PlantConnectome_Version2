@@ -498,6 +498,8 @@ def compute_similarity():
             "total_groups": len(groups),
             "threshold": threshold
         })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/compute-anchor-similarity', methods=['POST'])
