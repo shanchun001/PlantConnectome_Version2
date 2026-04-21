@@ -76,14 +76,13 @@ def lookup_entity_names(search_term, mode="substring"):
     mode: 'substring' (prefix-anchored regex on _id, uses B-tree index), 'exact'
     """
     term_lower = search_term.lower()
-    limit = 500
     if mode == "substring":
         # Contains regex on entity_lookup._id (lowercase entity names)
-        # No sort (sorting defeats index use)
+        # No sort (sorting defeats index use), no limit (return all matches)
         results = entity_lookup.find(
             {"_id": {"$regex": re.escape(term_lower)}},
             {"_id": 1}
-        ).limit(limit)
+        )
     elif mode == "exact":
         results = entity_lookup.find(
             {"_id": term_lower},
@@ -269,7 +268,7 @@ def find_preview_fast(my_search, genes, search_type):
         matched_names = [d["_id"] for d in entity_lookup.find(
             {"$text": {"$search": term}},
             {"_id": 1}
-        ).sort("count", -1).limit(300)]
+        ).sort("count", -1)]
         if not matched_names:
             return []
     elif search_type == "substring":
@@ -281,7 +280,7 @@ def find_preview_fast(my_search, genes, search_type):
     else:
         matched_names = [d["_id"] for d in entity_lookup.find(
             {"$text": {"$search": term}}, {"_id": 1}
-        ).sort("count", -1).limit(300)]
+        ).sort("count", -1)]
         if not matched_names:
             return []
 
@@ -328,7 +327,6 @@ def find_preview_fast(my_search, genes, search_type):
             "node_count": {"$sum": 1}
         }},
         {"$sort": {"node_count": -1}},
-        {"$limit": 500}
     ]
 
     results_combined = list(genes.aggregate(pipeline, allowDiskUse=True))
@@ -387,7 +385,7 @@ def find_terms(my_search, genes, search_type):
             quoted = f'"{search_term}"'
             query = {"$text": {"$search": quoted}}
 
-        result_list = list(genes.find(query).limit(10000))
+        result_list = list(genes.find(query))
 
         for doc in result_list:
             e1, e1t = doc["entity1"], doc.get("entity1type")
@@ -901,7 +899,7 @@ def generate_multi_search_route(search_type):
                 {"entity1_lower": {"$in": name_list_lower}},
                 {"entity2_lower": {"$in": name_list_lower}}
             ]}
-            result_list = list(collection.find(query).limit(10000))
+            result_list = list(collection.find(query))
 
             forSending = []
             elements = []

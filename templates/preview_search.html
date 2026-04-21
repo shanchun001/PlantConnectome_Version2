@@ -58,7 +58,7 @@
 
   <!-- Warning -->
   <div id="warningMessageContainer" class="preview-warning" style="display: none;">
-    &#9888; Total nodes selected exceeded 8000. Please reduce your selection so the graph can render.
+    &#9888; Your selection has more than 8000 nodes. The graph may be slow to render or hard to read at this scale.
   </div>
 
   <!-- Results Table -->
@@ -1034,12 +1034,13 @@
     const warning = document.getElementById("warningMessageContainer");
     const btn = document.getElementById("showSelectedButton");
     if (totalNodes > 8000) {
+      // Soft warning — no longer blocks submission, just advises that the
+      // graph may be slow/illegible at this scale.
       warning.style.display = "block";
-      btn.disabled = true;
     } else {
       warning.style.display = "none";
-      btn.disabled = (entityCount === 0);
     }
+    btn.disabled = (entityCount === 0);
   }
 
   // =========================
@@ -1051,8 +1052,11 @@
       return;
     }
     if (totalNodes > 8000) {
-      alert("Total nodes exceeded 8000. Please reduce your selection.");
-      return;
+      // Soft confirmation instead of a hard block — very large graphs render
+      // slowly and may be hard to read, but we no longer silently refuse.
+      if (!confirm(`Your selection has ~${totalNodes} nodes. Graphs this large can be slow to render. Continue anyway?`)) {
+        return;
+      }
     }
     const selectedArray = Array.from(selectedEntities);
     const pathSegment = (search_type === 'non-alphanumeric') ? 'non_alpha' : search_type;
