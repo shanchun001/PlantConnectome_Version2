@@ -52,14 +52,20 @@ short_keys = [k for k in alias_dict if len(k) < 3]
 for k in short_keys:
     del alias_dict[k]
 
-# Drop common English words / chemistry notations that would cause false matches
+# Drop common English words, chemistry notations, and units that would
+# cause false positives when the alias dict is used to tag entities.
 EXCLUSIONS = {
+    # originally-dropped english words
     "and", "ara", "main", "arm", "big", "sand", "can", "best", "polar",
     "fitness", "flip", "sub", "cal", "lot", "mate", "zip", "skip", "serrate",
-    "fit", "tri", "man", "chat", "sec", "rep", "flu", "pumpkin", "dim", "act",
+    "fit", "tri", "man", "chat", "rep", "flu", "pumpkin", "dim", "act",
     "tic", "sup", "ant", "eat", "chia", "mid", "sap", "pan", "try", "fed",
-    "rib", "chip", "kelp", "fact", "tasty", "clasp", "late", "ca2", "cu2",
-    "mn2", "mg2", "fe3", "fe2", "zn2", "so4", "daf", "chl",
+    "rib", "chip", "kelp", "fact", "tasty", "clasp", "late", "daf", "chl",
+    # ion/chemistry notations
+    "ca2", "cu2", "mn2", "mg2", "fe3", "fe2", "zn2", "so4",
+    # time / measurement units commonly seen inline in captions
+    "min", "mins", "sec", "secs", "hr", "hrs", "day", "days", "mo", "yr",
+    "ml", "ul", "mg", "ug", "ng", "kg", "cm", "mm", "nm", "pm", "ppm",
 }
 removed_english = 0
 for w in EXCLUSIONS:

@@ -3,27 +3,6 @@
 {% block dependencies %}
   {{ super() }}
   <input type="hidden" id="selected_categories" value="{{ selected_categories }}">
-  <script>
-    // Function to append logs to HTML
-    function logToHTML(message) {
-      const logList = document.getElementById("log-list");
-      if (logList) {
-        const logItem = document.createElement("li");
-        logItem.textContent = message;
-        logList.appendChild(logItem);
-        logList.parentElement.scrollTop = logList.parentElement.scrollHeight;
-      }
-    }
-    // Override console.log
-    (function() {
-      const originalLog = console.log;
-      console.log = function(...args) {
-        originalLog.apply(console, args);
-        const message = args.map(arg => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
-        logToHTML(message);
-      };
-    })();
-  </script>
   <!-- CytoscapeJS dependencies -->
      
   <script>
@@ -283,30 +262,6 @@
     }
     .tooltip-close-btn:hover { color: #111827; }
 
-    /* ── Console Log ── */
-    #custom-console-log {
-      position: fixed; bottom: 20px; right: 20px; z-index: 1000;
-      border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      padding: 12px 14px; width: 320px; max-height: 500px; overflow-y: auto;
-      background: #fff; border: 1px solid #e5e7eb; font-size: 11px;
-      transition: max-height 0.2s, opacity 0.2s;
-    }
-    #custom-console-log.console-collapsed {
-      max-height: 36px; overflow: hidden; opacity: 0.6;
-    }
-    #custom-console-log.console-collapsed:hover { opacity: 0.9; }
-    #custom-console-log h4 {
-      margin: 0 0 8px; font-size: 13px; font-weight: 600;
-      color: #374151; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    #custom-console-log ul { list-style-type: none; padding-left: 0; margin: 0; font-size: 12px; }
-    #custom-console-log ul li { color: #6b7280; font-style: italic; padding: 2px 0; }
-    .console-toggle-btn {
-      background: none; border: none; cursor: pointer;
-      font-size: 12px; color: #9ca3af; padding: 0;
-    }
-
     /* ── Alert Box (info style) ── */
     .alert-box {
       position: relative; padding: 12px 40px 12px 44px;
@@ -551,22 +506,6 @@
       <p>The network uses a <strong>force-directed</strong> layout by default. Use <strong>View Settings</strong> to change layout, node size, or edge spacing. Apply filters and recalculate to refine the view.</p>
       <button class="close-button" aria-label="Dismiss alert" type="button" onclick="this.parentElement.style.display='none';">&times;</button>
     </div>
-
-    <!-- Console Log -->
-    <div id="custom-console-log" class="console-collapsed">
-      <h4>Logs <button class="console-toggle-btn" onclick="toggleConsoleLog()">&#9660;</button></h4>
-      <ul id="log-list" style="display:none;"><li></li></ul>
-    </div>
-    <script>
-      function toggleConsoleLog() {
-        const log = document.getElementById('custom-console-log');
-        const list = document.getElementById('log-list');
-        const btn = log.querySelector('.console-toggle-btn');
-        const collapsed = log.classList.toggle('console-collapsed');
-        list.style.display = collapsed ? 'none' : '';
-        btn.innerHTML = collapsed ? '&#9660;' : '&#9650;';
-      }
-    </script>
 
     <!-- Search & Toolbar -->
     <form id="node-search-form" style="margin-bottom: 0;">
