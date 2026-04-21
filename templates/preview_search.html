@@ -680,42 +680,41 @@
     'other'
   ]);
 
-  // Canonical short vis categories (used by filter dropdown) + their display names
-  // Key = short vis category (uppercase, used for matching); value = nice-case display name
-  const VIS_CAT_DISPLAY = {
-    'GENE/PROTEIN': 'Gene / Protein',
-    'PHENOTYPE': 'Phenotype',
-    'CELL/ORGAN/ORGANISM': 'Cell / Organ / Organism',
-    'CHEMICAL': 'Chemical',
-    'TREATMENT': 'Treatment',
-    'BIOLOGICAL PROCESS': 'Biological Process',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'Genomic / Transcriptomic Feature',
-    'METHOD': 'Method',
-    'GENE IDENTIFIER': 'Gene Identifier',
-    'OTHER': 'Others',
+  // 18 canonical prompt categories + 'Others', displayed in this order in the dropdown.
+  // Each entry: { key: UPPERCASE matching key, label: nice-case display name }
+  const PROMPT_CATEGORIES = [
+    { key: 'GENE / PROTEIN',                                                 label: 'Gene / Protein' },
+    { key: 'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',      label: 'Genomic / Transcriptomic / Proteomic / Epigenomic Feature' },
+    { key: 'PHENOTYPE / TRAIT / DISEASE',                                    label: 'Phenotype / Trait / Disease' },
+    { key: 'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM',    label: 'Complex / Structure / Compartment / Cell / Organ / Organism' },
+    { key: 'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP',                  label: 'Taxonomic / Evolutionary / Phylogenetic Group' },
+    { key: 'CHEMICAL / METABOLITE / COFACTOR / LIGAND',                      label: 'Chemical / Metabolite / Cofactor / Ligand' },
+    { key: 'TREATMENT / PERTURBATION / STRESS / MUTANT',                     label: 'Treatment / Perturbation / Stress / Mutant' },
+    { key: 'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE',       label: 'Method / Assay / Experimental Setup / Parameter / Sample' },
+    { key: 'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',                        label: 'Biological Process / Pathway / Function' },
+    { key: 'REGULATORY / SIGNALING MECHANISM',                               label: 'Regulatory / Signaling Mechanism' },
+    { key: 'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC',              label: 'Computational / Model / Algorithm / Data / Metric' },
+    { key: 'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT',            label: 'Environmental / Ecological / Soil / Climate Context' },
+    { key: 'CLINICAL / EPIDEMIOLOGICAL / POPULATION',                        label: 'Clinical / Epidemiological / Population' },
+    { key: 'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT',                     label: 'Equipment / Device / Material / Instrument' },
+    { key: 'SOCIAL / ECONOMIC / POLICY / MANAGEMENT',                        label: 'Social / Economic / Policy / Management' },
+    { key: 'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT',       label: 'Knowledge / Concept / Hypothesis / Theoretical Construct' },
+    { key: 'PROPERTY / MEASUREMENT / CHARACTERIZATION',                      label: 'Property / Measurement / Characterization' },
+    { key: 'OTHERS',                                                         label: 'Others' },
+  ];
+
+  // Extra aliases for category variants observed in the DB (all UPPERCASE)
+  const PROMPT_ALIASES = {
+    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE': 'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
+    'BIOLOGICAL PROCESS / FUNCTION': 'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
+    'PROPERTY / CHARACTERIZATION': 'PROPERTY / MEASUREMENT / CHARACTERIZATION',
+    'GENE IDENTIFIER': 'GENE / PROTEIN',
   };
 
-  // Map full prompt category strings (UPPERCASE, from DB) to short vis category
-  const PROMPT_TO_VIS_CAT = {
-    'GENE / PROTEIN': 'GENE/PROTEIN',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'PHENOTYPE / TRAIT / DISEASE': 'PHENOTYPE',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM': 'CELL/ORGAN/ORGANISM',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP': 'CELL/ORGAN/ORGANISM',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION': 'CELL/ORGAN/ORGANISM',
-    'CHEMICAL / METABOLITE / COFACTOR / LIGAND': 'CHEMICAL',
-    'TREATMENT / PERTURBATION / STRESS / MUTANT': 'TREATMENT',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT': 'TREATMENT',
-    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE': 'METHOD',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC': 'METHOD',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT': 'METHOD',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION': 'BIOLOGICAL PROCESS',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
-    'BIOLOGICAL PROCESS / FUNCTION': 'BIOLOGICAL PROCESS',
-    'REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
-    'GENE IDENTIFIER': 'GENE IDENTIFIER',
-  };
+  // key → label lookup
+  const CAT_LABEL = {};
+  PROMPT_CATEGORIES.forEach(c => { CAT_LABEL[c.key] = c.label; });
 
   // Known relationship-label strings that sometimes leak into the entity category field.
   // These are NOT valid entity categories and should be dropped from display.
@@ -738,41 +737,42 @@
     return tokens.every(t => RELATIONSHIP_LABEL_TOKENS.has(t));
   }
 
-  // Returns the short vis category (uppercase key) for a raw DB category string.
-  // Unmappable inputs (empty, NA, or relationship labels) return 'OTHER'.
-  function resolveVisCat(cat) {
-    if (!cat) return 'OTHER';
+  // Resolve a raw DB category string to one of the 18 canonical prompt-category keys
+  // (UPPERCASE) — or 'OTHERS' if unmappable (empty / NA / relationship label / garbage).
+  function resolveCanonicalKey(cat) {
+    if (!cat) return 'OTHERS';
     const upper = cat.toString().trim().toUpperCase();
-    if (!upper || upper === 'NA' || upper === 'N/A') return 'OTHER';
-    // Direct short-form match
-    if (VIS_CAT_DISPLAY[upper]) return upper;
-    // Full prompt category → short vis
-    if (PROMPT_TO_VIS_CAT[upper]) return PROMPT_TO_VIS_CAT[upper];
-    // Relationship labels → Others
-    if (isLikelyRelationshipLabel(upper)) return 'OTHER';
-    // Token-overlap fallback against full prompt categories
+    if (!upper || upper === 'NA' || upper === 'N/A') return 'OTHERS';
+    // Direct match
+    if (CAT_LABEL[upper]) return upper;
+    // Alias (known DB variant)
+    if (PROMPT_ALIASES[upper]) return PROMPT_ALIASES[upper];
+    // Relationship-label leakage → Others
+    if (isLikelyRelationshipLabel(upper)) return 'OTHERS';
+    // Token-overlap fallback against canonical prompt categories (skip OTHERS sentinel)
     const tokens = new Set(upper.split(/[\s/|;,]+/).filter(w => w.length >= 2));
-    let bestCat = null, bestScore = 0;
-    for (const full of Object.keys(PROMPT_TO_VIS_CAT)) {
-      const fullTokens = new Set(full.split(/[\s/|;,]+/).filter(w => w.length >= 2));
+    let bestKey = null, bestScore = 0;
+    for (const c of PROMPT_CATEGORIES) {
+      if (c.key === 'OTHERS') continue;
+      const tplTokens = new Set(c.key.split(/[\s/|;,]+/).filter(w => w.length >= 2));
       let inter = 0;
-      for (const t of tokens) if (fullTokens.has(t)) inter++;
+      for (const t of tokens) if (tplTokens.has(t)) inter++;
       if (inter === 0) continue;
-      const union = new Set([...tokens, ...fullTokens]).size;
+      const union = new Set([...tokens, ...tplTokens]).size;
       const score = inter / union;
-      if (score > bestScore) { bestScore = score; bestCat = full; }
+      if (score > bestScore) { bestScore = score; bestKey = c.key; }
     }
-    return bestCat ? PROMPT_TO_VIS_CAT[bestCat] : 'OTHER';
+    return bestKey || 'OTHERS';
   }
 
   // Nice-case display name for a raw DB category string
   function catDisplay(cat) {
-    return VIS_CAT_DISPLAY[resolveVisCat(cat)] || 'Others';
+    return CAT_LABEL[resolveCanonicalKey(cat)] || 'Others';
   }
 
-  // Short uppercase key for a raw DB category (used by filter matching)
+  // Canonical UPPERCASE key for a raw DB category (used by filter matching)
   function catAlias(cat) {
-    return resolveVisCat(cat);
+    return resolveCanonicalKey(cat);
   }
 
   function debounce(func, wait) {
@@ -785,14 +785,12 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const dropdown = document.getElementById("entityTypeFilter");
-    // Build dropdown: option.value = short uppercase key (used by filter),
-    //                 option.textContent = nice-case display name
-    const entries = Object.entries(VIS_CAT_DISPLAY)
-      .sort((a, b) => a[1].localeCompare(b[1]));
-    entries.forEach(([key, label]) => {
+    // Build dropdown in the exact canonical order defined in PROMPT_CATEGORIES.
+    // option.value = UPPERCASE canonical key; option.textContent = nice-case label.
+    PROMPT_CATEGORIES.forEach(c => {
       const option = document.createElement("option");
-      option.value = key;  // e.g. "GENE/PROTEIN"
-      option.textContent = label;  // e.g. "Gene / Protein"
+      option.value = c.key;
+      option.textContent = c.label;
       dropdown.appendChild(option);
     });
 
