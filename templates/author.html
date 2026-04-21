@@ -313,13 +313,68 @@
         </div>
       </div>
 
-      <!-- Filter Buttons -->
-      <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 0px; left: 0px; position: absolute; z-index: 11;">
-        Node Filter Layout
+      <!-- Filter & View Buttons -->
+      <button class="open-button button secondary small-button" onclick="openNodeFilterForm()" style="top: 4px; left: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        Node Filter
       </button>
-      <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 0px; right: 0px; position: absolute; z-index: 11;">
-        Edge Filter Layout
+      <button class="open-button button secondary small-button" onclick="toggleViewSettings()" style="top: 4px; left: 50%; transform: translateX(-50%); position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        View Settings
       </button>
+      <button class="open-button button secondary small-button" onclick="openEdgeFilterForm()" style="top: 4px; right: 4px; position: absolute; z-index: 11; font-size: 0.7rem; padding: 4px 10px;">
+        Edge Filter
+      </button>
+
+      <!-- View Settings Panel -->
+      <div id="viewSettingsPanel" class="form-popup" style="display:none; position:absolute; top:35px; left:50%; transform:translateX(-50%); width:340px; z-index:999;">
+        <div class="form-container" style="padding:10px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">
+            <h5 style="margin:0; font-size:14px; font-weight:600; color:#2c3e50;">View Settings</h5>
+            <button onclick="toggleViewSettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;">&times;</button>
+          </div>
+
+          <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Nodes</div>
+          <div class="view-setting-row">
+            <label>Node Size</label>
+            <input type="range" id="vs-node-size" min="15" max="100" value="55" oninput="VS.set('nodeSize', this.value)">
+            <span id="vs-node-size-val">55</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Node Label Font</label>
+            <input type="range" id="vs-font-size" min="4" max="40" value="11" oninput="VS.set('fontSize', this.value)">
+            <span id="vs-font-size-val">11</span>
+          </div>
+
+          <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:6px 0 4px 0;">Edges</div>
+          <div class="view-setting-row">
+            <label>Edge Label Font</label>
+            <input type="range" id="vs-edge-font" min="0" max="30" value="8" oninput="VS.set('edgeFontSize', this.value)">
+            <span id="vs-edge-font-val">8</span>
+          </div>
+          <div class="view-setting-row">
+            <label>Edge Length</label>
+            <input type="range" id="vs-edge-len" min="20" max="300" value="120" oninput="VS.set('edgeLength', this.value)">
+            <span id="vs-edge-len-val">120</span>
+          </div>
+
+          <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin:6px 0 4px 0;">Layout</div>
+          <div class="view-setting-row">
+            <label>Graph Layout</label>
+            <select id="vs-layout" style="font-size:12px; padding:4px 8px; flex:1; border:1px solid #d1d5db; border-radius:4px;">
+              <option value="fcose" selected>Force-directed (default)</option>
+              <option value="circle">Circle</option>
+              <option value="concentric">Concentric (by connections)</option>
+              <option value="breadthfirst">Hierarchical (tree)</option>
+              <option value="grid">Grid</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+            <button class="button primary" onclick="VS.applyLayout()" style="font-size:12px; padding:6px 14px; flex:1;">Apply Layout</button>
+            <button class="button secondary" onclick="VS.fit()" style="font-size:12px; padding:6px 14px; flex:1; background:#f3f4f6; color:#374151; border:1px solid #d1d5db;">Fit to Screen</button>
+            <button class="button secondary" onclick="VS.reset()" style="font-size:0.72rem; padding:4px 10px; flex:1;">Reset All</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Node Filter Form -->
       <div class="form-popup" id="nodeFilterForm" style="display:none; position:absolute; top:35px; left:0px;">
@@ -353,26 +408,31 @@
       </div>
 
       <!-- Legend Section -->
-      <div id="nodes-legend" style="position:absolute; top:35px; left:0px; z-index:10;">
+      <div id="nodes-legend" class="legend-collapsed" style="position:absolute; top:35px; left:0px; z-index:10;">
         <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Nodes Legend <span class="legend-chevron">&#9660;</span></h6>
         <ul>
-          <li><span class="shape ellipse"></span> Gene/Protein</li>
-          <li><span class="shape micro-octagon"></span> Microorganism</li>
-          <li><span class="shape vee"></span> Disease/Condition</li>
-          <li><span class="shape diamond"></span> Chemical</li>
-          <li><span class="shape bio-hexagon"></span> Biological Process</li>
-          <li><span class="shape tag"></span> Cell/Compartment</li>
-          <li><span class="shape heptagon"></span> Host/Organism</li>
-          <li><span class="shape rectangle"></span> Phenotype</li>
-          <li><span class="shape pentagon"></span> Treatment</li>
-          <li><span class="shape concave-hexagon"></span> Environment</li>
-          <li><span class="shape triangle"></span> Method</li>
-          <li><span class="shape cut-rectangle"></span> Taxonomy</li>
-          <li><span class="shape star"></span> Other</li>
+          <li><span class="shape ellipse" style="background:#89CFF0;"></span> Gene / Protein</li>
+          <li><span class="shape round-rectangle" style="background:#AFEEEE;"></span> Genomic / Transcriptomic / Proteomic / Epigenomic Feature</li>
+          <li><span class="shape rectangle" style="background:#90EE90;"></span> Phenotype / Trait / Disease</li>
+          <li><span class="shape hexagon" style="background:#FFB6C1;"></span> Complex / Structure / Compartment / Cell / Organ / Organism</li>
+          <li><span class="shape heptagon" style="background:#F0E68C;"></span> Taxonomic / Evolutionary / Phylogenetic Group</li>
+          <li><span class="shape diamond" style="background:#FFD700;"></span> Chemical / Metabolite / Cofactor / Ligand</li>
+          <li><span class="shape pentagon" style="background:#E0FFFF;"></span> Treatment / Perturbation / Stress / Mutant</li>
+          <li><span class="shape triangle" style="background:#D2B48C;"></span> Method / Assay / Experimental Setup / Parameter / Sample</li>
+          <li><span class="shape ellipse" style="background:#98FB98;"></span> Biological Process / Pathway / Function</li>
+          <li><span class="shape ellipse" style="background:#98FB98;"></span> Regulatory / Signaling Mechanism</li>
+          <li><span class="shape triangle" style="background:#D2B48C;"></span> Computational / Model / Algorithm / Data / Metric</li>
+          <li><span class="shape concave-hexagon" style="background:#87CEEB;"></span> Environmental / Ecological / Soil / Climate Context</li>
+          <li><span class="shape vee" style="background:#FF6B6B;"></span> Clinical / Epidemiological / Population</li>
+          <li><span class="shape tag" style="background:#DEB887;"></span> Equipment / Device / Material / Instrument</li>
+          <li><span class="shape star" style="background:#C8A2C8;"></span> Social / Economic / Policy / Management</li>
+          <li><span class="shape star" style="background:#D3D3D3;"></span> Knowledge / Concept / Hypothesis / Theoretical Construct</li>
+          <li><span class="shape round-rectangle" style="background:#E8E8E8;"></span> Property / Measurement / Characterization</li>
+          <li><span class="shape star" style="background:#FFA07A;"></span> Others</li>
         </ul>
       </div>
       <!-- Legend for edges -->
-      <div id="edges-legend" style="position:absolute; top:35px; right:0px; z-index:10;">
+      <div id="edges-legend" class="legend-collapsed" style="position:absolute; top:35px; right:0px; z-index:10;">
         <h6 class="legend-title" onclick="this.parentElement.classList.toggle('legend-collapsed')">Edges Legend <span class="legend-chevron">&#9660;</span></h6>
         <ul>
           <li><svg width="45" height="20"><line x1="0" y1="15" x2="35" y2="15" style="stroke:#32CD32;stroke-width:2"/><polygon points="35,12 45,15 35,18" style="fill:#32CD32;"/></svg> Activation/Induction/Causation</li>
