@@ -840,13 +840,22 @@
       <select id="prompt_type">
         <option value="gene/protein">Gene / Protein prompt</option>
         <option value="gene identifier">Gene Identifier prompt</option>
-        <option value="genomic/transcriptomic feature">Genomic / Transcriptomic Feature prompt</option>
-        <option value="cell/organ/organism">Cell / Organ / Organism prompt</option>
-        <option value="chemical">Chemical prompt</option>
-        <option value="biological process">Biological Process prompt</option>
-        <option value="phenotype">Phenotype prompt</option>
-        <option value="treatment">Treatment prompt</option>
-        <option value="method">Method prompt</option>
+        <option value="genomic/transcriptomic feature">Genomic / Transcriptomic / Proteomic / Epigenomic Feature prompt</option>
+        <option value="phenotype">Phenotype / Trait / Disease prompt</option>
+        <option value="cell/organ/organism">Complex / Structure / Compartment / Cell / Organ / Organism prompt</option>
+        <option value="taxonomy">Taxonomic / Evolutionary / Phylogenetic Group prompt</option>
+        <option value="chemical">Chemical / Metabolite / Cofactor / Ligand prompt</option>
+        <option value="treatment">Treatment / Perturbation / Stress / Mutant prompt</option>
+        <option value="method">Method / Assay / Experimental Setup / Parameter / Sample prompt</option>
+        <option value="biological process">Biological Process / Pathway / Function prompt</option>
+        <option value="regulatory/signaling">Regulatory / Signaling Mechanism prompt</option>
+        <option value="computational/model">Computational / Model / Algorithm / Data / Metric prompt</option>
+        <option value="environmental/ecological">Environmental / Ecological / Soil / Climate Context prompt</option>
+        <option value="clinical/population">Clinical / Epidemiological / Population prompt</option>
+        <option value="equipment/device">Equipment / Device / Material / Instrument prompt</option>
+        <option value="social/policy">Social / Economic / Policy / Management prompt</option>
+        <option value="knowledge/concept">Knowledge / Concept / Hypothesis / Theoretical Construct prompt</option>
+        <option value="property/measurement">Property / Measurement / Characterization prompt</option>
         <option value="other">Other prompt</option>
       </select>
 
@@ -967,31 +976,40 @@
             'genomic / transcriptomic / epigenomic feature':                  'genomic/transcriptomic feature',
             'phenotype / trait / disease':                                    'phenotype',
             'complex / structure / compartment / cell / organ / organism':    'cell/organ/organism',
-            'taxonomic / evolutionary / phylogenetic group':                  'cell/organ/organism',
+            'taxonomic / evolutionary / phylogenetic group':                  'taxonomy',
             'chemical / metabolite / cofactor / ligand':                      'chemical',
             'treatment / perturbation / stress / mutant':                     'treatment',
-            'environmental / ecological / soil / climate context':            'treatment',
+            'environmental / ecological / soil / climate context':            'environmental/ecological',
             'method / assay / experimental setup / parameter / sample':       'method',
-            'computational / model / algorithm / data / metric':              'method',
-            'equipment / device / material / instrument':                     'method',
+            'computational / model / algorithm / data / metric':              'computational/model',
+            'equipment / device / material / instrument':                     'equipment/device',
             'biological process / pathway / function':                        'biological process',
             'biological process / function':                                  'biological process',
-            'regulatory / signaling mechanism':                               'biological process',
-            'clinical / epidemiological / population':                        'cell/organ/organism',
-            'social / economic / policy / management':                        'other',
-            'knowledge / concept / hypothesis / theoretical construct':       'other',
-            'property / measurement / characterization':                      'other',
-            'property / characterization':                                    'other',
+            'regulatory / signaling mechanism':                               'regulatory/signaling',
+            'clinical / epidemiological / population':                        'clinical/population',
+            'social / economic / policy / management':                        'social/policy',
+            'knowledge / concept / hypothesis / theoretical construct':       'knowledge/concept',
+            'property / measurement / characterization':                      'property/measurement',
+            'property / characterization':                                    'property/measurement',
             // short-form passthroughs (when bracket already has vis category)
             'gene/protein': 'gene/protein',
             'gene identifier': 'gene identifier',
             'genomic/transcriptomic feature': 'genomic/transcriptomic feature',
             'cell/organ/organism': 'cell/organ/organism',
+            'taxonomy': 'taxonomy',
             'chemical': 'chemical',
             'biological process': 'biological process',
+            'regulatory/signaling': 'regulatory/signaling',
             'phenotype': 'phenotype',
             'treatment': 'treatment',
+            'environmental/ecological': 'environmental/ecological',
             'method': 'method',
+            'computational/model': 'computational/model',
+            'equipment/device': 'equipment/device',
+            'clinical/population': 'clinical/population',
+            'social/policy': 'social/policy',
+            'knowledge/concept': 'knowledge/concept',
+            'property/measurement': 'property/measurement',
             'other': 'other',
             'na': 'other'
           };
@@ -1992,7 +2010,379 @@
               • Applications: Discuss practical applications of ${formattedQuery} in agriculture, biotechnology, or environmental science. How might an improved understanding of ${formattedQuery} contribute to advancements in these fields? Cite PMIDs to support practical applications.
               • Future Directions: Propose potential directions for future research or applications based on the current knowledge. How might advancements in biotechnology, environmental engineering, or plant science enhance our understanding of ${formattedQuery}? Cite relevant PMIDs to suggest areas for future study.
   
-              Conclude by summarizing the overall importance of ${formattedQuery} research, and its potential contributions to plant science, environmental sustainability, and applied fields such as biotechnology and agricultural management. Ensure that all points are based on the provided knowledge graph and PMIDs, but feel free to expand on future implications using logical reasoning. Cite PMIDs to ground your conclusions in the latest research.`
+              Conclude by summarizing the overall importance of ${formattedQuery} research, and its potential contributions to plant science, environmental sustainability, and applied fields such as biotechnology and agricultural management. Ensure that all points are based on the provided knowledge graph and PMIDs, but feel free to expand on future implications using logical reasoning. Cite PMIDs to ground your conclusions in the latest research.`,
+
+              'taxonomy': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that places ${formattedQuery} within its taxonomic, evolutionary, or phylogenetic context, including its position in the tree of life and its significance in plant science research. This introduction should be based on the input provided and include PMIDs where relevant. Then, structure the rest of the output as multiple paragraphs, each following the scientific review format outlined below.
+
+              In each section, ensure every detail from the input, including all PMIDs, is cited appropriately. If multiple sources support a statement, list all relevant PMIDs. Use scientific language and a formal tone suitable for publication. Each section should aim for at least 1000 words to ensure thorough coverage, even if information overlaps across sections.
+
+              Taxonomic Position and Classification:
+
+              Describe the hierarchical classification of ${formattedQuery} (kingdom, phylum, class, order, family, genus, species, cultivar/ecotype as applicable). Explain the defining morphological, anatomical, or molecular features used for this classification. Each statement must be supported by the corresponding PMID(s).
+
+              • Important: Use accepted taxonomic nomenclature. Do not conflate informal group names with formal taxonomic ranks unless explicitly supported by input data.
+              • Example: "${formattedQuery} belongs to the family Brassicaceae, as established by molecular phylogenetic evidence from the ITS and rbcL markers (PMID: XXXXXXXX)."
+
+              Evolutionary Relationships and Phylogeny:
+
+              Describe the phylogenetic relationships between ${formattedQuery} and related taxa. Include sister-group relationships, divergence times, and any notable evolutionary events (whole-genome duplications, polyploidization, adaptive radiations) supported by the input. Ensure each statement is accompanied by the corresponding PMID(s).
+
+              • Clarification: Distinguish between well-supported clades and tentative groupings. Cite the markers, methods, or datasets that underpin phylogenetic inferences.
+
+              Distinguishing Features and Diagnostic Traits:
+
+              Identify the morphological, physiological, biochemical, or genomic traits that distinguish ${formattedQuery} from closely related groups. Describe any autapomorphies or synapomorphies and their ecological or evolutionary significance. Each trait should be linked to the corresponding PMID(s).
+
+              Geographic Distribution and Ecology:
+
+              Describe the native range, introduced range, and preferred habitats of ${formattedQuery}, including climatic, edaphic, or altitudinal preferences. Where relevant, discuss endemism, invasion status, or conservation concerns. Each statement should be supported by the corresponding PMID(s).
+
+              Adaptations and Ecological Role:
+
+              Summarize physiological, biochemical, or morphological adaptations that allow ${formattedQuery} to thrive in its environment (e.g., C4 photosynthesis, salt tolerance, mycorrhizal associations). Discuss its ecological role (primary producer, nitrogen fixer, keystone species, etc.). Cite PMIDs for each claim.
+
+              Agronomic, Economic, or Scientific Importance:
+
+              Summarize the significance of ${formattedQuery} as a crop, model organism, or bioresource. Discuss yield-related traits, breeding programs, or its use as a reference in comparative genomics. Cite the relevant PMIDs.
+
+              Additional Information:
+
+              Review all PMIDs and input information to check for unused data. If any PMIDs remain unused, create an "Additional Information" section to present them.
+
+              Discussion and Conclusion:
+
+              Reflect on the overall significance of ${formattedQuery} in systematics, plant evolution, and applied biology. Highlight key findings from the input, identify knowledge gaps (unresolved phylogenetic placements, cryptic species, undocumented adaptations), and propose future directions (genome sequencing, comparative -omics, conservation action). Ensure every reflective point is grounded in PMIDs from the knowledge graph where possible.`,
+
+              'regulatory/signaling': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes ${formattedQuery} as a regulatory or signaling mechanism — what it controls, how it is activated, and its significance in plant physiology. Ensure all PMIDs are cited. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              In each section, cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Pathway Overview and Components:
+
+              Describe the core components of ${formattedQuery} (receptors, kinases, transcription factors, phosphatases, second messengers, effector proteins). Give the accepted pathway name and any synonyms. Each component should be linked to the corresponding PMID(s).
+
+              • Important: Include component stoichiometry, subcellular localization, and known isoforms where supported by the input.
+              • Example: "The MAPK cascade ${formattedQuery} comprises MKKK5 → MKK4/MKK5 → MPK3/MPK6, with MPK3/MPK6 translocating to the nucleus to phosphorylate WRKY33 (PMID: XXXXXXXX)."
+
+              Activation Triggers and Upstream Inputs:
+
+              Describe the stimuli (hormones, PAMPs/DAMPs, abiotic cues, developmental signals) that activate ${formattedQuery} and the upstream sensors or receptors that transduce these inputs. Cite PMIDs for each trigger.
+
+              Mechanism of Signal Transduction:
+
+              Explain the molecular steps by which the signal propagates — phosphorylation cascades, ligand-receptor binding, second-messenger release (Ca²⁺, ROS, cAMP), proteolytic processing, conformational changes. Cite PMIDs for each step.
+
+              Downstream Targets and Outputs:
+
+              Describe the transcription factors activated, genes transcribed, metabolites produced, or cellular phenotypes elicited downstream of ${formattedQuery}. Clearly distinguish direct vs. indirect targets. Cite PMIDs for every claim.
+
+              • Clarification: Only call something a "direct target" when the input supports binding, phosphorylation, or other direct molecular interaction evidence.
+
+              Crosstalk and Integration with Other Pathways:
+
+              Describe how ${formattedQuery} intersects with other signaling pathways (hormonal crosstalk, immunity-growth trade-offs, abiotic–biotic stress overlap). Cite PMIDs for each crosstalk node.
+
+              Regulation and Feedback:
+
+              Summarize negative and positive feedback loops, post-translational modifications, protein turnover, and transcriptional regulation of ${formattedQuery} itself. Cite PMIDs.
+
+              Biological and Agricultural Relevance:
+
+              Summarize how ${formattedQuery} contributes to growth, development, stress tolerance, immunity, or yield, and any translational use in crop improvement.
+
+              Additional Information:
+
+              Present any unused PMIDs or details under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the significance of ${formattedQuery} for plant signaling research, identify open questions (missing pathway nodes, mechanistic ambiguities, crosstalk not yet resolved), and propose future directions (cryo-EM, phosphoproteomics, synthetic biology). Ground every reflection in PMIDs where possible.`,
+
+              'computational/model': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes what ${formattedQuery} is (software, algorithm, model, dataset, or metric), its purpose in plant science, and its scope. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Purpose and Scope:
+
+              State the problem ${formattedQuery} is designed to solve — e.g., variant calling, gene prediction, image segmentation, phenotype prediction, GWAS — and the biological questions it addresses. Cite the relevant PMID(s).
+
+              Methodology and Algorithmic Basis:
+
+              Describe the underlying algorithm, statistical model, or computational approach (e.g., hidden Markov models, convolutional neural networks, random forest, Bayesian inference, dynamic programming). Include key hyperparameters or model architecture when supported by the input. Cite PMIDs.
+
+              • Important: Distinguish between the method itself and specific implementations. State assumptions explicitly.
+
+              Inputs, Outputs, and Data Formats:
+
+              Describe the expected input data (FASTA, VCF, BAM, expression matrix, image), pre-processing requirements, and the format of outputs. Cite PMIDs for benchmark datasets or reference corpora.
+
+              Performance, Accuracy, and Limitations:
+
+              Summarize reported performance metrics (precision, recall, F1, AUC, RMSE, runtime, memory), validation datasets, and known failure modes or biases. Cite PMIDs for every benchmark claim.
+
+              • Clarification: Do not generalize performance beyond the datasets on which ${formattedQuery} was validated.
+
+              Applications in Plant Science:
+
+              Describe documented uses of ${formattedQuery} — which plant species, which biological questions, which datasets. Cite PMIDs for each application.
+
+              Comparison with Alternative Methods:
+
+              Compare ${formattedQuery} against competing tools or approaches cited in the input. Note relative strengths, weaknesses, scalability, and interpretability.
+
+              Availability and Reproducibility:
+
+              Describe source code availability, licensing, dependencies, and reproducibility of results. Cite any database or web-server PMIDs.
+
+              Additional Information:
+
+              List unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the contribution of ${formattedQuery} to computational plant biology, identify methodological limits (dataset size, generalization across species, interpretability), and propose future directions (better training data, foundation models, multi-modal integration). Ground reflections in PMIDs.`,
+
+              'environmental/ecological': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes ${formattedQuery} as an environmental, ecological, soil, or climate context and explains its relevance to plant biology. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Description and Definition:
+
+              Describe ${formattedQuery} — is it a climate regime, soil type, stress condition, biome, agroecosystem, or microenvironment? Give the standard definition and any quantitative thresholds (e.g., pH range, rainfall, temperature) supported by the input. Cite PMIDs.
+
+              • Example: "${formattedQuery} is characterized by annual precipitation below 400 mm and soil electrical conductivity above 4 dS/m (PMID: XXXXXXXX)."
+
+              Abiotic and Biotic Components:
+
+              Describe the physical, chemical, and biological factors that define ${formattedQuery} — temperature, humidity, light, water availability, soil nutrients, microbial community, herbivore pressure. Cite PMIDs for each component.
+
+              Impact on Plant Physiology and Development:
+
+              Describe how ${formattedQuery} affects plant growth, development, metabolism, reproduction, or survival. Include specific physiological responses (e.g., stomatal closure, osmolyte accumulation, altered root architecture). Cite PMIDs.
+
+              • Important: Distinguish direct physiological effects from secondary consequences.
+
+              Adaptations and Tolerance Mechanisms:
+
+              Describe plant adaptations to ${formattedQuery} — morphological (e.g., thick cuticles), physiological (e.g., CAM metabolism), molecular (e.g., stress-responsive genes, ABA signaling), or developmental (e.g., accelerated flowering). Cite PMIDs.
+
+              Ecological Interactions:
+
+              Describe species interactions relevant to ${formattedQuery} — symbioses (mycorrhizae, rhizobia), competition, facilitation, herbivory, pollination. Cite PMIDs for each interaction.
+
+              Agricultural and Conservation Relevance:
+
+              Summarize implications of ${formattedQuery} for crop production, yield stability, breeding targets, land management, and conservation strategies. Cite PMIDs.
+
+              Climate Change and Future Trajectories:
+
+              If supported by the input, describe how ${formattedQuery} is being altered by climate change and the implications for plant communities and agriculture. Cite PMIDs.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the significance of ${formattedQuery} for plant ecology and agronomy, identify knowledge gaps, and propose future research (long-term monitoring, multifactor experiments, remote sensing). Ground reflections in PMIDs.`,
+
+              'clinical/population': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that characterizes ${formattedQuery} as a population, cohort, cultivar group, or epidemiological context relevant to plant science. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Population Definition and Composition:
+
+              Describe the population — species, cultivar group, natural accession panel, breeding population, or field cohort — including sample size, geographic origin, and genetic diversity metrics (heterozygosity, FST, LD decay) when supported by input. Cite PMIDs.
+
+              Sampling Design and Methodology:
+
+              Describe how ${formattedQuery} was sampled, surveyed, or assembled — field surveys, controlled trials, common garden experiments, biobanks, herbaria. Include design considerations (replication, randomization, blocking). Cite PMIDs.
+
+              Phenotypic and Genotypic Characterization:
+
+              Summarize traits measured in ${formattedQuery} (yield, disease resistance, flowering time, biomass) and any molecular characterization (genotyping-by-sequencing, SNP arrays, whole-genome resequencing). Cite PMIDs.
+
+              • Clarification: Distinguish between measurements on individuals and population-level statistics (e.g., allele frequency, heritability).
+
+              Epidemiological Patterns (if applicable):
+
+              If ${formattedQuery} relates to a disease outbreak, infestation, or stress event, describe incidence, prevalence, spatial/temporal patterns, risk factors, and transmission or spread dynamics. Cite PMIDs.
+
+              Genetic Structure and Evolutionary Dynamics:
+
+              Describe population structure (admixture, isolation by distance), selection signatures, or demographic history inferred from ${formattedQuery}. Cite PMIDs.
+
+              Applications in Breeding and Conservation:
+
+              Summarize how ${formattedQuery} has been or can be used for marker-assisted selection, genomic prediction, pre-breeding, or germplasm conservation. Cite PMIDs.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the value of ${formattedQuery} for crop improvement and ecology, identify gaps (underrepresented geography, missing phenotypes, limited replication), and propose future work (expanded sampling, multi-environment trials, integration with -omics). Cite PMIDs.`,
+
+              'equipment/device': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes what ${formattedQuery} is (instrument, device, material, or experimental apparatus), what it measures or does, and its role in plant science research. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Description and Operating Principle:
+
+              Describe the physical design, components, and underlying measurement or actuation principle of ${formattedQuery} (e.g., optical, mass-spectrometric, electrochemical, mechanical). Cite PMIDs.
+
+              • Example: "${formattedQuery} employs pulse-amplitude modulation of actinic light to resolve chlorophyll fluorescence parameters Fv/Fm and ΦPSII (PMID: XXXXXXXX)."
+
+              Technical Specifications:
+
+              List relevant specifications — sensitivity, resolution, dynamic range, throughput, environmental tolerances — when supported by the input. Cite PMIDs.
+
+              Applications in Plant Science:
+
+              Describe how ${formattedQuery} is used in plant research — e.g., phenotyping greenhouse trials, analysing root exudates, imaging cellular structures, monitoring canopy gas exchange. Cite PMIDs for each application.
+
+              Sample Preparation and Measurement Protocol:
+
+              Outline standard operating protocols, sample requirements, calibration steps, and quality-control procedures. Cite PMIDs for validated protocols.
+
+              Advantages, Limitations, and Alternatives:
+
+              Compare ${formattedQuery} against alternative instruments or methods. Describe cost, ease of use, reproducibility, and known limitations. Cite PMIDs.
+
+              Data Output and Analysis:
+
+              Describe the data formats produced, typical post-processing pipelines, and statistical treatments required. Cite PMIDs for analytical software or workflows.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the contribution of ${formattedQuery} to plant science measurement capability, note limitations, and propose future developments (miniaturization, automation, multi-sensor fusion). Cite PMIDs.`,
+
+              'social/policy': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction framing ${formattedQuery} as a social, economic, policy, or management context relevant to plant science or agriculture. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Definition and Scope:
+
+              Describe ${formattedQuery} — is it a policy instrument, farming practice, economic framework, trade regulation, management strategy, or governance mechanism? Give scope and jurisdiction when supported by the input. Cite PMIDs.
+
+              Historical and Institutional Context:
+
+              Describe the origin, evolution, and institutional actors associated with ${formattedQuery}. Cite PMIDs for key milestones.
+
+              Stakeholders and Governance:
+
+              Identify the stakeholders involved (farmers, researchers, agencies, consumers, industry) and the decision-making structures. Cite PMIDs.
+
+              Economic Implications:
+
+              Summarize documented economic impacts — yield changes, input costs, market access, distributional effects, subsidies. Cite PMIDs.
+
+              Environmental and Agronomic Outcomes:
+
+              Describe effects on soil health, biodiversity, resource use, greenhouse-gas emissions, and crop productivity. Cite PMIDs.
+
+              • Clarification: Separate evidence-based outcomes from projected or modelled outcomes.
+
+              Implementation Barriers and Enablers:
+
+              Describe barriers to adoption (regulatory, economic, cultural) and enablers (extension services, subsidies, knowledge transfer). Cite PMIDs.
+
+              Relevance to Plant Science Research:
+
+              Explain how ${formattedQuery} shapes research priorities, funding, or field deployment of plant technologies. Cite PMIDs.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the broader significance of ${formattedQuery} for sustainable agriculture, identify knowledge gaps, and propose future directions (policy evaluation, interdisciplinary research, participatory approaches). Cite PMIDs.`,
+
+              'knowledge/concept': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that defines ${formattedQuery} as a concept, hypothesis, theoretical construct, or framework in plant science. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Definition and Formal Statement:
+
+              Precisely define ${formattedQuery}, distinguishing it from related concepts. State any formal propositions, equations, or axioms associated with it. Cite PMIDs.
+
+              • Example: "${formattedQuery} posits that cellulose microfibril orientation is guided by cortical microtubules via CSI1 (POM2)-mediated coupling of CESA complexes (PMID: XXXXXXXX)."
+
+              Historical Development:
+
+              Trace the origin and refinement of ${formattedQuery} through the literature — who proposed it, which experiments or observations supported it, and how it has evolved. Cite PMIDs for key milestones.
+
+              Supporting Evidence:
+
+              Summarize experimental, observational, or computational evidence that supports ${formattedQuery}. Distinguish between direct and indirect evidence. Cite PMIDs.
+
+              • Important: Do not conflate corroboration with proof. Note the scope and boundary conditions of the supporting evidence.
+
+              Counter-Evidence and Alternative Hypotheses:
+
+              Describe any contradictory findings, competing hypotheses, or unresolved controversies. Cite PMIDs.
+
+              Predictions and Testable Consequences:
+
+              State the empirically testable predictions that follow from ${formattedQuery} and any tests already performed. Cite PMIDs.
+
+              Applications and Influence:
+
+              Describe how ${formattedQuery} has shaped research programs, experimental designs, or applied plant science. Cite PMIDs.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the current status of ${formattedQuery} — widely accepted, contested, provisional — and propose future tests, refinements, or alternative frameworks. Ground every reflection in PMIDs.`,
+
+              'property/measurement': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes ${formattedQuery} as a property, measurement, or characterization used in plant science. Cite PMIDs. Then structure the rest of the output as multiple paragraphs in scientific review format.
+
+              Each section must cite every PMID from the input. Use formal scientific language and aim for at least 1000 words per section.
+
+              Definition and Units:
+
+              Define ${formattedQuery} — what physical, chemical, biological, or statistical quantity does it represent? State the standard units and any conventions. Cite PMIDs.
+
+              • Example: "${formattedQuery} is reported as μmol CO₂ m⁻² s⁻¹ and reflects the net rate of carbon assimilation per unit leaf area (PMID: XXXXXXXX)."
+
+              Measurement Methods:
+
+              Describe the standard methods used to measure ${formattedQuery} — instruments, protocols, sampling strategies, and reference standards. Cite PMIDs.
+
+              Typical Values and Variability:
+
+              Report typical values or ranges for ${formattedQuery} across species, tissues, developmental stages, or environments, with variability estimates (standard deviation, coefficient of variation, confidence intervals). Cite PMIDs.
+
+              Biological Significance:
+
+              Explain what ${formattedQuery} tells us about plant function, health, or performance. Link the measurement to downstream traits or mechanisms of interest. Cite PMIDs.
+
+              • Clarification: Distinguish between ${formattedQuery} as an indicator vs. a direct determinant of a trait.
+
+              Factors Influencing ${formattedQuery}:
+
+              Summarize genetic, developmental, environmental, and methodological factors that affect ${formattedQuery}. Cite PMIDs.
+
+              Applications in Research and Breeding:
+
+              Describe how ${formattedQuery} is used in phenotyping, screening, breeding, or diagnostics. Cite PMIDs.
+
+              Additional Information:
+
+              Present any unused PMIDs under "Additional Information".
+
+              Discussion and Conclusion:
+
+              Reflect on the utility of ${formattedQuery} as a metric, identify sources of bias or error, and propose future work (automation, high-throughput measurement, standardization). Cite PMIDs.`
             };
           
             // Update the custom prompt text area with the appropriate placeholder
