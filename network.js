@@ -740,9 +740,11 @@
       </div>
     `;
 
-    // Bottom block: Source/Target Entity + Validate button (renders below Source Text)
+    // Bottom block: Validate button (3rd) then Source/Target Entity (below Source Text)
     ab.innerHTML = `
-      <div class="edge-tp-section-title">Source Entity</div>
+      <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
+
+      <div class="edge-tp-section-title" style="margin-top:10px;">Source Entity</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Name</span><span><strong>${srcName}</strong></span></div>
         <div class="edge-tp-row"><span class="edge-tp-label">Type</span><span>${srcType}</span></div>
@@ -761,8 +763,6 @@
         ${edge.data().target_extracted_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted def.</span><span style="font-size:11px;">${edge.data().target_extracted_definition}</span></div>` : ''}
         ${edge.data().target_generated_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated def.</span><span style="font-size:11px;">${edge.data().target_generated_definition}</span></div>` : ''}
       </div>
-
-      <button id="validateEdge" class="edge-tp-validate-btn">Validate Edge</button>
     `;
 
     // Show Source Text row and add link
