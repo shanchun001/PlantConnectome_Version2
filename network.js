@@ -607,13 +607,8 @@
 
     const nodeIdentifier = node.data().identifier || '';
     const nodeCategory = titleCaseCategory(node.data().category || node.data().originalcategory || '');
-    abTitle.innerHTML = `
-      <div class="node-tp-header">
-        <span class="node-tp-name">${nodeId}</span>
-        <span style="font-size:0.75em;color:#6b7280;">(${typeDisplay})</span>
-        ${nodeCategory ? ` <span class="edge-tp-category-badge">${nodeCategory}</span>` : ''}
-      </div>
-    `;
+    // Title bar intentionally left empty — Entity Information section below has the same data
+    abTitle.innerHTML = '';
 
     // Node info card
     let nodeInfoHtml = `
@@ -723,17 +718,19 @@
     const srcCat = titleCaseCategory(srcNode?.data()?.category || srcNode?.data()?.originalcategory || '');
     const tgtCat = titleCaseCategory(tgtNode?.data()?.category || tgtNode?.data()?.originalcategory || '');
 
-    abTitle.innerHTML = `
-      <div class="edge-tp-header">
-        <span class="edge-tp-interaction">Edge Details</span>
-      </div>
-    `;
+    // Title bar intentionally left empty — Relationship section below contains the same data
+    abTitle.innerHTML = '';
 
     ab.innerHTML = `
-      <div class="edge-tp-connection" style="font-size:12px;">
-        <strong>${srcName}</strong> <small style="color:#6b7280;">(${srcType})</small>
-        <span style="font-weight:600;">&rarr; ${interactionText} &rarr;</span>
-        <strong>${tgtName}</strong> <small style="color:#6b7280;">(${tgtType})</small>
+      <div class="edge-tp-section-title">Relationship</div>
+      <div class="edge-tp-meta">
+        <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span><strong>${interactionText}</strong></span></div>
+        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${categoryText}</span></div>` : ''}
+        ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>` : ''}
+        ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence</span><span>${basisText}</span></div>` : ''}
+        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted process</span><span>${assocProcess}</span></div>` : ''}
+        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated process</span><span>${genProcess}</span></div>` : ''}
+        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
       </div>
 
       <div class="edge-tp-section-title">Source Entity</div>
@@ -744,17 +741,6 @@
         ${srcIdent ? `<div class="edge-tp-row"><span class="edge-tp-label">Identifier</span><span>${srcIdent}</span></div>` : ''}
         ${edge.data().source_extracted_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted def.</span><span style="font-size:11px;">${edge.data().source_extracted_definition}</span></div>` : ''}
         ${edge.data().source_generated_definition ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated def.</span><span style="font-size:11px;">${edge.data().source_generated_definition}</span></div>` : ''}
-      </div>
-
-      <div class="edge-tp-section-title">Relationship</div>
-      <div class="edge-tp-meta">
-        <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span><strong>${interactionText}</strong></span></div>
-        ${categoryText && categoryText !== 'N/A' && categoryText !== 'Na' ? `<div class="edge-tp-row"><span class="edge-tp-label">Category</span><span class="edge-tp-category-badge">${categoryText}</span></div>` : ''}
-        ${speciesText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Species</span><span>${speciesText}</span></div>` : ''}
-        ${basisText !== 'N/A' ? `<div class="edge-tp-row"><span class="edge-tp-label">Evidence</span><span>${basisText}</span></div>` : ''}
-        ${assocProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Extracted process</span><span>${assocProcess}</span></div>` : ''}
-        ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated process</span><span>${genProcess}</span></div>` : ''}
-        ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
       </div>
 
       <div class="edge-tp-section-title">Target Entity</div>
@@ -776,8 +762,8 @@
     const isRealPmid = /^\d+$/.test(pmid);
     const sectionLabel = section !== 'N/A' ? ` | Section: ${section}` : '';
     pmidElem.innerHTML = isRealPmid
-      ? `Reference: <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" style="color:#3498db;">${pmid}</a>${sectionLabel}`
-      : `Reference Source${sectionLabel}`;
+      ? `Source Text: <a href="https://pubmed.ncbi.nlm.nih.gov/${pmid}" target="_blank" style="color:#3498db;">${pmid}</a>${sectionLabel}`
+      : `Source Text${sectionLabel}`;
     pmidElem.onclick = () =>
       openPMIDModal(
         pmid,
