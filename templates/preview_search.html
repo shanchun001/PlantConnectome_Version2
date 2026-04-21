@@ -20,7 +20,7 @@
         <strong style="font-size:14px;">How to use this page</strong>
         <ol style="margin:6px 0 0 0;padding-left:20px;">
           <li><strong>Select</strong> &mdash; Check the entities you want to explore, or use the search box and category filter to narrow down.</li>
-          <li><strong>Find Closest</strong> <em>(optional)</em> &mdash; In Step 2, type or pick an anchor entity (e.g. <em>CESA mutants</em>) and click <strong style="color:#8e44ad;">Find Closest</strong>. Ticking a result syncs that entity's checkbox in the table above.</li>
+          <li><strong>Find Closest</strong> <em>(optional)</em> &mdash; In Step 2, type any term (e.g. <em>CESA mutants</em>) and click <strong style="color:#8e44ad;">Find Closest</strong> to rank the table entities by similarity to it. Ticking a result syncs that entity's checkbox in the table above.</li>
           <li><strong>Visualize</strong> &mdash; Click <strong style="color:#3498db;">Show Selected Entities</strong> to generate the knowledge network graph.</li>
         </ol>
       </div>
@@ -91,16 +91,15 @@
 
   <div class="similarity-card">
     <div class="similarity-description">
-      Pick an entity from the table above (e.g. <em>CESA mutants</em>) and this tool will
-      rank the other entities by how semantically similar they are. Ticking a box
-      in the results instantly selects the matching entity in the table.
+      Define a term you want to search for (e.g. <em>CESA mutants</em>, <em>cellulose biosynthesis</em>).
+      This tool ranks every entity in the table above by how semantically similar it is to the term you typed.
+      Ticking a box in the results instantly selects the matching entity in the table.
     </div>
 
     <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap; margin-top:10px;">
-      <input type="text" id="anchorEntityInput" list="anchorEntityList"
-             placeholder="Type or pick an entity from the table above..."
+      <input type="text" id="anchorEntityInput"
+             placeholder="Type a term (e.g. CESA mutants, cellulose biosynthesis)..."
              style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
-      <datalist id="anchorEntityList"></datalist>
       <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto;">
         Find Closest
       </button>
@@ -956,7 +955,6 @@
     tbody.appendChild(fragment);
     updateTotalNodeCount();
     updateSelectAllCheckbox();
-    if (typeof refreshAnchorDatalist === 'function') refreshAnchorDatalist();
   }
 
   // =========================
@@ -1193,20 +1191,6 @@
   // SEMANTIC SIMILARITY
   // =========================
 
-  // Populate the datalist for the anchor-entity input from current allRowsData.
-  // Called whenever the table re-renders so the options stay in sync.
-  function refreshAnchorDatalist() {
-    const dl = document.getElementById('anchorEntityList');
-    if (!dl) return;
-    const names = new Set();
-    (allRowsData || []).forEach(item => {
-      const name = Array.isArray(item) ? item[0] : item.entity;
-      if (name) names.add(name);
-    });
-    dl.innerHTML = [...names].slice(0, 500)
-      .map(n => `<option value="${n.replace(/"/g, '&quot;')}"></option>`)
-      .join('');
-  }
 
   // Find entities closest to a user-chosen anchor by cosine similarity.
   function findClosestToAnchor() {
