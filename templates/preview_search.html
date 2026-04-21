@@ -1145,12 +1145,20 @@
     html += `<div class="sim-summary">
       <div class="sim-summary-text">
         Found <strong>${groups.length}</strong> groups with <strong>${totalDuplicates}</strong> similar entities
+        <span id="simVisibleCount" style="font-size:11px;color:#6b7280;margin-left:6px;"></span>
       </div>
       <div class="sim-summary-actions">
         <button onclick="toggleAllGroups(true)" class="sim-action-btn">Select All Groups</button>
         <button onclick="toggleAllGroups(false)" class="sim-action-btn sim-action-btn-outline">Deselect All</button>
         <button onclick="applyMerge()" class="sim-action-btn sim-action-btn-green">Apply Merge</button>
       </div>
+    </div>`;
+
+    // Group search box — filter visible groups by entity name substring
+    html += `<div class="sim-group-search" style="margin:10px 0 8px 0;">
+      <input type="text" id="simGroupSearchInput" placeholder="Search groups by entity name..."
+             oninput="filterSimilarityGroups()"
+             style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
     </div>`;
 
     // Scrollable group list
@@ -1165,7 +1173,10 @@
       const visibleAliases = hasMore ? aliases.slice(0, MAX_VISIBLE) : aliases;
       const hiddenAliases = hasMore ? aliases.slice(MAX_VISIBLE) : [];
 
-      html += `<div class="sim-group" data-group="${gi}">
+      // Pre-compute lowercase search index for this group (representative + all aliases)
+      const groupSearchText = group.map(e => (e.name || '').toLowerCase()).join(' | ');
+
+      html += `<div class="sim-group" data-group="${gi}" data-search="${groupSearchText.replace(/"/g, '&quot;')}">
         <div class="sim-group-header">
           <label class="sim-group-checkbox-label">
             <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" onchange="onGroupToggle(${gi}, this.checked)">
@@ -1207,6 +1218,31 @@
 
     html += `</div>`;
     resultsDiv.innerHTML = html;
+    updateSimVisibleCount();
+  }
+
+  function filterSimilarityGroups() {
+    const input = document.getElementById('simGroupSearchInput');
+    if (!input) return;
+    const q = input.value.trim().toLowerCase();
+    document.querySelectorAll('.sim-groups-container > .sim-group').forEach(g => {
+      const searchText = g.dataset.search || '';
+      const show = !q || searchText.includes(q);
+      g.style.display = show ? '' : 'none';
+    });
+    updateSimVisibleCount();
+  }
+
+  function updateSimVisibleCount() {
+    const countEl = document.getElementById('simVisibleCount');
+    if (!countEl) return;
+    const all = document.querySelectorAll('.sim-groups-container > .sim-group');
+    const visible = [...all].filter(g => g.style.display !== 'none').length;
+    if (visible === all.length) {
+      countEl.textContent = '';
+    } else {
+      countEl.textContent = `(showing ${visible} of ${all.length})`;
+    }
   }
 
   function toggleAliases(gi, btn) {
