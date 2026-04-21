@@ -147,15 +147,23 @@ _KNOWN_CATS = set(PROMPT_TEMPLATES)
 _CAT_STOPWORDS = {'AND', 'OR', 'OF', 'THE', 'A', 'AN', 'IN', 'ON', 'WITH', 'BY'}
 
 def _tokenize_category(s):
-    """Split 'A / B / C' into {'A', 'B', 'C'} (uppercase, stripped, stop-words removed)."""
+    """
+    Tokenize a category string into a set of uppercase single words.
+
+    Splits on '/', '|', ';', and whitespace so:
+      'Plant CesA Gene / Protein'  →  {'PLANT', 'CESA', 'GENE', 'PROTEIN'}
+      'GENE / PROTEIN'             →  {'GENE', 'PROTEIN'}
+    Stop-words and short noise tokens are dropped.
+    """
     if not s:
         return set()
-    parts = str(s).upper().replace('|', '/').replace(';', '/').split('/')
+    raw = str(s).upper().replace('|', '/').replace(';', '/').replace(',', '/')
     tokens = set()
-    for p in parts:
-        tok = p.strip()
-        if tok and tok not in _CAT_STOPWORDS:
-            tokens.add(tok)
+    for part in raw.split('/'):
+        for word in part.split():
+            w = word.strip().strip('-_()[]{}.,:;')
+            if len(w) >= 2 and w not in _CAT_STOPWORDS:
+                tokens.add(w)
     return tokens
 
 # Pre-compute tokens for each canonical template (module load)
