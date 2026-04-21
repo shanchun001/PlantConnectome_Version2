@@ -838,18 +838,15 @@
 
       <label for="prompt_type">Prompt Type Template:</label>
       <select id="prompt_type">
-        <option value="gene/protein">Gene/Protein prompt</option>
-        <option value="microorganism">Microorganism prompt</option>
-        <option value="disease/condition">Disease/Condition prompt</option>
+        <option value="gene/protein">Gene / Protein prompt</option>
+        <option value="gene identifier">Gene Identifier prompt</option>
+        <option value="genomic/transcriptomic feature">Genomic / Transcriptomic Feature prompt</option>
+        <option value="cell/organ/organism">Cell / Organ / Organism prompt</option>
         <option value="chemical">Chemical prompt</option>
         <option value="biological process">Biological Process prompt</option>
-        <option value="cell/compartment">Cell/Compartment prompt</option>
-        <option value="host/organism">Host/Organism prompt</option>
         <option value="phenotype">Phenotype prompt</option>
         <option value="treatment">Treatment prompt</option>
-        <option value="environment">Environment prompt</option>
         <option value="method">Method prompt</option>
-        <option value="taxonomy">Taxonomy prompt</option>
         <option value="other">Other prompt</option>
       </select>
 
@@ -1198,7 +1195,7 @@
               • Relationships between genes, environmental factors, and phenotype manifestation are accurately represented.
               • Any remaining PMIDs or relevant details from the knowledge graph are incorporated or listed in the ‘Additional Information’ section.`,
   
-              'cell/compartment': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that gives an overview of ${formattedQuery}, explaining its biological role and importance in plant biology. This introduction should be based on the input provided and include PMIDs where relevant. Then, structure the rest of the output as multiple paragraphs, where each section is described separately and follows the scientific review format outlined below.
+              'cell/organ/organism': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that gives an overview of ${formattedQuery}, explaining its biological role and importance in plant biology. This introduction should be based on the input provided and include PMIDs where relevant. Then, structure the rest of the output as multiple paragraphs, where each section is described separately and follows the scientific review format outlined below.
   
               In each section, ensure that every detail from the input, including all PMIDs, is included and cited appropriately. If a statement is supported by multiple PMIDs, list all relevant PMIDs. Use scientific language and a formal tone suitable for publication. Each section should aim for at least 1000 words to ensure that all details are included, even if information overlaps across sections.
   
@@ -1673,7 +1670,7 @@
               • Ensure **precise language distinguishing experimental setups, outcomes, and applications**.
               • Validate **relationships using PMIDs** to prevent misinterpretations.`,
   
-              'genomic/transcriptomic': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes its genomic or transcriptomic role and significance in plant biology. Ensure that all PMIDs are included and cited appropriately. Structure the rest of the output into multiple paragraphs, where each section is described separately and follows the scientific review format outlined below.
+              'genomic/transcriptomic feature': `Provide a detailed overview of ${formattedQuery} using the knowledge graph provided. Begin with a short introduction that describes its genomic or transcriptomic role and significance in plant biology. Ensure that all PMIDs are included and cited appropriately. Structure the rest of the output into multiple paragraphs, where each section is described separately and follows the scientific review format outlined below.
   
               In each section, ensure every detail from the input, including all PMIDs, is included and cited appropriately. If a statement is supported by multiple PMIDs, list all relevant PMIDs. Use scientific language and a formal tone suitable for publication. Be careful to correctly interpret genomic functions, transcriptional regulation, and expression relationships, ensuring the distinction between regulatory elements, target genes, and expression patterns is clear. Each section should aim for at least 1000 words to ensure a thorough discussion, even if information overlaps across sections.
   
