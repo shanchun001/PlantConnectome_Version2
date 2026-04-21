@@ -66,6 +66,12 @@ EXCLUSIONS = {
     # time / measurement units commonly seen inline in captions
     "min", "mins", "sec", "secs", "hr", "hrs", "day", "days", "mo", "yr",
     "ml", "ul", "mg", "ug", "ng", "kg", "cm", "mm", "nm", "pm", "ppm",
+    # month abbreviations
+    "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    # common english that also happen to be gene symbols (tagging noise)
+    "has", "not", "tax", "tip", "nut", "eye", "bar", "tub", "dip", "big",
+    "sap", "sup", "sun", "win", "lip", "arm", "leg", "bat", "cat", "dog",
+    "bed", "bus", "pot", "pit", "set", "pin", "cup", "map", "log", "bag",
 }
 removed_english = 0
 for w in EXCLUSIONS:

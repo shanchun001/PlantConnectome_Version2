@@ -70,12 +70,11 @@ for i, (alias_lower, canonical) in enumerate(alias_items, 1):
         new_display = canon_str + suf       # "(...) protein"
         new_lower = new_display.lower()
 
-        # Skip if the target already equals the display (avoid redundant writes)
-        # Update entity1
+        # "Gene Identifier" is a CATEGORY only — leave entity type as-is so
+        # "NPR1 protein" stays type=protein, "NPR1 gene" stays type=gene, etc.
         set_e1 = {
             "entity1": new_display,
             "entity1_lower": new_lower,
-            "entity1type": "gene identifier",
             "entity1category": "Gene Identifier",
         }
         if agi:
@@ -90,7 +89,6 @@ for i, (alias_lower, canonical) in enumerate(alias_items, 1):
         set_e2 = {
             "entity2": new_display,
             "entity2_lower": new_lower,
-            "entity2type": "gene identifier",
             "entity2category": "Gene Identifier",
         }
         if agi:
