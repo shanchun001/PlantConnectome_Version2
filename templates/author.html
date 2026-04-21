@@ -83,7 +83,7 @@
     .button:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .button:active { transform: scale(0.97); }
     .button.primary { background-color: #3498db; color: #fff; }
-    .button.primary:hover { background-color: #0f766e; }
+    .button.primary:hover { background-color: #2980b9; }
     .button.success { background-color: #059669; color: #fff; }
     .button.success:hover { background-color: #047857; }
     .button.secondary { background-color: #6b7280; color: #fff; }
@@ -129,7 +129,7 @@
     .search-term-container { max-height: 100px; overflow-y: auto; display: block; width: 100%; padding: 0; border: none; border-radius: 4px; background-color: transparent; box-sizing: border-box; margin: 0; }
     .search-term-container::-webkit-scrollbar { width: 6px; }
     .search-term-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 3px; }
-    .term { display: inline-block; background-color: #f0fdfa; padding: 4px 12px; margin: 2px 4px; border-radius: 20px; font-size: 1.1em; color: #0f766e; border: 1px solid #99f6e4; font-weight: 500; }
+    .term { display: inline-block; background-color: #eff6ff; padding: 4px 12px; margin: 2px 4px; border-radius: 20px; font-size: 1.1em; color: #2980b9; border: 1px solid #bfdbfe; font-weight: 500; }
     .search-header .search-term-container { flex: 1 1 auto; margin-right: 20px; }
     .search-header .graph-info { flex: 0 0 auto; font-size: 0.95em; color: #6b7280; padding: 4px 14px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
     @media (max-width: 768px) {
@@ -214,7 +214,7 @@
     #sentPrompt { max-height: 250px; overflow-y: auto; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; transition: max-height 0.3s; }
     #sentPrompt.expanded { max-height: none; }
     #expandPromptBtn, #expandResponseBtn { margin-top: 8px; padding: 6px 14px; font-size: 0.85em; cursor: pointer; border: none; background-color: #3498db; color: white; border-radius: 6px; font-weight: 500; transition: background-color 0.2s; }
-    #expandPromptBtn:hover, #expandResponseBtn:hover { background-color: #0f766e; }
+    #expandPromptBtn:hover, #expandResponseBtn:hover { background-color: #2980b9; }
     #apiResponse { max-height: 250px; overflow-y: auto; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; transition: max-height 0.3s; }
     #apiResponse.expanded { max-height: none; }
     #validationResult:not(:empty) { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 12px 0; }
@@ -297,7 +297,7 @@
     <div id="nodeSummary"></div>
 
     <!-- Cytoscape Graph / Network Viewer -->
-    <div class="cy-wrapper" id="cy_wrapper" style="position: relative; width: 100%; height: 600px; background-color: white; border: 0px solid black;">
+    <div class="cy-wrapper" id="cy_wrapper" style="position: relative; width: 100%; height: 75vh; min-height: 500px; max-height: 900px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
       <!-- Resize Buttons -->
       <div class="resize-buttons">
         <button class="button secondary small-button" onclick="toggleFullScreen()" aria-label="Toggle full screen">
@@ -383,7 +383,8 @@
             <button id="applyNodeFilter" class="button secondary" onclick="recalculateLayout()"> Recalculate layout </button>
             <button class="button alert" onclick="nodecloseForm()"> <b> Close Options </b> </button>
           </div>
-          <h5>Node Filters:</h5>
+          <h5>Node Filters</h5><p>Query nodes with existing edges will remain visible</p>
+
           <div id="nodeTypeCheckboxes" class="checkbox-grid"></div>
         </div>
       </div>
@@ -395,6 +396,49 @@
             <button class="button secondary" onclick="recalculateLayout()">Recalculate layout</button>
             <button class="button alert" onclick="edgecloseForm()"><b>Close Options</b></button>
           </div>
+          <script>
+          /**
+           * Reorder checkboxes so checked items bubble to the top,
+           * then sort remaining by data-count desc.
+           * Only operates on visible (non-hidden) labels.
+           */
+          function reorderCheckboxes(checkboxesContainerId) {
+            const checkboxesContainer = document.getElementById(checkboxesContainerId);
+            let labels = Array.from(checkboxesContainer.getElementsByTagName('label'));
+            labels = labels.filter(label => label.style.display !== "none");
+            labels.sort((a, b) => {
+              const aCheckbox = a.querySelector('input[type="checkbox"]');
+              const bCheckbox = b.querySelector('input[type="checkbox"]');
+              const aChecked = aCheckbox.checked;
+              const bChecked = bCheckbox.checked;
+              const aCount = parseInt(aCheckbox.getAttribute('data-count') || '0', 10);
+              const bCount = parseInt(bCheckbox.getAttribute('data-count') || '0', 10);
+              if (aChecked && !bChecked) return -1;
+              if (!aChecked && bChecked) return 1;
+              return bCount - aCount;
+            });
+            labels.forEach(label => checkboxesContainer.appendChild(label));
+          }
+
+          /**
+           * Filter checkboxes by text, show/hide matching labels, then reorder.
+           */
+          function filterCheckboxes(searchInputId, checkboxesContainerId) {
+            const inputValue = document.getElementById(searchInputId).value.toLowerCase();
+            const checkboxesContainer = document.getElementById(checkboxesContainerId);
+            const labels = Array.from(checkboxesContainer.getElementsByTagName('label'));
+            labels.forEach(label => {
+              const text = label.textContent.toLowerCase();
+              label.style.display = text.includes(inputValue) ? 'block' : 'none';
+            });
+            reorderCheckboxes(checkboxesContainerId);
+          }
+
+          /** Called from each checkbox onchange. */
+          function handleCheckboxChange(checkboxesContainerId) {
+            reorderCheckboxes(checkboxesContainerId);
+          }
+          </script>
           <!-- Hidden div to prevent JS errors -->
           <div id="edgeTypeCheckboxes" style="display:none;"></div>
 
