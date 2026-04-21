@@ -402,12 +402,13 @@
       <!-- Popup for node actions -->
       <div class="side-tooltip" id="side-tooltip" style="display: none;">
         <button class="tooltip-close-btn" onclick="hideTooltip()" aria-label="Close tooltip">&times;</button>
-        <label class="title" id="ab-title"></label><br/>
-        <div id="pmid-row" style="display:none;">
+        <label class="title" id="ab-title"></label>
+        <div class="content" id="ab-top"></div>
+        <div id="pmid-row" style="display:none; margin-top:8px;">
           <label class="title">Source Text:</label>
           <a id="pmid" class="pubmed-link pubmed-hyperlink" href="javascript:void(0)"></a>
         </div>
-        <div class="content nodeinfo">
+        <div class="content nodeinfo" style="margin-top:8px;">
           <label class="title" style="font-size:12px; color:#6b7280;">Actions:</label>
           <ul>
             <li><a href="javascript:void(0)" onclick="removeNode()">Remove node</a></li>
