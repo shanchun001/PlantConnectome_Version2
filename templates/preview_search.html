@@ -680,7 +680,7 @@
     'other'
   ]);
 
-  // Category names — displayed as-is, no shortening
+  // Short vis categories used by the filter dropdown
   const CAT_ALIAS = {
     'GENE/PROTEIN': 'GENE/PROTEIN',
     'PHENOTYPE': 'PHENOTYPE',
@@ -691,12 +691,58 @@
     'GENOMIC/TRANSCRIPTOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
     'METHOD': 'METHOD',
     'GENE IDENTIFIER': 'GENE IDENTIFIER',
-    'NA': 'NA',
     'OTHER': 'OTHER',
   };
+
+  // Map full prompt category strings (from DB, e.g. "Gene / Protein")
+  // to the short vis category used by the filter and display.
+  const PROMPT_TO_VIS_CAT = {
+    'GENE / PROTEIN': 'GENE/PROTEIN',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'PHENOTYPE / TRAIT / DISEASE': 'PHENOTYPE',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM': 'CELL/ORGAN/ORGANISM',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP': 'CELL/ORGAN/ORGANISM',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION': 'CELL/ORGAN/ORGANISM',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND': 'CHEMICAL',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT': 'TREATMENT',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT': 'TREATMENT',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE': 'METHOD',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC': 'METHOD',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT': 'METHOD',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION': 'BIOLOGICAL PROCESS',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
+    'BIOLOGICAL PROCESS / FUNCTION': 'BIOLOGICAL PROCESS',
+    'REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT': 'OTHER',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT': 'OTHER',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION': 'OTHER',
+    'PROPERTY / CHARACTERIZATION': 'OTHER',
+    'GENE IDENTIFIER': 'GENE IDENTIFIER',
+    'NA': 'OTHER',
+    'OTHER': 'OTHER',
+  };
+
   function catAlias(cat) {
     if (!cat) return '—';
-    return CAT_ALIAS[cat] || CAT_ALIAS[cat.toUpperCase()] || cat;
+    const upper = cat.toString().trim().toUpperCase();
+    // 1. Direct match on short vis category
+    if (CAT_ALIAS[upper]) return CAT_ALIAS[upper];
+    // 2. Full prompt category → short vis
+    if (PROMPT_TO_VIS_CAT[upper]) return PROMPT_TO_VIS_CAT[upper];
+    // 3. Token-overlap fallback: score against each full prompt category
+    const tokens = new Set(upper.split(/[\s/|;,]+/).filter(w => w.length >= 2));
+    let bestCat = null, bestScore = 0;
+    for (const full of Object.keys(PROMPT_TO_VIS_CAT)) {
+      const fullTokens = new Set(full.split(/[\s/|;,]+/).filter(w => w.length >= 2));
+      let inter = 0;
+      for (const t of tokens) if (fullTokens.has(t)) inter++;
+      if (inter === 0) continue;
+      const union = new Set([...tokens, ...fullTokens]).size;
+      const score = inter / union;
+      if (score > bestScore) { bestScore = score; bestCat = full; }
+    }
+    return bestCat ? PROMPT_TO_VIS_CAT[bestCat] : 'OTHER';
   }
 
   function debounce(func, wait) {
