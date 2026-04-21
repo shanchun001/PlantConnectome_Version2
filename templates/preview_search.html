@@ -20,7 +20,7 @@
         <strong style="font-size:14px;">How to use this page</strong>
         <ol style="margin:6px 0 0 0;padding-left:20px;">
           <li><strong>Select</strong> &mdash; Check the entities you want to explore, or use the search box and category filter to narrow down.</li>
-          <li><strong>Find Similar</strong> <em>(optional)</em> &mdash; Click <strong style="color:#8e44ad;">Find Similar Entities</strong> to find groups of similar names. Check a group to select its representative and deselect its aliases in the table above.</li>
+          <li><strong>Find Closest</strong> <em>(optional)</em> &mdash; In Step 2, type or pick an anchor entity (e.g. <em>CESA mutants</em>) and click <strong style="color:#8e44ad;">Find Closest</strong>. Ticking a result syncs that entity's checkbox in the table above.</li>
           <li><strong>Visualize</strong> &mdash; Click <strong style="color:#3498db;">Show Selected Entities</strong> to generate the knowledge network graph.</li>
         </ol>
       </div>
@@ -82,55 +82,31 @@
     </div>
   </div>
 
-  <!-- Step 2: Optional similarity deduplication -->
+  <!-- Step 2: Optional — rank entities closest to a specific one -->
   <div style="margin-top:20px;margin-bottom:6px;">
     <span style="display:inline-block;background:#8e44ad;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">Step 2</span>
-    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Find &amp; merge similar entities</span>
+    <span style="font-size:13px;font-weight:600;color:#2c3e50;">Find entities closest to a specific one</span>
     <span style="font-size:12px;color:#6b7280;margin-left:4px;">(optional)</span>
   </div>
 
   <div class="similarity-card">
     <div class="similarity-description">
-      Different papers may refer to the same entity using different names
-      (e.g. <em>"CesA genes"</em> vs <em>"cellulose synthase genes"</em>).
-      This tool uses AI embeddings to identify similar entities so you can merge them.
+      Pick an entity from the table above (e.g. <em>CESA mutants</em>) and this tool will
+      rank the other entities by how semantically similar they are. Ticking a box
+      in the results instantly selects the matching entity in the table.
     </div>
 
-    <div class="similarity-controls">
-      <div class="similarity-slider-group">
-        <label for="simThreshold">Sensitivity</label>
-        <div class="similarity-slider-row">
-          <span class="similarity-label-end">More matches</span>
-          <input type="range" id="simThreshold" min="0.5" max="0.99" step="0.01" value="0.80"
-                 oninput="document.getElementById('simThresholdVal').textContent=this.value">
-          <span class="similarity-label-end">Fewer matches</span>
-          <span id="simThresholdVal" class="similarity-threshold-badge">0.80</span>
-        </div>
-      </div>
-
-      <button id="findSimilarBtn" onclick="findSimilarEntities()" class="similarity-btn">
-        Find Similar Entities
+    <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap; margin-top:10px;">
+      <input type="text" id="anchorEntityInput" list="anchorEntityList"
+             placeholder="Type or pick an entity from the table above..."
+             style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
+      <datalist id="anchorEntityList"></datalist>
+      <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto;">
+        Find Closest
       </button>
     </div>
 
-    <!-- Anchor-based similarity: "closest to a specific entity" -->
-    <div class="anchor-similarity" style="margin-top:16px; padding-top:14px; border-top:1px dashed #e5e7eb;">
-      <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">
-        Or find entities closest to a specific one (e.g. <em>CESA mutants</em>):
-      </div>
-      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
-        <input type="text" id="anchorEntityInput" list="anchorEntityList"
-               placeholder="Type or pick an entity from the table above..."
-               style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
-        <datalist id="anchorEntityList"></datalist>
-        <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto;">
-          Find Closest
-        </button>
-      </div>
-      <div id="anchorResults" style="margin-top:10px;"></div>
-    </div>
-
-    <div id="similarityResults"></div>
+    <div id="anchorResults" style="margin-top:10px;"></div>
   </div>
 
   <!-- Spacer so sticky bar doesn't overlap content -->
@@ -1137,10 +1113,8 @@
     const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
     if (entities.length === 0) { alert('No entities to compare.'); return; }
 
-    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.70);
-    // Use the threshold slider as the floor for anchor results, but clamp low
-    // so users can still see loosely related entities when slider is strict.
-    const minSim = Math.max(0.3, threshold - 0.15);
+    // Similarity floor: show loosely related entities too; user can filter via quick-select buttons.
+    const minSim = 0.3;
 
     resultsDiv.innerHTML = `
       <div style="text-align:center;padding:16px;">
@@ -1322,216 +1296,5 @@
     countEl.textContent = `${selected} of ${total} selected`;
   }
 
-  function findSimilarEntities() {
-    const btn = document.getElementById('findSimilarBtn');
-    const resultsDiv = document.getElementById('similarityResults');
-    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.70);
-
-    const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
-    if (entities.length === 0) { alert('No entities to compare.'); return; }
-
-    resultsDiv.innerHTML = `
-      <div style="text-align:center;padding:24px;">
-        <div style="display:inline-block;width:22px;height:22px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-        <p style="margin-top:10px;color:#6b7280;font-size:13px;">Computing embeddings for ${entities.length} entities...</p>
-      </div>`;
-    btn.disabled = true;
-    btn.textContent = 'Computing...';
-
-    fetch('/compute-similarity', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entities, threshold })
-    })
-    .then(r => r.json())
-    .then(data => {
-      btn.disabled = false;
-      btn.textContent = 'Find Similar Entities';
-
-      if (data.error) { resultsDiv.innerHTML = `<p style="color:#e74c3c;">${data.error}</p>`; return; }
-      if (data.groups.length === 0) {
-        resultsDiv.innerHTML = `<p style="color:#6b7280;padding:8px 0;">No similar entities found at threshold ${threshold}. Try lowering the sensitivity slider.</p>`;
-        return;
-      }
-
-      window._similarityGroups = data.groups;
-      renderSimilarityResults(data);
-    })
-    .catch(err => {
-      btn.disabled = false;
-      btn.textContent = 'Find Similar Entities';
-      resultsDiv.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
-    });
-  }
-
-  function renderSimilarityResults(data) {
-    const resultsDiv = document.getElementById('similarityResults');
-    const groups = data.groups;
-    const totalDuplicates = groups.reduce((sum, g) => sum + g.length - 1, 0);
-
-    let html = '';
-
-    // Summary bar with actions
-    html += `<div class="sim-summary">
-      <div class="sim-summary-text">
-        Found <strong>${groups.length}</strong> groups with <strong>${totalDuplicates}</strong> similar entities
-        <span id="simVisibleCount" style="font-size:11px;color:#6b7280;margin-left:6px;"></span>
-      </div>
-      <div class="sim-summary-actions">
-        <button onclick="toggleAllGroups(true)" class="sim-action-btn">Select All Groups</button>
-        <button onclick="toggleAllGroups(false)" class="sim-action-btn sim-action-btn-outline">Deselect All</button>
-        <button onclick="applyMerge()" class="sim-action-btn sim-action-btn-green">Apply Merge</button>
-      </div>
-    </div>`;
-
-    // Group search box — filter visible groups by entity name substring
-    html += `<div class="sim-group-search" style="margin:10px 0 8px 0;">
-      <input type="text" id="simGroupSearchInput" placeholder="Search groups by entity name..."
-             oninput="filterSimilarityGroups()"
-             style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
-    </div>`;
-
-    // Scrollable group list
-    html += `<div class="sim-groups-container">`;
-
-    groups.forEach((group, gi) => {
-      const representative = group[0];
-      const aliases = group.slice(1);
-
-      const MAX_VISIBLE = 8;
-      const hasMore = aliases.length > MAX_VISIBLE;
-      const visibleAliases = hasMore ? aliases.slice(0, MAX_VISIBLE) : aliases;
-      const hiddenAliases = hasMore ? aliases.slice(MAX_VISIBLE) : [];
-
-      // Pre-compute lowercase search index for this group (representative + all aliases)
-      const groupSearchText = group.map(e => (e.name || '').toLowerCase()).join(' | ');
-
-      html += `<div class="sim-group" data-group="${gi}" data-search="${groupSearchText.replace(/"/g, '&quot;')}">
-        <div class="sim-group-header">
-          <label class="sim-group-checkbox-label">
-            <input type="checkbox" class="sim-group-checkbox" data-group="${gi}" onchange="onGroupToggle(${gi}, this.checked)">
-            <span class="sim-group-title">Group ${gi + 1}</span>
-          </label>
-          <span class="sim-group-count">${aliases.length} similar entit${aliases.length !== 1 ? 'ies' : 'y'}</span>
-        </div>
-
-        <div class="sim-group-body">
-          <div class="sim-representative">
-            <span class="sim-rep-badge">Keep</span>
-            <span class="sim-rep-name">${representative.name}</span>
-          </div>
-
-          <div class="sim-aliases">
-            <span class="sim-aliases-label">Similar entities (will be deselected when you Apply Merge):</span>
-            <div class="sim-alias-list" id="sim-aliases-${gi}">`;
-
-      visibleAliases.forEach(a => {
-        html += `<span class="sim-alias-pill">${a.name}</span>`;
-      });
-
-      if (hasMore) {
-        html += `</div>
-            <div class="sim-alias-list sim-alias-hidden" id="sim-aliases-hidden-${gi}" style="display:none;">`;
-        hiddenAliases.forEach(a => {
-          html += `<span class="sim-alias-pill">${a.name}</span>`;
-        });
-        html += `</div>
-            <button class="sim-show-more" onclick="toggleAliases(${gi}, this)">Show all ${aliases.length} similar entities</button>`;
-      } else {
-        html += `</div>`;
-      }
-
-      html += `</div>
-        </div>
-      </div>`;
-    });
-
-    html += `</div>`;
-    resultsDiv.innerHTML = html;
-    updateSimVisibleCount();
-  }
-
-  function filterSimilarityGroups() {
-    const input = document.getElementById('simGroupSearchInput');
-    if (!input) return;
-    const q = input.value.trim().toLowerCase();
-    document.querySelectorAll('.sim-groups-container > .sim-group').forEach(g => {
-      const searchText = g.dataset.search || '';
-      const show = !q || searchText.includes(q);
-      g.style.display = show ? '' : 'none';
-    });
-    updateSimVisibleCount();
-  }
-
-  function updateSimVisibleCount() {
-    const countEl = document.getElementById('simVisibleCount');
-    if (!countEl) return;
-    const all = document.querySelectorAll('.sim-groups-container > .sim-group');
-    const visible = [...all].filter(g => g.style.display !== 'none').length;
-    if (visible === all.length) {
-      countEl.textContent = '';
-    } else {
-      countEl.textContent = `(showing ${visible} of ${all.length})`;
-    }
-  }
-
-  function toggleAliases(gi, btn) {
-    const hidden = document.getElementById(`sim-aliases-hidden-${gi}`);
-    if (hidden.style.display === 'none') {
-      hidden.style.display = 'flex';
-      btn.textContent = 'Show fewer';
-    } else {
-      hidden.style.display = 'none';
-      const count = hidden.querySelectorAll('.sim-alias-pill').length + document.getElementById(`sim-aliases-${gi}`).querySelectorAll('.sim-alias-pill').length;
-      btn.textContent = `Show all ${count} similar entities`;
-    }
-  }
-
-  function onGroupToggle(gi, checked) {
-    // When a group checkbox is toggled, select/deselect ALL entities
-    // in the group (representative + similar) in the Step 1 table
-    const groups = window._similarityGroups;
-    if (!groups || !groups[gi]) return;
-    const group = groups[gi];
-    const allNames = new Set(group.map(e => e.name.toLowerCase()));
-
-    document.querySelectorAll('.entity-checkbox').forEach(entityCb => {
-      const row = entityCb.closest('tr');
-      if (!row) return;
-      const link = row.querySelector('.entity-name a');
-      const entityName = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
-      if (!entityName) return;
-
-      if (allNames.has(entityName)) {
-        entityCb.checked = checked;
-      }
-    });
-    updateTotalNodeCount();
-  }
-
-  function toggleAllGroups(checked) {
-    document.querySelectorAll('.sim-group-checkbox').forEach(cb => {
-      cb.checked = checked;
-      const gi = parseInt(cb.dataset.group);
-      onGroupToggle(gi, checked);
-    });
-  }
-
-  function applyMerge() {
-    // Apply all checked groups at once
-    let totalMerged = 0;
-    document.querySelectorAll('.sim-group-checkbox:checked').forEach(cb => {
-      const gi = parseInt(cb.dataset.group);
-      totalMerged++;
-    });
-
-    // Visual feedback
-    const resultsDiv = document.getElementById('similarityResults');
-    const summary = resultsDiv.querySelector('.sim-summary-text');
-    if (summary) {
-      const checkedCount = document.querySelectorAll('.sim-group-checkbox:checked').length;
-      summary.innerHTML = `Applied! <strong>${checkedCount}</strong> groups merged. Representatives selected in the table above.`;
-    }
-  }
 </script>
 {% endblock %}
