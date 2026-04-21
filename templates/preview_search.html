@@ -113,6 +113,23 @@
       </button>
     </div>
 
+    <!-- Anchor-based similarity: "closest to a specific entity" -->
+    <div class="anchor-similarity" style="margin-top:16px; padding-top:14px; border-top:1px dashed #e5e7eb;">
+      <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">
+        Or find entities closest to a specific one (e.g. <em>CESA mutants</em>):
+      </div>
+      <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+        <input type="text" id="anchorEntityInput" list="anchorEntityList"
+               placeholder="Type or pick an entity from the table above..."
+               style="flex:1 1 260px; min-width:220px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; box-sizing:border-box;">
+        <datalist id="anchorEntityList"></datalist>
+        <button id="findClosestBtn" onclick="findClosestToAnchor()" class="similarity-btn" style="flex:0 0 auto;">
+          Find Closest
+        </button>
+      </div>
+      <div id="anchorResults" style="margin-top:10px;"></div>
+    </div>
+
     <div id="similarityResults"></div>
   </div>
 
@@ -944,6 +961,7 @@
     tbody.appendChild(fragment);
     updateTotalNodeCount();
     updateSelectAllCheckbox();
+    if (typeof refreshAnchorDatalist === 'function') refreshAnchorDatalist();
   }
 
   // =========================
@@ -1092,6 +1110,120 @@
   // =========================
   // SEMANTIC SIMILARITY
   // =========================
+
+  // Populate the datalist for the anchor-entity input from current allRowsData.
+  // Called whenever the table re-renders so the options stay in sync.
+  function refreshAnchorDatalist() {
+    const dl = document.getElementById('anchorEntityList');
+    if (!dl) return;
+    const names = new Set();
+    (allRowsData || []).forEach(item => {
+      const name = Array.isArray(item) ? item[0] : item.entity;
+      if (name) names.add(name);
+    });
+    dl.innerHTML = [...names].slice(0, 500)
+      .map(n => `<option value="${n.replace(/"/g, '&quot;')}"></option>`)
+      .join('');
+  }
+
+  // Find entities closest to a user-chosen anchor by cosine similarity.
+  function findClosestToAnchor() {
+    const input = document.getElementById('anchorEntityInput');
+    const resultsDiv = document.getElementById('anchorResults');
+    const btn = document.getElementById('findClosestBtn');
+    const anchor = input.value.trim();
+    if (!anchor) { alert('Please enter or pick an anchor entity.'); return; }
+
+    const entities = allRowsData.map(item => Array.isArray(item) ? item[0] : item.entity);
+    if (entities.length === 0) { alert('No entities to compare.'); return; }
+
+    const threshold = parseFloat(document.getElementById('simThreshold')?.value || 0.70);
+    // Use the threshold slider as the floor for anchor results, but clamp low
+    // so users can still see loosely related entities when slider is strict.
+    const minSim = Math.max(0.3, threshold - 0.15);
+
+    resultsDiv.innerHTML = `
+      <div style="text-align:center;padding:16px;">
+        <div style="display:inline-block;width:18px;height:18px;border:3px solid #e5e7eb;border-top-color:#8e44ad;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <p style="margin-top:8px;color:#6b7280;font-size:12px;">Ranking ${entities.length} entities by similarity to "${anchor}"...</p>
+      </div>`;
+    btn.disabled = true;
+    btn.textContent = 'Computing...';
+
+    fetch('/compute-anchor-similarity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entities, anchor, limit: 30, min_similarity: minSim })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'Find Closest';
+      if (data.error) {
+        resultsDiv.innerHTML = `<p style="color:#e74c3c;font-size:13px;">${data.error}</p>`;
+        return;
+      }
+      renderAnchorResults(data);
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = 'Find Closest';
+      resultsDiv.innerHTML = `<p style="color:#e74c3c;font-size:13px;">${err.message || err}</p>`;
+    });
+  }
+
+  function renderAnchorResults(data) {
+    const resultsDiv = document.getElementById('anchorResults');
+    const results = data.results || [];
+    if (results.length === 0) {
+      resultsDiv.innerHTML = `<p style="color:#6b7280;font-size:12px;margin:8px 0 0 0;">No entities passed the similarity floor (${data.min_similarity}). Try lowering the sensitivity slider.</p>`;
+      return;
+    }
+
+    const safeAnchor = (data.anchor || '').replace(/</g, '&lt;');
+    let html = `<div style="font-size:12px;color:#374151;margin-bottom:6px;">
+      Top <strong>${results.length}</strong> entities closest to <strong>${safeAnchor}</strong>
+      <button onclick="selectAnchorResultsInTable()" class="sim-action-btn sim-action-btn-green" style="margin-left:8px; padding:4px 10px; font-size:11px;">Select these in table</button>
+    </div>`;
+    html += `<div class="sim-groups-container" style="max-height:280px;">`;
+    results.forEach(r => {
+      const pct = Math.round(r.similarity * 100);
+      const barColor = r.similarity >= 0.8 ? '#22c55e' : r.similarity >= 0.6 ? '#eab308' : '#94a3b8';
+      html += `<div class="sim-group" style="display:flex;align-items:center;gap:10px;padding:8px 10px;">
+        <span style="flex:1 1 auto;font-size:13px;color:#111827;">${r.name.replace(/</g, '&lt;')}</span>
+        <span style="flex:0 0 60px;font-size:11px;color:#6b7280;text-align:right;">${r.similarity.toFixed(3)}</span>
+        <div style="flex:0 0 80px;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${barColor};"></div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+    resultsDiv.innerHTML = html;
+    window._anchorResults = results;
+  }
+
+  // Check the entity-checkbox for each anchor result in the Step 1 table.
+  function selectAnchorResultsInTable() {
+    const results = window._anchorResults || [];
+    if (results.length === 0) return;
+    const targetNames = new Set(results.map(r => r.name.toLowerCase()));
+    // Also include the anchor itself
+    const anchor = document.getElementById('anchorEntityInput')?.value.trim().toLowerCase();
+    if (anchor) targetNames.add(anchor);
+
+    let checked = 0;
+    document.querySelectorAll('.entity-checkbox').forEach(cb => {
+      const row = cb.closest('tr');
+      if (!row) return;
+      const link = row.querySelector('.entity-name a');
+      const name = (link?.dataset?.originalText || link?.textContent || '').trim().toLowerCase();
+      if (targetNames.has(name)) { cb.checked = true; checked++; }
+    });
+    if (typeof updateTotalNodeCount === 'function') updateTotalNodeCount();
+    if (typeof updateSelectAllCheckbox === 'function') updateSelectAllCheckbox();
+    alert(`Selected ${checked} entities in the table.`);
+  }
+
   function findSimilarEntities() {
     const btn = document.getElementById('findSimilarBtn');
     const resultsDiv = document.getElementById('similarityResults');

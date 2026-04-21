@@ -499,6 +499,78 @@ def compute_similarity():
             "threshold": threshold
         })
 
+
+@app.route('/compute-anchor-similarity', methods=['POST'])
+def compute_anchor_similarity():
+    """Rank entities by cosine similarity to a user-chosen anchor entity.
+
+    Expects JSON: {
+        "entities": ["entity1", ...],
+        "anchor": "<anchor entity name>",
+        "limit": 30,                # number of top results
+        "min_similarity": 0.3       # floor score (keeps results relevant)
+    }
+    Returns: { "anchor": ..., "results": [{"name":..., "similarity":...}, ...] }
+    """
+    data = request.get_json()
+    entities = data.get('entities', [])
+    anchor = (data.get('anchor') or '').strip()
+    limit = int(data.get('limit', 30))
+    min_sim = float(data.get('min_similarity', 0.3))
+
+    if not entities:
+        return jsonify({"error": "No entities provided"}), 400
+    if not anchor:
+        return jsonify({"error": "No anchor entity provided"}), 400
+    if len(entities) > 500:
+        return jsonify({"error": "Too many entities (max 500)"}), 400
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        return jsonify({"error": "OpenAI API key not configured."}), 500
+
+    # Ensure anchor is in the candidate list; keep original order for its neighbors
+    candidates = list(entities)
+    if anchor not in candidates:
+        candidates.append(anchor)
+    anchor_idx = candidates.index(anchor)
+
+    try:
+        client = openai.OpenAI(api_key=openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=candidates
+        )
+        embeddings = np.array([item.embedding for item in response.data])
+
+        # Normalize for cosine similarity
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1
+        normalized = embeddings / norms
+
+        anchor_vec = normalized[anchor_idx]
+        sims = np.dot(normalized, anchor_vec)
+
+        # Rank others by similarity (exclude the anchor itself)
+        scored = []
+        for i, name in enumerate(candidates):
+            if i == anchor_idx:
+                continue
+            s = float(sims[i])
+            if s >= min_sim:
+                scored.append({"name": name, "similarity": round(s, 4)})
+
+        scored.sort(key=lambda x: -x["similarity"])
+
+        return jsonify({
+            "anchor": anchor,
+            "results": scored[:limit],
+            "total_candidates": len(candidates) - 1,
+            "min_similarity": min_sim,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
