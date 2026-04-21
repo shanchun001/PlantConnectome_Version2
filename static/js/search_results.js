@@ -7,17 +7,45 @@ doesn't look too bloated and is more maintainable in the long run).
 var searchForm = document.getElementById("node-search-form");
 searchForm.addEventListener("submit", function (event) {
   event.preventDefault();
-  const searchTerm = event.target[0].value.toLowerCase();
+  const searchTerm = event.target[0].value.trim().toLowerCase();
   const cy = document.getElementById("cy")._cyreg.cy;
+
+  // Clear previous highlight styles
+  cy.nodes().removeStyle("opacity border-width border-color overlay-color overlay-padding overlay-opacity");
+  cy.edges().removeStyle("opacity");
+
+  if (!searchTerm) return;
+
+  // Substring match against both the display label (originalId) and the full id
   const matchingNodes = cy.nodes().filter(function (node) {
-    const nodeId = node.id().toLowerCase();
-    if (nodeId === searchTerm) {
-      return true;
-    }
-    return nodeId.includes(searchTerm);
+    const nodeId = (node.id() || "").toLowerCase();
+    const label = (node.data("originalId") || node.data("label") || "").toLowerCase();
+    return nodeId.includes(searchTerm) || label.includes(searchTerm);
   });
-  cy.nodes().style("opacity", "0.5");
-  matchingNodes.style("opacity", "1");
+
+  if (matchingNodes.length === 0) {
+    alert(`No nodes found matching "${searchTerm}"`);
+    return;
+  }
+
+  // Dim everything strongly; highlight matches with full opacity + yellow halo border
+  cy.nodes().style({ "opacity": 0.15 });
+  cy.edges().style({ "opacity": 0.08 });
+
+  matchingNodes.style({
+    "opacity": 1,
+    "border-width": 4,
+    "border-color": "#FFD700",
+    "overlay-color": "#FFD700",
+    "overlay-padding": 8,
+    "overlay-opacity": 0.35,
+  });
+
+  // Also brighten edges connected to matches so context is visible
+  matchingNodes.connectedEdges().style({ "opacity": 0.7 });
+
+  // Center/zoom on matches
+  cy.animate({ fit: { eles: matchingNodes, padding: 80 }, duration: 400 });
 });
 
 // {{ cytoscape_js_code | safe }} --> meant to be put into the script file this originally belonged in.

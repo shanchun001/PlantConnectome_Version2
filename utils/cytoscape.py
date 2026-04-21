@@ -116,6 +116,115 @@ with open('utils/Connectome_relationships.json', 'r') as file:
     RELATIONSHIP_CATEGORIES = json.load(file)
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Canonical prompt templates (the entity categories used by the GPT
+# extraction prompt). Every DB category should resolve to one of these.
+# When a DB category is a "merged" variant (e.g. extra slash-separated
+# tokens), we pick the canonical prompt with the highest token overlap.
+# ─────────────────────────────────────────────────────────────────────────
+PROMPT_TEMPLATES = [
+    'GENE / PROTEIN',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',
+    'PHENOTYPE / TRAIT / DISEASE',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
+    'REGULATORY / SIGNALING MECHANISM',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION',
+]
+_KNOWN_CATS = set(PROMPT_TEMPLATES)
+
+# Stop-word tokens to ignore when scoring overlap (too generic)
+_CAT_STOPWORDS = {'AND', 'OR', 'OF', 'THE', 'A', 'AN', 'IN', 'ON', 'WITH', 'BY'}
+
+def _tokenize_category(s):
+    """Split 'A / B / C' into {'A', 'B', 'C'} (uppercase, stripped, stop-words removed)."""
+    if not s:
+        return set()
+    parts = str(s).upper().replace('|', '/').replace(';', '/').split('/')
+    tokens = set()
+    for p in parts:
+        tok = p.strip()
+        if tok and tok not in _CAT_STOPWORDS:
+            tokens.add(tok)
+    return tokens
+
+# Pre-compute tokens for each canonical template (module load)
+_PROMPT_TEMPLATE_TOKENS = {t: _tokenize_category(t) for t in PROMPT_TEMPLATES}
+
+
+def resolve_prompt_template(node_category, node_type=None):
+    """
+    Resolve a raw DB category string to the nearest canonical prompt template.
+
+    Strategy:
+      1. Empty → 'OTHER'
+      2. Exact match against _KNOWN_CATS
+      3. Token-overlap scoring: pick the canonical prompt with the highest
+         Jaccard similarity (intersection / union of uppercase tokens).
+         Ties broken by longer intersection size, then by template length.
+      4. Fall back to mapping via ENTITY_CATEGORIES_DICT on the node type.
+    """
+    if not node_category:
+        if node_type:
+            vis = ENTITY_CATEGORIES_DICT.get(str(node_type).upper(), '')
+            if vis:
+                return vis
+        return 'OTHER'
+
+    raw = str(node_category).strip().upper()
+    if not raw:
+        return 'OTHER'
+
+    # 1. Exact match (fast path)
+    if raw in _KNOWN_CATS:
+        return raw
+
+    # 2. Token-overlap nearest-match
+    raw_tokens = _tokenize_category(raw)
+    if not raw_tokens:
+        return 'OTHER'
+
+    best = None
+    best_score = 0.0
+    best_inter = 0
+    for template, tpl_tokens in _PROMPT_TEMPLATE_TOKENS.items():
+        if not tpl_tokens:
+            continue
+        inter = len(raw_tokens & tpl_tokens)
+        if inter == 0:
+            continue
+        union = len(raw_tokens | tpl_tokens)
+        score = inter / union  # Jaccard similarity
+        if (score > best_score
+                or (score == best_score and inter > best_inter)
+                or (score == best_score and inter == best_inter
+                    and best is not None and len(template) < len(best))):
+            best = template
+            best_score = score
+            best_inter = inter
+
+    if best is not None and best_score > 0:
+        return best
+
+    # 3. Fallback: use node_type → CSV mapping
+    if node_type:
+        vis = ENTITY_CATEGORIES_DICT.get(str(node_type).upper(), '')
+        if vis:
+            return vis
+
+    return 'OTHER'
+
+
 def normalize_relationship_label(label):
     """Strip brackets and normalize a relationship_label like '[Regulation / Control]' to 'REGULATION/CONTROL'."""
     if not label:
@@ -134,44 +243,9 @@ def generate_cytoscape_js(elements, ab, fa):
             return ''
         return str(value).replace("'", "").replace('"', '').replace('\n', '').replace('\\', '').replace('`', '').replace('${', '')
 
-    # The exact keys network.js nodeStyles recognizes
-    _KNOWN_CATS = {
-        'GENE / PROTEIN',
-        'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE',
-        'PHENOTYPE / TRAIT / DISEASE',
-        'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM',
-        'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP',
-        'CHEMICAL / METABOLITE / COFACTOR / LIGAND',
-        'TREATMENT / PERTURBATION / STRESS / MUTANT',
-        'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE',
-        'BIOLOGICAL PROCESS / PATHWAY / FUNCTION',
-        'REGULATORY / SIGNALING MECHANISM',
-        'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC',
-        'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT',
-        'CLINICAL / EPIDEMIOLOGICAL / POPULATION',
-        'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT',
-        'SOCIAL / ECONOMIC / POLICY / MANAGEMENT',
-        'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT',
-        'PROPERTY / MEASUREMENT / CHARACTERIZATION',
-    }
-
     def get_node_category(node_category, node_type):
-        """Normalize DB category to a known nodeStyles key."""
-        if not node_category:
-            return 'OTHER'
-        raw = node_category.strip().upper()
-        # Exact match
-        if raw in _KNOWN_CATS:
-            return raw
-        # Split on | or ; (multi-category) and try first part
-        first = raw.split('|')[0].split(';')[0].strip()
-        if first in _KNOWN_CATS:
-            return first
-        # Try matching: known is prefix of raw, or raw is prefix of known
-        for known in _KNOWN_CATS:
-            if raw.startswith(known) or known.startswith(first[:25]):
-                return known
-        return 'OTHER'
+        """Normalize DB category to the canonical prompt template (nearest-match)."""
+        return resolve_prompt_template(node_category, node_type)
 
     def get_edge_category(relationship_label, interaction):
         """Return the relationship_label as-is (it is the category from the prompt)."""
@@ -285,44 +359,86 @@ def generate_cytoscape_js(elements, ab, fa):
     ).replace('REPLACE_AB', json.dumps(ab)).replace('REPLACE_FA', json.dumps(fa))
 
 
-# Mapping from prompt entity categories to visualization categories
-# Each category maps to itself (exact names from GPT extraction prompt)
-PROMPT_TO_VIS_CATEGORY = {
-    # Map long prompt category names → short vis category names (matching CAT_ALIAS in templates)
-    'GENE / PROTEIN': 'GENE/PROTEIN',
-    'PHENOTYPE / TRAIT / DISEASE': 'PHENOTYPE',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM': 'CELL/ORGAN/ORGANISM',
-    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGANISM': 'CELL/ORGAN/ORGANISM',
-    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP': 'CELL/ORGAN/ORGANISM',
-    'CHEMICAL / METABOLITE / COFACTOR / LIGAND': 'CHEMICAL',
-    'TREATMENT / PERTURBATION / STRESS / MUTANT': 'TREATMENT',
-    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE': 'METHOD',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION': 'BIOLOGICAL PROCESS',
-    'BIOLOGICAL PROCESS / FUNCTION': 'BIOLOGICAL PROCESS',
-    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
-    'REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
-    'REGULATORY / SIGNALING MECHANISM / METABOLIC PATHWAY': 'BIOLOGICAL PROCESS',
-    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC': 'METHOD',
-    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT': 'TREATMENT',
-    'CLINICAL / EPIDEMIOLOGICAL / POPULATION': 'CELL/ORGAN/ORGANISM',
-    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT': 'METHOD',
-    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT': 'OTHER',
-    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT': 'OTHER',
-    'PROPERTY / MEASUREMENT / CHARACTERIZATION': 'OTHER',
-    'PROPERTY / CHARACTERIZATION': 'OTHER',
-    # Short form keys (in case they appear in data)
-    'GENE/PROTEIN': 'GENE/PROTEIN',
-    'PHENOTYPE': 'PHENOTYPE',
-    'CELL/ORGAN/ORGANISM': 'CELL/ORGAN/ORGANISM',
-    'CHEMICAL': 'CHEMICAL',
-    'TREATMENT': 'TREATMENT',
-    'METHOD': 'METHOD',
-    'BIOLOGICAL PROCESS': 'BIOLOGICAL PROCESS',
-    'GENOMIC/TRANSCRIPTOMIC FEATURE': 'GENOMIC/TRANSCRIPTOMIC FEATURE',
-    'GENE IDENTIFIER': 'GENE IDENTIFIER',
-    'PROCESS': 'BIOLOGICAL PROCESS',
-    'NA': 'OTHER',
+# ─────────────────────────────────────────────────────────────────────────
+# Canonical prompt template → short visualization category.
+# Every one of the 17 PROMPT_TEMPLATES above has an entry here.
+# Plus common short-form keys and frequent merged variants observed in the DB.
+# Anything not listed falls through to resolve_prompt_template() which uses
+# token-overlap scoring to find the nearest canonical prompt.
+# ─────────────────────────────────────────────────────────────────────────
+_PROMPT_TEMPLATE_TO_VIS = {
+    'GENE / PROTEIN':                                                 'GENE/PROTEIN',
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE':      'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'PHENOTYPE / TRAIT / DISEASE':                                    'PHENOTYPE',
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGAN / ORGANISM':    'CELL/ORGAN/ORGANISM',
+    'TAXONOMIC / EVOLUTIONARY / PHYLOGENETIC GROUP':                  'CELL/ORGAN/ORGANISM',
+    'CHEMICAL / METABOLITE / COFACTOR / LIGAND':                      'CHEMICAL',
+    'TREATMENT / PERTURBATION / STRESS / MUTANT':                     'TREATMENT',
+    'METHOD / ASSAY / EXPERIMENTAL SETUP / PARAMETER / SAMPLE':       'METHOD',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION':                        'BIOLOGICAL PROCESS',
+    'REGULATORY / SIGNALING MECHANISM':                               'BIOLOGICAL PROCESS',
+    'COMPUTATIONAL / MODEL / ALGORITHM / DATA / METRIC':              'METHOD',
+    'ENVIRONMENTAL / ECOLOGICAL / SOIL / CLIMATE CONTEXT':            'TREATMENT',
+    'CLINICAL / EPIDEMIOLOGICAL / POPULATION':                        'CELL/ORGAN/ORGANISM',
+    'EQUIPMENT / DEVICE / MATERIAL / INSTRUMENT':                     'METHOD',
+    'SOCIAL / ECONOMIC / POLICY / MANAGEMENT':                        'OTHER',
+    'KNOWLEDGE / CONCEPT / HYPOTHESIS / THEORETICAL CONSTRUCT':       'OTHER',
+    'PROPERTY / MEASUREMENT / CHARACTERIZATION':                      'OTHER',
 }
+
+# Frequent merged/variant strings that should also resolve to the same vis category
+_VARIANT_TO_VIS = {
+    # Biological process merged variants
+    'BIOLOGICAL PROCESS / FUNCTION':                                          'BIOLOGICAL PROCESS',
+    'BIOLOGICAL PROCESS / PATHWAY / FUNCTION / REGULATORY / SIGNALING MECHANISM': 'BIOLOGICAL PROCESS',
+    'REGULATORY / SIGNALING MECHANISM / METABOLIC PATHWAY':                   'BIOLOGICAL PROCESS',
+    # CELL/ORGAN variants
+    'COMPLEX / STRUCTURE / COMPARTMENT / CELL / ORGANISM':                    'CELL/ORGAN/ORGANISM',
+    # Genomic feature variants
+    'GENOMIC / TRANSCRIPTOMIC / PROTEOMIC / EPIGENOMIC FEATURE / GENE MUTANT':'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'GENOMIC / TRANSCRIPTOMIC / EPIGENOMIC FEATURE':                          'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    # Property variant
+    'PROPERTY / CHARACTERIZATION':                                            'OTHER',
+    # Short-form keys (when data already has the short name)
+    'GENE/PROTEIN':                     'GENE/PROTEIN',
+    'PHENOTYPE':                        'PHENOTYPE',
+    'CELL/ORGAN/ORGANISM':              'CELL/ORGAN/ORGANISM',
+    'CHEMICAL':                         'CHEMICAL',
+    'TREATMENT':                        'TREATMENT',
+    'METHOD':                           'METHOD',
+    'BIOLOGICAL PROCESS':               'BIOLOGICAL PROCESS',
+    'GENOMIC/TRANSCRIPTOMIC FEATURE':   'GENOMIC/TRANSCRIPTOMIC FEATURE',
+    'GENE IDENTIFIER':                  'GENE IDENTIFIER',
+    'PROCESS':                          'BIOLOGICAL PROCESS',
+    'NA':                               'OTHER',
+    'OTHER':                            'OTHER',
+}
+
+
+class _PromptToVisMap(dict):
+    """
+    Dict-like mapping: canonical prompt/variant → short vis category.
+
+    Any unknown key falls back to the nearest canonical prompt template
+    (via token-overlap scoring in resolve_prompt_template), and that
+    template's vis category is returned.
+    """
+
+    def __missing__(self, key):
+        if not key:
+            return 'OTHER'
+        canonical = resolve_prompt_template(key)
+        if canonical == 'OTHER':
+            return 'OTHER'
+        return _PROMPT_TEMPLATE_TO_VIS.get(canonical, 'OTHER')
+
+    def get(self, key, default='OTHER'):
+        if key in self:
+            return dict.__getitem__(self, key)
+        val = self.__missing__(key)
+        return val if val is not None else default
+
+
+PROMPT_TO_VIS_CATEGORY = _PromptToVisMap()
+PROMPT_TO_VIS_CATEGORY.update(_PROMPT_TEMPLATE_TO_VIS)
+PROMPT_TO_VIS_CATEGORY.update(_VARIANT_TO_VIS)
