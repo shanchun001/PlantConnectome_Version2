@@ -259,13 +259,17 @@ def find_preview_fast(my_search, genes, search_type):
     term_lower = term.lower()
 
     # For all search types, use entity_lookup first for fast entity discovery,
-    # then query all_dic using exact $in on indexed _lower fields
+    # then query all_dic using exact $in on indexed _lower fields.
+    # IMPORTANT: sort entity_lookup hits by `count` desc so high-signal entities
+    # (e.g. canonical gene-identifier forms aggregated from many docs) make it
+    # into the top-N before we cap at 300. Without this, MongoDB's text index
+    # returns matches in natural order and a heavy canonical (e.g. 1068 docs)
+    # can get excluded by the limit.
     if search_type == "normal":
-        # Text search on entity_lookup is fast (~0.3s)
         matched_names = [d["_id"] for d in entity_lookup.find(
             {"$text": {"$search": term}},
             {"_id": 1}
-        ).limit(300)]
+        ).sort("count", -1).limit(300)]
         if not matched_names:
             return []
     elif search_type == "substring":
@@ -277,7 +281,7 @@ def find_preview_fast(my_search, genes, search_type):
     else:
         matched_names = [d["_id"] for d in entity_lookup.find(
             {"$text": {"$search": term}}, {"_id": 1}
-        ).limit(300)]
+        ).sort("count", -1).limit(300)]
         if not matched_names:
             return []
 
