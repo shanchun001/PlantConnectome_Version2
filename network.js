@@ -669,7 +669,11 @@
       `;
     });
 
-    ab.innerHTML = nodeInfoHtml + edgeInfo;
+    // Split: Entity Information → #ab-top (renders above Actions)
+    //        Connected Relationships → #ab (renders below Actions)
+    const abTop = document.getElementById('ab-top');
+    if (abTop) abTop.innerHTML = nodeInfoHtml;
+    ab.innerHTML = edgeInfo;
     tooltip.style.display = 'block';
 
   }
@@ -721,7 +725,9 @@
     // Title bar intentionally left empty — Relationship section below contains the same data
     abTitle.innerHTML = '';
 
-    ab.innerHTML = `
+    // Top block: Relationship (renders above Source Text)
+    const abTop = document.getElementById('ab-top');
+    if (abTop) abTop.innerHTML = `
       <div class="edge-tp-section-title">Relationship</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Interaction</span><span><strong>${interactionText}</strong></span></div>
@@ -732,7 +738,10 @@
         ${genProcess ? `<div class="edge-tp-row"><span class="edge-tp-label">Generated process</span><span>${genProcess}</span></div>` : ''}
         ${citations ? `<div class="edge-tp-row"><span class="edge-tp-label">Citations</span><span>${citations}</span></div>` : ''}
       </div>
+    `;
 
+    // Bottom block: Source/Target Entity + Validate button (renders below Source Text)
+    ab.innerHTML = `
       <div class="edge-tp-section-title">Source Entity</div>
       <div class="edge-tp-meta">
         <div class="edge-tp-row"><span class="edge-tp-label">Name</span><span><strong>${srcName}</strong></span></div>
